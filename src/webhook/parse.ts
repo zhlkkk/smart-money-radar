@@ -6,30 +6,129 @@ const BASE_TOKEN_MINTS = new Set([
   'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
 ]);
 
-// src/webhook/parse.ts
-export function parseSwap(tx: any): ParsedSwap | null {
+/**
+ * Parse a Helius Enhanced Transaction into a ParsedSwap.
+ *
+ * Strategy:
+ *  1. Try events.swap (populated for Jupiter, Raydium, Orca, etc.)
+ *  2. Fall back to tokenTransfers (always populated, even for unsupported DEXes)
+ *
+ * In both paths, find the watched wallet and the "interesting" (non-base) token.
+ */
+export function parseSwap(
+  tx: HeliusEnhancedTransaction,
+  watchedAddresses: Set<string>,
+): ParsedSwap | null {
   if (tx?.type !== 'SWAP') return null;
-  
-  // 防御性检查
+
+  // --- Path 1: events.swap ---
   const swapEvent = tx.events?.swap;
-  if (!swapEvent) {
-    console.warn('⚠️ [parseSwap] No swap event found, skipping');
-    return null;
+  if (swapEvent?.tokenOutputs?.length) {
+    const result = parseFromSwapEvent(tx, swapEvent, watchedAddresses);
+    if (result) return result;
+    console.warn('[parseSwap] events.swap present but no matching output for watched wallet', {
+      signature: tx.signature,
+      outputCount: swapEvent.tokenOutputs.length,
+    });
   }
 
-  const tokenOutput = swapEvent.tokenOutputs?.[0];
-  if (!tokenOutput?.mint) {
-    console.warn('⚠️ [parseSwap] No tokenOutput mint found, skipping');
-    return null;
+  // --- Path 2: tokenTransfers fallback ---
+  if (tx.tokenTransfers?.length) {
+    const result = parseFromTokenTransfers(tx, watchedAddresses);
+    if (result) return result;
+    console.warn('[parseSwap] tokenTransfers present but no matching transfer for watched wallet', {
+      signature: tx.signature,
+      transferCount: tx.tokenTransfers.length,
+    });
   }
+
+  console.warn('[parseSwap] No swap data found in events.swap or tokenTransfers', {
+    signature: tx.signature,
+    source: tx.source,
+    hasSwapEvent: !!swapEvent,
+    tokenTransferCount: tx.tokenTransfers?.length ?? 0,
+  });
+  return null;
+}
+
+function parseFromSwapEvent(
+  tx: HeliusEnhancedTransaction,
+  swapEvent: NonNullable<HeliusEnhancedTransaction['events']['swap']>,
+  watchedAddresses: Set<string>,
+): ParsedSwap | null {
+  // Identify buyer: feePayer or any output recipient that's in the watchlist
+  let buyerAddress: string | null = null;
+
+  if (watchedAddresses.has(tx.feePayer)) {
+    buyerAddress = tx.feePayer;
+  } else {
+    for (const output of swapEvent.tokenOutputs) {
+      if (watchedAddresses.has(output.userAccount)) {
+        buyerAddress = output.userAccount;
+        break;
+      }
+    }
+  }
+
+  if (!buyerAddress) return null;
+
+  // Find the non-base-token output (the "interesting" token they bought)
+  const interestingOutput = swapEvent.tokenOutputs.find(
+    (o) => !BASE_TOKEN_MINTS.has(o.mint),
+  );
+
+  if (!interestingOutput?.mint) return null;
 
   return {
     signature: tx.signature,
-    buyerAddress: tx.feePayer,
-    tokenMint: tokenOutput.mint,
-    tokenSymbol: tokenOutput.symbol || 'UNKNOWN',
-    amountRaw: tokenOutput.amount,
-    dexSource: tx.source || 'UNKNOWN',
-    timestamp: Date.now(),
+    buyerAddress,
+    tokenMint: interestingOutput.mint,
+    amountRaw: interestingOutput.rawTokenAmount?.tokenAmount,
+    dexSource: tx.source ?? 'UNKNOWN',
+    timestamp: tx.timestamp ?? Math.floor(Date.now() / 1000),
   };
+}
+
+function parseFromTokenTransfers(
+  tx: HeliusEnhancedTransaction,
+  watchedAddresses: Set<string>,
+): ParsedSwap | null {
+  // In tokenTransfers, the "received" token is sent TO a watched wallet.
+  // Find the first non-base token received by a watched address.
+  for (const transfer of tx.tokenTransfers) {
+    if (
+      watchedAddresses.has(transfer.toUserAccount) &&
+      !BASE_TOKEN_MINTS.has(transfer.mint)
+    ) {
+      return {
+        signature: tx.signature,
+        buyerAddress: transfer.toUserAccount,
+        tokenMint: transfer.mint,
+        amountRaw: transfer.tokenAmount != null ? String(transfer.tokenAmount) : undefined,
+        dexSource: tx.source ?? 'UNKNOWN',
+        timestamp: tx.timestamp ?? Math.floor(Date.now() / 1000),
+      };
+    }
+  }
+
+  // Fallback: check if feePayer is watched and any non-base token was transferred
+  if (watchedAddresses.has(tx.feePayer)) {
+    const interestingTransfer = tx.tokenTransfers.find(
+      (t) => !BASE_TOKEN_MINTS.has(t.mint),
+    );
+    if (interestingTransfer) {
+      return {
+        signature: tx.signature,
+        buyerAddress: tx.feePayer,
+        tokenMint: interestingTransfer.mint,
+        amountRaw: interestingTransfer.tokenAmount != null
+          ? String(interestingTransfer.tokenAmount)
+          : undefined,
+        dexSource: tx.source ?? 'UNKNOWN',
+        timestamp: tx.timestamp ?? Math.floor(Date.now() / 1000),
+      };
+    }
+  }
+
+  return null;
 }

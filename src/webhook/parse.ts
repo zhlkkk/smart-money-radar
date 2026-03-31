@@ -6,42 +6,30 @@ const BASE_TOKEN_MINTS = new Set([
   'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
 ]);
 
-export function parseSwap(
-  tx: HeliusEnhancedTransaction,
-  watchedAddresses: Set<string>,
-): ParsedSwap | null {
-  if (tx.type !== 'SWAP') return null;
-
-  const swapEvent = tx.events.swap;
-  if (!swapEvent) return null;
-
-  let buyerAddress: string | null = null;
-
-  if (watchedAddresses.has(tx.feePayer)) {
-    buyerAddress = tx.feePayer;
-  } else {
-    for (const output of swapEvent.tokenOutputs) {
-      if (watchedAddresses.has(output.userAccount)) {
-        buyerAddress = output.userAccount;
-        break;
-      }
-    }
+// src/webhook/parse.ts
+export function parseSwap(tx: any): ParsedSwap | null {
+  if (tx?.type !== 'SWAP') return null;
+  
+  // 防御性检查
+  const swapEvent = tx.events?.swap;
+  if (!swapEvent) {
+    console.warn('⚠️ [parseSwap] No swap event found, skipping');
+    return null;
   }
 
-  if (!buyerAddress) return null;
-
-  const interestingOutput = swapEvent.tokenOutputs.find(
-    (o) => !BASE_TOKEN_MINTS.has(o.mint),
-  );
-
-  if (!interestingOutput) return null;
+  const tokenOutput = swapEvent.tokenOutputs?.[0];
+  if (!tokenOutput?.mint) {
+    console.warn('⚠️ [parseSwap] No tokenOutput mint found, skipping');
+    return null;
+  }
 
   return {
     signature: tx.signature,
-    buyerAddress,
-    tokenMint: interestingOutput.mint,
-    amountRaw: interestingOutput.rawTokenAmount.tokenAmount,
-    dexSource: tx.source,
-    timestamp: tx.timestamp,
+    buyerAddress: tx.feePayer,
+    tokenMint: tokenOutput.mint,
+    tokenSymbol: tokenOutput.symbol || 'UNKNOWN',
+    amountRaw: tokenOutput.amount,
+    dexSource: tx.source || 'UNKNOWN',
+    timestamp: Date.now(),
   };
 }

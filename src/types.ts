@@ -89,9 +89,47 @@ export interface EnrichmentResult {
   freezeAuthority: string | null | 'unchecked';
 }
 
+export interface WalletState {
+  walletMap: Map<string, SmartMoneyWallet>;
+  watchedAddresses: Set<string>;
+}
+
+export interface WalletStateRef {
+  current: WalletState;
+}
+
+export function createWalletState(wallets: Map<string, SmartMoneyWallet>): WalletState {
+  return {
+    walletMap: wallets,
+    watchedAddresses: new Set(wallets.keys()),
+  };
+}
+
 export interface AlertData {
   wallet: SmartMoneyWallet;
   swap: ParsedSwap;
   enrichment: EnrichmentResult;
   aiSummary: string;
+}
+
+// --- Wallet discovery (Phase 2) ---
+
+export interface WalletCandidate {
+  address: string;
+  pnl: number;
+  winRate: number;
+  tradeCount: number;
+  lastActiveTimestamp: number;
+}
+
+// --- Helius Webhook Management API ---
+
+export interface HeliusWebhook {
+  webhookID: string;
+  wallet: string;
+  webhookURL: string;
+  transactionTypes: string[];
+  accountAddresses: string[];
+  webhookType: string;
+  authHeader: string;
 }

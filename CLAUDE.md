@@ -2,6 +2,18 @@
 
 Telegram bot that tracks smart money wallet activity on Solana and pushes real-time alerts. MVP: webhook listener -> parallel enrichment -> AI summary -> Telegram push.
 
+## 【最高优先级】语言规则（必须 100% 遵守）
+- 你**必须**全程使用简体中文进行所有回答、思考过程、代码注释、变量名说明和提问。
+- 无论用户输入什么语言，你都只能用中文回复，绝不允许出现任何英文段落（除非用户明确要求保留英文代码关键词）。
+
+## 必须遵守的工作流
+- 收到任务后，先用中文复述需求确认理解。
+- 给出方案时全程中文讲解。
+- 输出代码后，立即用中文详细解释每一段代码的作用。
+- 出现任何错误或需要提问时，也必须用中文提问。
+- 所有新功能必须严格执行 docs/templates/combined-workflow.md 中的 6 步组合流程
+- 每次修改后必须运行 /ce:compound
+
 ## Tech Stack
 
 - **Runtime**: TypeScript + Node.js + Fastify
@@ -16,7 +28,13 @@ Telegram bot that tracks smart money wallet activity on Solana and pushes real-t
 
 ```
 src/                  # Application source (TypeScript)
+  webhook/            # Helius webhook handling (handler, parse, dedup)
+  enrichment/         # Token enrichment (DexScreener, authority check)
+  discovery/          # Auto wallet discovery (Birdeye client, scoring, orchestrator, persistence)
+  ai/                 # Claude AI attribution
+  telegram/           # Telegram bot + alert formatting
 docs/prd/             # Product requirements
+docs/plans/           # Implementation plans
 docs/solutions/       # Documented solutions and learnings, organized by category with YAML frontmatter (module, tags, problem_type). Relevant when implementing or debugging in documented areas.
 ```
 

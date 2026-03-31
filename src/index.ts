@@ -8,7 +8,9 @@ import { resolve } from 'node:path';
 import { loadEnv } from './env.js';
 import { registerWebhookRoutes } from './webhook/handler.js';
 import { createPipeline } from './pipeline.js';
-import type { SmartMoneyWallet } from './types.js';
+import { createDiscovery } from './discovery/orchestrator.js';
+import { createWalletState } from './types.js';
+import type { SmartMoneyWallet, WalletStateRef } from './types.js';
 
 const env = loadEnv();
 
@@ -17,12 +19,12 @@ if (env.SENTRY_DSN) {
   Sentry.init({ dsn: env.SENTRY_DSN, environment: env.NODE_ENV });
 }
 
-// Load wallet config
+// Load pinned wallet config (always monitored regardless of discovery)
 const addressPath = resolve(import.meta.dirname, '../config/smart-money-addresses.json');
 const addressData: Record<string, SmartMoneyWallet> = JSON.parse(
   readFileSync(addressPath, 'utf-8'),
 );
-const walletMap = new Map(Object.entries(addressData));
+const pinnedWallets = new Map(Object.entries(addressData));
 
 // Solana RPC
 const rpc = createSolanaRpc(env.SOLANA_RPC_URL);
@@ -30,9 +32,29 @@ const rpc = createSolanaRpc(env.SOLANA_RPC_URL);
 // Anthropic client
 const anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
-// Pipeline
+// Wallet state (mutable via single-reference swap for discovery)
+const walletStateRef: WalletStateRef = { current: createWalletState(pinnedWallets) };
+
+// Discovery: load persisted state and merge with pinned wallets before creating pipeline
+const discoveryStatePath = resolve(import.meta.dirname, '../config/discovered-wallets.json');
+let discovery: ReturnType<typeof createDiscovery> | null = null;
+
+if (env.HELIUS_API_KEY && env.BIRDEYE_API_KEY && env.HELIUS_WEBHOOK_ID) {
+  discovery = createDiscovery({
+    walletStateRef,
+    pinnedWallets,
+    birdeyeApiKey: env.BIRDEYE_API_KEY,
+    heliusApiKey: env.HELIUS_API_KEY,
+    heliusWebhookId: env.HELIUS_WEBHOOK_ID,
+    statePath: discoveryStatePath,
+    intervalMs: env.DISCOVERY_INTERVAL_MS,
+    walletCap: env.DISCOVERY_WALLET_CAP,
+  });
+}
+
+// Pipeline (uses walletStateRef which may now include discovered wallets)
 const pipeline = createPipeline({
-  walletMap,
+  walletStateRef,
   rpc,
   anthropicClient,
   botToken: env.TELEGRAM_BOT_TOKEN,
@@ -68,8 +90,14 @@ process.on('uncaughtException', (err) => {
 // Start
 try {
   await app.listen({ port: env.PORT, host: '0.0.0.0' });
+  const totalWallets = walletStateRef.current.walletMap.size;
   app.log.info(`Smart Money Radar listening on port ${env.PORT}`);
-  app.log.info(`Monitoring ${walletMap.size} smart money addresses`);
+  app.log.info(`Monitoring ${totalWallets} wallets (${pinnedWallets.size} pinned${discovery ? `, discovery enabled` : ''})`);
+
+  // Start wallet discovery after server is accepting webhooks
+  if (discovery) {
+    discovery.start();
+  }
 } catch (err) {
   app.log.fatal(err, 'Failed to start server');
   process.exit(1);

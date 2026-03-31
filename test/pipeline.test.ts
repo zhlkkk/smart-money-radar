@@ -27,20 +27,27 @@ import { enrichToken } from '../src/enrichment/enrich.js';
 import { generateAttribution } from '../src/ai/attribution.js';
 import { formatAlert } from '../src/telegram/format.js';
 import { sendAlert } from '../src/telegram/bot.js';
-import type { HeliusEnhancedTransaction } from '../src/types.js';
+import { createWalletState } from '../src/types.js';
+import type { HeliusEnhancedTransaction, WalletStateRef } from '../src/types.js';
 import swapFixture from './fixtures/swap-event.json' with { type: 'json' };
 
 describe('Pipeline', () => {
   let pipeline: ReturnType<typeof createPipeline>;
+  let walletStateRef: WalletStateRef;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    walletStateRef = {
+      current: createWalletState(
+        new Map([
+          ['7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB', { label: 'Wintermute', category: 'DEX Whale' }],
+        ]),
+      ),
+    };
     pipeline = createPipeline({
-      walletMap: new Map([
-        ['7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB', { label: 'Wintermute', category: 'DEX Whale' }],
-      ]),
-      rpc: {} as any,
-      anthropicClient: {} as any,
+      walletStateRef,
+      rpc: {} as unknown,
+      anthropicClient: {} as unknown,
       botToken: '123:ABC',
       channelId: '-100999',
     });
@@ -106,5 +113,54 @@ describe('Pipeline', () => {
 
     expect(formatAlert).toHaveBeenCalledWith(expect.objectContaining({ aiSummary: '' }));
     expect(sendAlert).toHaveBeenCalledOnce();
+  });
+
+  it('picks up a newly added wallet after swapping walletStateRef.current', async () => {
+    const newWalletAddress = 'NewWallet1111111111111111111111111111111111';
+    // Swap in new state that includes the new wallet
+    walletStateRef.current = createWalletState(
+      new Map([
+        ['7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB', { label: 'Wintermute', category: 'DEX Whale' }],
+        [newWalletAddress, { label: 'NewWhale', category: 'Fresh Wallet' }],
+      ]),
+    );
+
+    vi.mocked(parseSwap).mockReturnValueOnce({
+      signature: 'sig-new',
+      buyerAddress: newWalletAddress,
+      tokenMint: 'MintNew',
+      dexSource: 'RAYDIUM',
+      timestamp: 1711900900,
+    });
+    vi.mocked(enrichToken).mockResolvedValueOnce({
+      liquidity: 500_000, fdv: 2_000_000, marketCap: 1_000_000,
+      mintAuthority: null, freezeAuthority: null,
+    });
+    vi.mocked(generateAttribution).mockResolvedValueOnce('New whale summary');
+    vi.mocked(formatAlert).mockReturnValueOnce('<b>new wallet alert</b>');
+    vi.mocked(sendAlert).mockResolvedValueOnce(undefined);
+
+    await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    expect(enrichToken).toHaveBeenCalledWith('MintNew', expect.anything());
+    expect(sendAlert).toHaveBeenCalledOnce();
+  });
+
+  it('rejects transactions from a wallet removed from state', async () => {
+    // Swap in empty state — removes all wallets
+    walletStateRef.current = createWalletState(new Map());
+
+    vi.mocked(parseSwap).mockReturnValueOnce({
+      signature: 'sig-removed',
+      buyerAddress: '7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB',
+      tokenMint: 'Mint',
+      dexSource: 'JUPITER',
+      timestamp: 0,
+    });
+
+    await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    expect(enrichToken).not.toHaveBeenCalled();
+    expect(sendAlert).not.toHaveBeenCalled();
   });
 });

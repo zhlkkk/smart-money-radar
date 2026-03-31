@@ -193,3 +193,4 @@ await telegram.send(formatAlert(enriched, summary));
 ## Related
 
 - [Frontend Design Philosophy - Phased Crypto Terminal](../best-practices/phased-frontend-design-philosophy-2026-03-31.md) — design tokens, typography, component patterns, and phase-gated frontend workflow
+- [Fire-and-Forget Webhook Pattern](../best-practices/fire-and-forget-webhook-graceful-degradation-2026-03-31.md) — reusable pattern for webhook pipelines with parallel enrichment, timeouts, and graceful degradation

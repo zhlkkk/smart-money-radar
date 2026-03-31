@@ -104,7 +104,7 @@ Helius Enhanced Webhook
 
 **Tech stack**: TypeScript, Node.js, Fastify, Helius Enhanced Transaction Webhooks, DexScreener API, @solana/kit, Claude claude-3-5-haiku, Telegram Bot API, Sentry.
 
-**Data monitoring**: 20 fixed smart money wallet addresses configured in Helius Dashboard. No auto-discovery -- wallets are manually curated for MVP.
+**Data monitoring**: Originally 20 fixed smart money wallet addresses configured in Helius Dashboard. Auto wallet discovery was implemented ahead of schedule (see [Auto Wallet Discovery Architecture](../best-practices/auto-wallet-discovery-architecture-2026-03-31.md)) — the system now dynamically discovers and scores wallets via the Birdeye API while retaining pinned addresses as a baseline.
 
 **Rug-pull protection**: Check `mintAuthority` and `freezeAuthority` via `getAccountInfo`. If either is non-null, the token issuer retains the ability to mint infinite supply or freeze accounts -- flag it in the alert.
 
@@ -125,7 +125,7 @@ Helius Enhanced Webhook
 These items are explicitly excluded. Any temptation to add them must be resisted until Phase 1 validation succeeds:
 
 - Web Dashboard / Frontend UI
-- Automatic smart money wallet discovery algorithm
+- ~~Automatic smart money wallet discovery algorithm~~ *(已在 Phase 1 提前实现，见 `src/discovery/`)*
 - User subscription or payment system (manual invite only)
 - Historical backtesting or win rate analysis
 - Multi-chain support (Solana only)
@@ -135,7 +135,7 @@ These items are explicitly excluded. Any temptation to add them must be resisted
 The entire architecture is shaped by one constraint: **validate demand before building infrastructure**.
 
 - **Telegram-only** (no web UI) eliminates weeks of frontend work and keeps the feedback loop tight -- users are already in Telegram.
-- **20 fixed wallets** (no auto-discovery) means monitoring setup is config, not an algorithm to build and tune.
+- **Wallet monitoring** started with 20 fixed wallets as config-only setup; auto-discovery was later implemented ahead of schedule via the Birdeye scoring pipeline, with pinned wallets preserved as a baseline.
 - **Manual invite** (no payment system) trades automation for speed -- collecting $100/month from 10 people can be done via direct message.
 - **Graceful degradation** on enrichment and AI means an external API outage delays information but never kills the alert. The 5-second SLA is protected.
 - **Explicit cut list** prevents scope creep. Each excluded item would add value but delays launch past the 4-week window.
@@ -194,3 +194,4 @@ await telegram.send(formatAlert(enriched, summary));
 
 - [Frontend Design Philosophy - Phased Crypto Terminal](../best-practices/phased-frontend-design-philosophy-2026-03-31.md) — design tokens, typography, component patterns, and phase-gated frontend workflow
 - [Fire-and-Forget Webhook Pattern](../best-practices/fire-and-forget-webhook-graceful-degradation-2026-03-31.md) — reusable pattern for webhook pipelines with parallel enrichment, timeouts, and graceful degradation
+- [Auto Wallet Discovery Architecture](../best-practices/auto-wallet-discovery-architecture-2026-03-31.md) — Phase 2 功能提前落地：动态钱包发现、评分、热切换架构

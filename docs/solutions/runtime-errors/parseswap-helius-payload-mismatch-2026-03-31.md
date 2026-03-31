@@ -94,6 +94,6 @@ The previous fix assumed `events.swap` was always present for `type: "SWAP"` tra
 
 ## Related Issues
 
-- [Sentry Auto-Fix Workflow](../workflow-issues/sentry-auto-fix-workflow-2026-03-31.md) — the workflow pattern that produced this fix
+
 - [Fire-and-Forget Webhook Pattern](../best-practices/fire-and-forget-webhook-graceful-degradation-2026-03-31.md) — graceful degradation foundation
 - [Solana TypeScript Gotchas](../developer-experience/solana-typescript-implementation-gotchas-2026-03-31.md) — related SDK edge cases

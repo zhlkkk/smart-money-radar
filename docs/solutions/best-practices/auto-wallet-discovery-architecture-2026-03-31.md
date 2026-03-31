@@ -205,5 +205,5 @@ Cycle 3: Wallet J returns to #28 → missedCycles resets to 0, monitored again
 - [Smart Money Radar MVP Architecture](../documentation-gaps/smart-money-radar-mvp-architecture-2026-03-31.md) — pipeline stages where discovery injects mutable state
 - [Smart Money Radar MVP PRD v1.1](../documentation-gaps/smart-money-radar-mvp-prd-v1-1-2026-03-31.md) — phase gates (wallet discovery was Phase 3 scope, implemented as Phase 2)
 - [parseSwap Helius Payload Mismatch](../runtime-errors/parseswap-helius-payload-mismatch-2026-03-31.md) — defensive parsing for wallets discovery adds to the webhook
-- [Sentry Auto-Fix Workflow](../workflow-issues/sentry-auto-fix-workflow-2026-03-31.md) — error monitoring patterns for discovery cycle failures
+
 - Implementation plan: `docs/plans/2026-03-31-001-feat-auto-wallet-discovery-plan.md`

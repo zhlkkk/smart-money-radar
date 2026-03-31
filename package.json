@@ -1,0 +1,35 @@
+{
+  "name": "smart-money-radar",
+  "version": "1.0.0",
+  "description": "Smart Money Radar - Telegram alerts for Solana smart money activity",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "NODE_ENV=production tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@sentry/node": "^9.47.1",
+    "@solana-program/token": "^0.12.0",
+    "@solana-program/token-2022": "^0.9.0",
+    "@solana/kit": "^6.5.0",
+    "@solana/sysvars": "^6.5.0",
+    "dotenv": "^16.6.1",
+    "fastify": "^5.8.4",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

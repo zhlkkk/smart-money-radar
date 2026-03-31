@@ -1,0 +1,40 @@
+{
+  "signature": "5UfDuX9MnWkceVdaKmAeYR1vN3VXJhMFwJxQMkp3FRZN8kPJNbLEZzWVKAj2TAQVFcHG3USH7LaVgZCxWkNL7oJ",
+  "type": "SWAP",
+  "source": "JUPITER",
+  "description": "7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB swapped 1 SOL for 1000 BONK",
+  "fee": 5000,
+  "feePayer": "7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB",
+  "slot": 250000000,
+  "timestamp": 1711900800,
+  "nativeTransfers": [
+    { "from": "7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB", "to": "DEXPool111111111111111111111111111111111111", "amount": 1000000000 }
+  ],
+  "tokenTransfers": [
+    {
+      "fromUserAccount": "DEXPool111111111111111111111111111111111111",
+      "toUserAccount": "7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB",
+      "fromTokenAccount": "PoolTokenAccount1111111111111111111111111",
+      "toTokenAccount": "UserTokenAccount1111111111111111111111111",
+      "tokenAmount": 1000,
+      "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      "tokenStandard": "Fungible"
+    }
+  ],
+  "events": {
+    "swap": {
+      "nativeInput": { "account": "7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB", "amount": "1000000000" },
+      "nativeOutput": null,
+      "tokenInputs": [],
+      "tokenOutputs": [
+        {
+          "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+          "rawTokenAmount": { "decimals": 5, "tokenAmount": "100000000" },
+          "tokenAccount": "UserTokenAccount1111111111111111111111111",
+          "userAccount": "7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB"
+        }
+      ]
+    }
+  },
+  "transactionError": null
+}

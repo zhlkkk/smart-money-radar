@@ -185,3 +185,4 @@ async function processEvent(event: Event): Promise<void> {
 
 - [Smart Money Radar MVP PRD v1.1](../documentation-gaps/smart-money-radar-mvp-prd-v1-1-2026-03-31.md) — NFRs and reliability targets that motivated this pattern
 - [Webhook Pipeline Design Spec](../../superpowers/specs/2026-03-31-mvp-webhook-pipeline-design.md) — concrete implementation of this pattern with module-level detail
+- [Solana TypeScript Gotchas](../developer-experience/solana-typescript-implementation-gotchas-2026-03-31.md) — implementation-time gotchas discovered while building this pattern

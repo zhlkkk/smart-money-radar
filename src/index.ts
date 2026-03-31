@@ -46,7 +46,7 @@ const app = Fastify({
   },
 });
 
-await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+await app.register(rateLimit, { max: 500, timeWindow: '1 minute' });
 
 registerWebhookRoutes(app, {
   authToken: env.HELIUS_AUTH_TOKEN,

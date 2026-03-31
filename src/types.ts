@@ -1,4 +1,6 @@
 // --- Helius Enhanced Transaction (subset we use) ---
+// Types reflect reality: many fields are optional because Helius omits them
+// for unsupported DEXes, failed parses, or certain transaction types.
 
 export interface HeliusTokenTransfer {
   fromUserAccount: string;
@@ -25,6 +27,13 @@ export interface HeliusSwapEvent {
   nativeOutput?: { account: string; amount: string } | null;
   tokenInputs: HeliusSwapTokenIO[];
   tokenOutputs: HeliusSwapTokenIO[];
+  tokenFees?: HeliusSwapTokenIO[];
+  nativeFees?: { account: string; amount: string }[];
+  innerSwaps?: {
+    tokenInputs: HeliusSwapTokenIO[];
+    tokenOutputs: HeliusSwapTokenIO[];
+    programInfo?: { source: string; account: string; programName: string; instructionName: string };
+  }[];
 }
 
 export interface HeliusEnhancedTransaction {

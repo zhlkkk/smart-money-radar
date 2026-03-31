@@ -2,8 +2,12 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { parseSwap } from '../../src/webhook/parse.js';
 import type { HeliusEnhancedTransaction } from '../../src/types.js';
 import swapFixture from '../fixtures/swap-event.json' with { type: 'json' };
+import noEventsFixture from '../fixtures/swap-no-events.json' with { type: 'json' };
 
-const WATCHED = new Set(['7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB']);
+const WATCHED = new Set([
+  '7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB',
+  '5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D',
+]);
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
 afterEach(() => {
@@ -177,6 +181,19 @@ describe('parseSwap', () => {
     } as unknown as HeliusEnhancedTransaction;
     expect(parseSwap(tx, WATCHED)).toBeNull();
     expect(spy).toHaveBeenCalled();
+  });
+
+  // --- Fixture-based: Pump.fun swap (no events.swap) ---
+
+  it('parses Pump.fun swap via tokenTransfers fixture', () => {
+    const result = parseSwap(noEventsFixture as unknown as HeliusEnhancedTransaction, WATCHED);
+    expect(result).not.toBeNull();
+    expect(result!.signature).toBe(noEventsFixture.signature);
+    expect(result!.buyerAddress).toBe('5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D');
+    expect(result!.tokenMint).toBe('PumpFunToken111111111111111111111111111111');
+    expect(result!.amountRaw).toBe('12345.678');
+    expect(result!.dexSource).toBe('PUMP_FUN');
+    expect(result!.timestamp).toBe(noEventsFixture.timestamp);
   });
 
   it('identifies buyer from tokenOutput userAccount when feePayer is not watched', () => {

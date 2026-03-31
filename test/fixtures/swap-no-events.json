@@ -1,0 +1,30 @@
+{
+  "signature": "3nQzGCgYRkBpVsMfVbXh5PUyAEHuPwrHYWaXdKVs7JmLdWkNE1oqM9H8VjMPyTZzREcqKNuakgRxLe3sHD5tBrf",
+  "type": "SWAP",
+  "source": "PUMP_FUN",
+  "description": "5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D swapped 0.5 SOL for 12345 PUMPTOKEN",
+  "fee": 5000,
+  "feePayer": "5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D",
+  "slot": 251000000,
+  "timestamp": 1711904400,
+  "nativeTransfers": [
+    {
+      "from": "5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D",
+      "to": "PumpFunBondingCurve111111111111111111111",
+      "amount": 500000000
+    }
+  ],
+  "tokenTransfers": [
+    {
+      "fromUserAccount": "PumpFunBondingCurve111111111111111111111",
+      "toUserAccount": "5JJLDJ9d7WeP4sz6KGNRF3ueEF33dtbsihGVC5eyQu9D",
+      "fromTokenAccount": "PumpTokenAcc111111111111111111111111111",
+      "toTokenAccount": "UserPumpTokenAcc11111111111111111111111",
+      "tokenAmount": 12345.678,
+      "mint": "PumpFunToken111111111111111111111111111111",
+      "tokenStandard": "Fungible"
+    }
+  ],
+  "events": {},
+  "transactionError": null
+}

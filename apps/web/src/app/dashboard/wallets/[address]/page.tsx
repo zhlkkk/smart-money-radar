@@ -1,16 +1,21 @@
-// 钱包详情页（Server Component）
-// 展示钱包指标 + 关联告警
+// 钱包详情页 — Glassmorphism 指标卡片 + ScoreRing
 
 export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
 import { getWalletDetail } from '@/lib/backend-client';
 import { AlertCard } from '@/components/alert-card';
+import { GlassCard } from '@/components/ui/glass-card';
+import { ScoreRing } from '@/components/ui/score-ring';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   truncateAddress,
   formatPercent,
   formatPnl,
 } from '@/lib/format';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 interface WalletDetailPageProps {
   params: Promise<{ address: string }>;
@@ -29,66 +34,79 @@ export default async function WalletDetailPage({
   const { wallet, recentAlerts } = result;
 
   const pnlColor =
-    wallet.pnl != null && wallet.pnl >= 0 ? 'text-[#00FF88]' : 'text-[#FF4444]';
+    wallet.pnl != null && wallet.pnl >= 0
+      ? 'text-[var(--smr-accent-green)]'
+      : 'text-[var(--smr-accent-red)]';
 
   return (
     <div className="mx-auto max-w-3xl">
+      {/* 返回链接 */}
+      <Link
+        href="/dashboard/wallets"
+        className="mb-6 inline-flex cursor-pointer items-center gap-1 text-sm text-smr-text-muted transition hover:text-smr-text"
+      >
+        <ArrowLeft size={14} />
+        返回钱包列表
+      </Link>
+
       {/* 头部 */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white">
-            {wallet.label ?? truncateAddress(wallet.address)}
-          </h1>
-          <span
-            className={`rounded px-2 py-0.5 text-xs ${
-              wallet.source === 'pinned'
-                ? 'bg-[#00F0FF]/10 text-[#00F0FF]'
-                : 'bg-[#00FF88]/10 text-[#00FF88]'
-            }`}
-          >
-            {wallet.source === 'pinned' ? '人工标记' : '自动发现'}
-          </span>
+      <div className="mb-6 flex items-center gap-4">
+        <ScoreRing score={wallet.compositeScore} size={64} strokeWidth={3.5} />
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-smr-text">
+              {wallet.label ?? truncateAddress(wallet.address)}
+            </h1>
+            <Badge variant={wallet.source === 'pinned' ? 'cyan' : 'green'} size="md">
+              {wallet.source === 'pinned' ? '人工标记' : '自动发现'}
+            </Badge>
+          </div>
+          <p className="font-data mt-1 text-sm text-smr-text-muted">{wallet.address}</p>
+          {wallet.category && (
+            <Badge variant="muted" size="md" className="mt-2">
+              {wallet.category}
+            </Badge>
+          )}
         </div>
-        <p className="mt-1 font-mono text-sm text-zinc-500">{wallet.address}</p>
-        {wallet.category && (
-          <span className="mt-2 inline-block rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
-            {wallet.category}
-          </span>
-        )}
       </div>
 
       {/* 指标卡片 */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MetricCard
-          label="综合评分"
-          value={
-            wallet.compositeScore != null
+        <GlassCard className="p-4" hover={false}>
+          <div className="text-xs text-smr-text-muted">综合评分</div>
+          <div className="font-data mt-1 text-xl font-bold text-[var(--smr-accent-cyan)]">
+            {wallet.compositeScore != null
               ? wallet.compositeScore.toFixed(1)
-              : '-'
-          }
-          accent
-        />
-        <MetricCard
-          label="胜率"
-          value={formatPercent(wallet.winRate)}
-        />
-        <MetricCard
-          label="PNL"
-          value={formatPnl(wallet.pnl)}
-          className={pnlColor}
-        />
-        <MetricCard
-          label="交易次数"
-          value={wallet.tradeCount != null ? String(wallet.tradeCount) : '-'}
-        />
+              : '-'}
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4" hover={false}>
+          <div className="text-xs text-smr-text-muted">胜率</div>
+          <div className="font-data mt-1 text-xl font-bold text-smr-text">
+            {formatPercent(wallet.winRate)}
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4" hover={false}>
+          <div className="text-xs text-smr-text-muted">PNL</div>
+          <div className={`font-data mt-1 text-xl font-bold ${pnlColor}`}>
+            {formatPnl(wallet.pnl)}
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4" hover={false}>
+          <div className="text-xs text-smr-text-muted">交易次数</div>
+          <div className="font-data mt-1 text-xl font-bold text-smr-text">
+            {wallet.tradeCount != null ? String(wallet.tradeCount) : '-'}
+          </div>
+        </GlassCard>
       </div>
 
       {/* 关联告警 */}
-      <h2 className="mb-4 text-lg font-medium text-zinc-300">近期告警</h2>
+      <h2 className="mb-4 text-lg font-medium text-smr-text-secondary">近期告警</h2>
       {recentAlerts.length === 0 ? (
-        <div className="rounded-lg border border-zinc-800 bg-[#111111] py-8 text-center text-sm text-zinc-500">
-          暂无关联告警
-        </div>
+        <EmptyState
+          title="暂无关联告警"
+          description="该钱包尚未触发交易告警"
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {recentAlerts.map((alert) => (
@@ -96,30 +114,6 @@ export default async function WalletDetailPage({
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── 内部子组件 ───
-
-interface MetricCardProps {
-  label: string;
-  value: string;
-  accent?: boolean;
-  className?: string;
-}
-
-function MetricCard({ label, value, accent, className }: MetricCardProps) {
-  return (
-    <div className="rounded-lg border border-zinc-800 bg-[#111111] p-4">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div
-        className={`mt-1 text-xl font-bold ${
-          className ?? (accent ? 'text-[#00F0FF]' : 'text-white')
-        }`}
-      >
-        {value}
-      </div>
     </div>
   );
 }

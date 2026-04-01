@@ -26,28 +26,15 @@ export function parseSwap(
   if (swapEvent?.tokenOutputs?.length) {
     const result = parseFromSwapEvent(tx, swapEvent, watchedAddresses);
     if (result) return result;
-    console.debug('[parseSwap] events.swap present but no matching output for watched wallet', {
-      signature: tx.signature,
-      outputCount: swapEvent.tokenOutputs.length,
-    });
   }
 
   // --- Path 2: tokenTransfers fallback ---
   if (tx.tokenTransfers?.length) {
     const result = parseFromTokenTransfers(tx, watchedAddresses);
     if (result) return result;
-    console.debug('[parseSwap] tokenTransfers present but no matching transfer for watched wallet', {
-      signature: tx.signature,
-      transferCount: tx.tokenTransfers.length,
-    });
   }
 
-  console.debug('[parseSwap] No swap data found in events.swap or tokenTransfers', {
-    signature: tx.signature,
-    source: tx.source,
-    hasSwapEvent: !!swapEvent,
-    tokenTransferCount: tx.tokenTransfers?.length ?? 0,
-  });
+  // Unparseable swap — not an error, just a tx type we don't handle yet
   return null;
 }
 

@@ -79,7 +79,11 @@ export async function generateAttribution(
 
     const textBlock = response.content.find((c) => c.type === 'text');
     return textBlock?.text ?? '';
-  } catch {
+  } catch (err) {
+    console.error('[attribution] AI summary failed', {
+      error: err instanceof Error ? err.message : String(err),
+      tokenMint: input.tokenMint,
+    });
     return '';
   }
 }

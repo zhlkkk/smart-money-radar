@@ -72,7 +72,7 @@ describe('Pipeline', () => {
     pipeline = createPipeline({
       walletStateRef,
       rpc: {} as unknown,
-      anthropicClient: {} as unknown,
+      llmConfig: { apiKey: 'test', baseURL: 'https://test.ai/v1', model: 'test' },
       botToken: '123:ABC',
       channelId: '-100999',
     });
@@ -199,7 +199,7 @@ describe('Pipeline with DB persistence', () => {
     pipeline = createPipeline({
       walletStateRef,
       rpc: {} as unknown,
-      anthropicClient: {} as unknown,
+      llmConfig: { apiKey: 'test', baseURL: 'https://test.ai/v1', model: 'test' },
       botToken: '123:ABC',
       channelId: '-100999',
       db: mockDb,
@@ -251,7 +251,7 @@ describe('Pipeline with DB persistence', () => {
     const noPipeline = createPipeline({
       walletStateRef,
       rpc: {} as unknown,
-      anthropicClient: {} as unknown,
+      llmConfig: { apiKey: 'test', baseURL: 'https://test.ai/v1', model: 'test' },
       botToken: '123:ABC',
       channelId: '-100999',
       db: null,

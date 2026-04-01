@@ -1,10 +1,10 @@
-import type Anthropic from '@anthropic-ai/sdk';
 import type { PoolDatabase } from '@radar/db';
 import type { HeliusEnhancedTransaction, WalletStateRef } from './types.js';
 import { TxDedup } from './webhook/dedup.js';
 import { parseSwap } from './webhook/parse.js';
 import { enrichToken } from './enrichment/enrich.js';
 import { generateAttribution } from './ai/attribution.js';
+import type { LLMConfig } from './ai/attribution.js';
 import { formatAlert } from './telegram/format.js';
 import { sendAlert } from './telegram/bot.js';
 import { persistAlert } from './persistence/alerts.js';
@@ -66,7 +66,7 @@ export function assessRisk(enrichment: EnrichmentResult): RiskAssessment {
 export interface PipelineConfig {
   walletStateRef: WalletStateRef;
   rpc: unknown;
-  anthropicClient: Anthropic;
+  llmConfig: LLMConfig;
   botToken: string;
   channelId: string;
   db?: PoolDatabase | null;
@@ -112,7 +112,7 @@ export function createPipeline(config: PipelineConfig) {
         riskLabel: riskAssessment.label,
         riskFactors: riskAssessment.factors,
       },
-      config.anthropicClient,
+      config.llmConfig,
     );
 
     const html = formatAlert({ wallet, swap, enrichment, riskAssessment, aiSummary });

@@ -1,4 +1,3 @@
-import type Anthropic from '@anthropic-ai/sdk';
 import { withTimeout } from '../enrichment/enrich.js';
 
 export interface AttributionInput {
@@ -16,6 +15,12 @@ export interface AttributionInput {
   freezeAuthority: string | null | 'unchecked';
   riskLabel: string;
   riskFactors: string[];
+}
+
+export interface LLMConfig {
+  apiKey: string;
+  baseURL: string;
+  model: string;
 }
 
 function formatValue(val: number | null): string {
@@ -64,21 +69,39 @@ Freeze Authority: ${formatAuthStatus(input.freezeAuthority)}
 
 export async function generateAttribution(
   input: AttributionInput,
-  client: Anthropic,
+  llmConfig: LLMConfig,
   timeoutMs = 3000,
 ): Promise<string> {
   try {
-    const responsePromise = client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 100,
-      temperature: 0.3,
-      messages: [{ role: 'user', content: buildPrompt(input) }],
+    const url = `${llmConfig.baseURL.replace(/\/$/, '')}/chat/completions`;
+
+    const responsePromise = fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${llmConfig.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: llmConfig.model,
+        max_tokens: 100,
+        temperature: 0.3,
+        messages: [{ role: 'user', content: buildPrompt(input) }],
+      }),
     });
 
-    const response = await withTimeout(responsePromise, timeoutMs);
+    const res = await withTimeout(responsePromise, timeoutMs);
 
-    const textBlock = response.content.find((c) => c.type === 'text');
-    return textBlock?.text ?? '';
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('[attribution] LLM API error', { status: res.status, body: text });
+      return '';
+    }
+
+    const data = await res.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    return data.choices?.[0]?.message?.content?.trim() ?? '';
   } catch (err) {
     console.error('[attribution] AI summary failed', {
       error: err instanceof Error ? err.message : String(err),

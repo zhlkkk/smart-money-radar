@@ -4,7 +4,6 @@ import 'dotenv/config';
 const envSchema = z.object({
   // Webhook pipeline (Phase 1)
   HELIUS_AUTH_TOKEN: z.string().min(1),
-  ANTHROPIC_API_KEY: z.string().min(1),
   TELEGRAM_BOT_TOKEN: z.string().min(1),
   TELEGRAM_CHANNEL_ID: z.string().min(1),
   SOLANA_RPC_URL: z.string().url(),
@@ -32,8 +31,10 @@ const envSchema = z.object({
   // Backend API key (Phase 2b) — for frontend->backend authenticated calls
   BACKEND_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 
-  // LLM proxy (optional) — set to OpenRouter or other proxy base URL
+  // LLM (OpenAI-compatible API — n1n.ai, OpenRouter, Anthropic, etc.)
+  LLM_API_KEY: z.string().min(1),
   LLM_BASE_URL: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
+  LLM_MODEL: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;

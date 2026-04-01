@@ -1,7 +1,6 @@
 import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import * as Sentry from '@sentry/node';
-import Anthropic from '@anthropic-ai/sdk';
 import { createSolanaRpc } from '@solana/kit';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -39,11 +38,12 @@ const pinnedWallets = new Map(Object.entries(addressData));
 // Solana RPC
 const rpc = createSolanaRpc(env.SOLANA_RPC_URL);
 
-// LLM client (supports Anthropic direct or OpenRouter proxy via LLM_BASE_URL)
-const anthropicClient = new Anthropic({
-  apiKey: env.ANTHROPIC_API_KEY,
-  ...(env.LLM_BASE_URL ? { baseURL: env.LLM_BASE_URL } : {}),
-});
+// LLM config (OpenAI-compatible API — works with n1n.ai, OpenRouter, etc.)
+const llmConfig = {
+  apiKey: env.LLM_API_KEY,
+  baseURL: env.LLM_BASE_URL ?? 'https://api.anthropic.com/v1',
+  model: env.LLM_MODEL ?? 'claude-haiku-4-5-20251001',
+};
 
 // Wallet state (mutable via single-reference swap for discovery)
 const walletStateRef: WalletStateRef = { current: createWalletState(pinnedWallets) };
@@ -55,7 +55,7 @@ const discoveryStatePath = resolve(import.meta.dirname, '../config/discovered-wa
 const pipeline = createPipeline({
   walletStateRef,
   rpc,
-  anthropicClient,
+  llmConfig,
   botToken: env.TELEGRAM_BOT_TOKEN,
   channelId: env.TELEGRAM_CHANNEL_ID,
 });

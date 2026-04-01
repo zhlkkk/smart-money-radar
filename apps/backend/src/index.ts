@@ -76,6 +76,7 @@ const app = Fastify({
   logger: {
     level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
+  disableRequestLogging: env.NODE_ENV === 'production',
 });
 
 await app.register(rateLimit, { max: 500, timeWindow: '1 minute' });

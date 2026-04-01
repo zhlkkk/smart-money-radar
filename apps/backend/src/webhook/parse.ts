@@ -26,7 +26,7 @@ export function parseSwap(
   if (swapEvent?.tokenOutputs?.length) {
     const result = parseFromSwapEvent(tx, swapEvent, watchedAddresses);
     if (result) return result;
-    console.warn('[parseSwap] events.swap present but no matching output for watched wallet', {
+    console.debug('[parseSwap] events.swap present but no matching output for watched wallet', {
       signature: tx.signature,
       outputCount: swapEvent.tokenOutputs.length,
     });
@@ -36,13 +36,13 @@ export function parseSwap(
   if (tx.tokenTransfers?.length) {
     const result = parseFromTokenTransfers(tx, watchedAddresses);
     if (result) return result;
-    console.warn('[parseSwap] tokenTransfers present but no matching transfer for watched wallet', {
+    console.debug('[parseSwap] tokenTransfers present but no matching transfer for watched wallet', {
       signature: tx.signature,
       transferCount: tx.tokenTransfers.length,
     });
   }
 
-  console.warn('[parseSwap] No swap data found in events.swap or tokenTransfers', {
+  console.debug('[parseSwap] No swap data found in events.swap or tokenTransfers', {
     signature: tx.signature,
     source: tx.source,
     hasSwapEvent: !!swapEvent,
@@ -93,8 +93,7 @@ function parseFromTokenTransfers(
   tx: HeliusEnhancedTransaction,
   watchedAddresses: Set<string>,
 ): ParsedSwap | null {
-  // In tokenTransfers, the "received" token is sent TO a watched wallet.
-  // Find the first non-base token received by a watched address.
+  // Pass 1: non-base token received BY a watched wallet (toUserAccount)
   for (const transfer of tx.tokenTransfers) {
     if (
       watchedAddresses.has(transfer.toUserAccount) &&
@@ -111,7 +110,32 @@ function parseFromTokenTransfers(
     }
   }
 
-  // Fallback: check if feePayer is watched and any non-base token was transferred
+  // Pass 2: watched wallet sent base token (fromUserAccount) — find what they received
+  // Aggregators like OKX_DEX_ROUTER and TITAN route through intermediate accounts,
+  // so the watched wallet appears as sender of SOL/USDC, not direct receiver of the token.
+  for (const transfer of tx.tokenTransfers) {
+    if (
+      watchedAddresses.has(transfer.fromUserAccount) &&
+      BASE_TOKEN_MINTS.has(transfer.mint)
+    ) {
+      // Found the watched wallet paying base token — now find the non-base token in the same tx
+      const received = tx.tokenTransfers.find(
+        (t) => !BASE_TOKEN_MINTS.has(t.mint),
+      );
+      if (received) {
+        return {
+          signature: tx.signature,
+          buyerAddress: transfer.fromUserAccount,
+          tokenMint: received.mint,
+          amountRaw: received.tokenAmount != null ? String(received.tokenAmount) : undefined,
+          dexSource: tx.source ?? 'UNKNOWN',
+          timestamp: tx.timestamp ?? Math.floor(Date.now() / 1000),
+        };
+      }
+    }
+  }
+
+  // Pass 3: feePayer fallback
   if (watchedAddresses.has(tx.feePayer)) {
     const interestingTransfer = tx.tokenTransfers.find(
       (t) => !BASE_TOKEN_MINTS.has(t.mint),

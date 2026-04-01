@@ -19,6 +19,9 @@ export interface DexScreenerData {
   liquidity: number | null;
   fdv: number | null;
   marketCap: number | null;
+  volume24h: number | null;
+  txns24h: { buys: number; sells: number } | null;
+  pairCreatedAt: number | null;
 }
 
 export interface AuthorityData {
@@ -30,8 +33,19 @@ export interface EnrichmentResult {
   liquidity: number | null;
   fdv: number | null;
   marketCap: number | null;
+  volume24h: number | null;
+  txns24h: { buys: number; sells: number } | null;
+  pairCreatedAt: number | null;
   mintAuthority: string | null | 'unchecked';
   freezeAuthority: string | null | 'unchecked';
+}
+
+export type RiskLevel = 'high' | 'medium' | 'low';
+
+export interface RiskAssessment {
+  level: RiskLevel;
+  label: string;
+  factors: string[];
 }
 
 export interface WalletState {
@@ -54,6 +68,7 @@ export interface AlertData {
   wallet: SmartMoneyWallet;
   swap: ParsedSwap;
   enrichment: EnrichmentResult;
+  riskAssessment: RiskAssessment;
   aiSummary: string;
 }
 

@@ -1,17 +1,24 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
 import './globals.css';
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-mono',
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-jetbrains-mono',
+  subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'Smart Money Radar',
-  description: 'Real-time Solana smart money alerts',
+  description: 'Solana 链上聪明钱实时追踪 — AI 分析告警',
 };
 
 export default function RootLayout({
@@ -24,13 +31,16 @@ export default function RootLayout({
       appearance={{
         baseTheme: dark,
         variables: {
-          colorBackground: '#0A0A0A',
-          colorPrimary: '#00F0FF',
+          colorBackground: '#0a0e1a',
+          colorPrimary: '#00f0ff',
         },
       }}
     >
-      <html lang="zh-CN" className={`${jetbrainsMono.variable} dark`}>
-        <body className="min-h-screen bg-[#0A0A0A] text-white antialiased">
+      <html
+        lang="zh-CN"
+        className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} dark`}
+      >
+        <body className="min-h-screen bg-smr-bg text-smr-text antialiased">
           {children}
         </body>
       </html>

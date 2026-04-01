@@ -65,7 +65,7 @@ Freeze Authority: ${formatAuthStatus(input.freezeAuthority)}
 export async function generateAttribution(
   input: AttributionInput,
   client: Anthropic,
-  timeoutMs = 1000,
+  timeoutMs = 3000,
 ): Promise<string> {
   try {
     const responsePromise = client.messages.create({

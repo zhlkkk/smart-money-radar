@@ -503,7 +503,7 @@ Phase 1 MVP 通过 Telegram 私密频道 + 手动邀请验证了核心需求（1
 
 ---
 
-- [ ] **Unit 7: Stripe 订阅集成**
+- [x] **Unit 7: Stripe 订阅集成**
 
   **Goal:** 实现 Stripe Checkout 订阅流程、webhook 处理订阅生命周期、Customer Portal 管理
 

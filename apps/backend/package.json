@@ -22,6 +22,7 @@
     "@solana/sysvars": "^6.5.0",
     "dotenv": "^16.6.1",
     "fastify": "^5.8.4",
+    "stripe": "^17",
     "zod": "^3.25.76"
   },
   "devDependencies": {

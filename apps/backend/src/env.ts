@@ -23,6 +23,11 @@ const envSchema = z.object({
 
   // Database (Phase 2) — optional so Phase 1 deployments continue working without DB
   DATABASE_POOL_URL: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
+
+  // Stripe (Phase 2) — optional for Phase 1 compatibility
+  STRIPE_SECRET_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+  STRIPE_PRICE_ID: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;

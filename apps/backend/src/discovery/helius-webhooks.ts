@@ -42,7 +42,13 @@ export async function updateHeliusWebhookAddresses(
   const response = await fetch(apiUrl(apiKey, webhookId), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...current, accountAddresses: addresses }),
+    body: JSON.stringify({
+      webhookURL: current.webhookURL,
+      transactionTypes: current.transactionTypes,
+      accountAddresses: addresses,
+      webhookType: current.webhookType,
+      authHeader: current.authHeader,
+    }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
 

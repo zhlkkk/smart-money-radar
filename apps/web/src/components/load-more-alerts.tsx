@@ -1,7 +1,6 @@
 'use client';
 
-// 告警加载更多按钮（Client Component）
-// 使用游标分页从后端获取下一页告警
+// 告警加载更多按钮 — 游标分页
 
 import { useState, useTransition } from 'react';
 import type { AlertRow } from '@/lib/backend-client';
@@ -58,12 +57,17 @@ export function LoadMoreAlerts({
     <>
       {/* 动态加载的告警 */}
       {alerts.map((alert) => (
-        <AlertCard key={alert.id} alert={alert} />
+        <div key={alert.id} className="relative">
+          <div className="absolute -left-8 top-5 flex items-center justify-center">
+            <div className="h-2.5 w-2.5 rounded-full bg-[var(--smr-accent-cyan)] shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
+          </div>
+          <AlertCard alert={alert} />
+        </div>
       ))}
 
       {/* 错误提示 */}
       {error && (
-        <div className="mt-4 rounded-md border border-[#FF4444]/30 bg-[#FF4444]/10 px-4 py-2.5 text-center text-sm text-[#FF4444]">
+        <div className="glass-card mt-4 border-[var(--smr-accent-red)]/30 px-4 py-2.5 text-center text-sm text-[var(--smr-accent-red)]">
           加载失败，请重试
         </div>
       )}
@@ -73,7 +77,8 @@ export function LoadMoreAlerts({
         <button
           onClick={handleLoadMore}
           disabled={isPending}
-          className="mt-4 w-full rounded-md border border-zinc-800 bg-[#111111] py-2.5 text-sm text-zinc-400 transition hover:border-[#00F0FF]/30 hover:text-[#00F0FF] disabled:opacity-50"
+          className="glass-card mt-4 w-full cursor-pointer py-2.5 text-center text-sm text-smr-text-muted transition hover:border-[var(--smr-border-hover)] hover:text-[var(--smr-accent-cyan)] disabled:opacity-50"
+          style={{ transition: 'all var(--smr-transition-fast)' }}
         >
           {isPending ? '加载中...' : error ? '重试' : '加载更多'}
         </button>

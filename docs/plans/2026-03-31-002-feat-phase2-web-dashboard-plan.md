@@ -448,7 +448,7 @@ Phase 1 MVP 通过 Telegram 私密频道 + 手动邀请验证了核心需求（1
 
 ### Phase C: 前端核心（Unit 6-8）
 
-- [ ] **Unit 6: Next.js 脚手架 + Clerk 认证**
+- [x] **Unit 6: Next.js 脚手架 + Clerk 认证**
 
   **Goal:** 搭建 Next.js 15 App Router 应用，集成 Clerk 认证，实现注册/登录/路由保护
 

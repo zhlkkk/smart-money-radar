@@ -25,6 +25,9 @@ export async function enrichToken(
     liquidity: dexResult.status === 'fulfilled' ? dexResult.value.liquidity : null,
     fdv: dexResult.status === 'fulfilled' ? dexResult.value.fdv : null,
     marketCap: dexResult.status === 'fulfilled' ? dexResult.value.marketCap : null,
+    volume24h: dexResult.status === 'fulfilled' ? dexResult.value.volume24h : null,
+    txns24h: dexResult.status === 'fulfilled' ? dexResult.value.txns24h : null,
+    pairCreatedAt: dexResult.status === 'fulfilled' ? dexResult.value.pairCreatedAt : null,
     mintAuthority: authResult.status === 'fulfilled' ? authResult.value.mintAuthority : 'unchecked',
     freezeAuthority: authResult.status === 'fulfilled' ? authResult.value.freezeAuthority : 'unchecked',
   };

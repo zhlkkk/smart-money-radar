@@ -16,9 +16,21 @@ Telegram bot that tracks smart money wallet activity on Solana and pushes real-t
 
 ---
 
-## Agent Teams 团队配置
+## 【自驱模式】Agent Teams 自动化规则（必须遵守）
 
-本项目启用 Claude Code Agent Teams 进行三角色协作开发。
+本项目启用 Claude Code Agent Teams 进行**全自动**三角色协作开发。
+
+**核心原则：PM 是调度引擎，不是提问机器。**
+
+- Project_Facilitator 完成一个 Unit 后**必须自动开始下一个 Unit**，绝不停下来问用户"要不要继续"
+- Execution_Engineer 编码完成后**必须自动提交给 QA_Reviewer**，不问用户
+- QA_Reviewer 审查完成后**必须自动 handoff**（通过→PM，驳回→Coder），不问用户
+- 整个 Phase 的所有 Unit 应该像流水线一样自动流转，直到全部完成才停下来
+
+### 允许停下来的唯一情况
+1. 所有 Unit 全部完成
+2. 需要用户提供外部信息（API key 等）
+3. Execution_Engineer 连续 3 次修复同一问题失败
 
 ### 团队架构
 
@@ -130,6 +142,10 @@ The MVP is deliberately minimal. Core concerns:
 - Unit 4: 去重服务（LRU cache + signature-based dedup）
 
 ### Phase 2b（进行中）— Unit 5 ~ Unit 10b
+- Unit 5: Fastify REST API 层（X-API-Key 鉴权、游标分页告警、钱包列表/详情、增强 Health Check）✅
+- Unit 8: Dashboard 页面（告警历史、钱包列表/详情、侧边栏导航、服务端订阅拦截、API 代理路由）✅
+- Unit 9: Pricing 页面 + Landing Page（营销首页、PricingCard、Stripe Checkout Server Action）✅
+- Unit 10b: 前端部署 (Vercel)（进行中）
 - 详见 `docs/plans/phase_2b_plan.md`
 
 ## Performance Targets

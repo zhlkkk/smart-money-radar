@@ -141,11 +141,11 @@ The MVP is deliberately minimal. Core concerns:
 - Unit 3: 交易解析器（Enhanced Transaction → 标准化 ParsedTrade）
 - Unit 4: 去重服务（LRU cache + signature-based dedup）
 
-### Phase 2b（进行中）— Unit 5 ~ Unit 10b
+### Phase 2b（已完成 ✅）— Unit 5 ~ Unit 10b
 - Unit 5: Fastify REST API 层（X-API-Key 鉴权、游标分页告警、钱包列表/详情、增强 Health Check）✅
 - Unit 8: Dashboard 页面（告警历史、钱包列表/详情、侧边栏导航、服务端订阅拦截、API 代理路由）✅
 - Unit 9: Pricing 页面 + Landing Page（营销首页、PricingCard、Stripe Checkout Server Action）✅
-- Unit 10b: 前端部署 (Vercel)（进行中）
+- Unit 10b: 前端部署准备（Clerk Webhook/Proxy、Vercel 配置、部署清单、@radar/db .js 导入修复）✅
 - 详见 `docs/plans/phase_2b_plan.md`
 
 ## Performance Targets

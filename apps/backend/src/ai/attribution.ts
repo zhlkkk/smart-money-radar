@@ -67,15 +67,15 @@ Freeze Authority: ${formatAuthStatus(input.freezeAuthority)}
 风险因子: ${input.riskFactors.length > 0 ? input.riskFactors.join('、') : '无'}`;
 }
 
-export async function generateAttribution(
-  input: AttributionInput,
+async function callLLM(
+  prompt: string,
   llmConfig: LLMConfig,
-  timeoutMs = 3000,
+  timeoutMs: number,
 ): Promise<string> {
-  try {
-    const url = `${llmConfig.baseURL.replace(/\/$/, '')}/chat/completions`;
+  const url = `${llmConfig.baseURL.replace(/\/$/, '')}/chat/completions`;
 
-    const responsePromise = fetch(url, {
+  const res = await withTimeout(
+    fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -85,28 +85,54 @@ export async function generateAttribution(
         model: llmConfig.model,
         max_tokens: 100,
         temperature: 0.3,
-        messages: [{ role: 'user', content: buildPrompt(input) }],
+        messages: [{ role: 'user', content: prompt }],
       }),
-    });
+    }),
+    timeoutMs,
+  );
 
-    const res = await withTimeout(responsePromise, timeoutMs);
+  if (res.status === 429) {
+    throw new RetryableError('rate limited');
+  }
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error('[attribution] LLM API error', { status: res.status, body: text });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`LLM API ${res.status}: ${text}`);
+  }
+
+  const data = await res.json() as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+
+  return data.choices?.[0]?.message?.content?.trim() ?? '';
+}
+
+class RetryableError extends Error {
+  constructor(message: string) { super(message); }
+}
+
+export async function generateAttribution(
+  input: AttributionInput,
+  llmConfig: LLMConfig,
+  timeoutMs = 3000,
+): Promise<string> {
+  const prompt = buildPrompt(input);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await callLLM(prompt, llmConfig, timeoutMs);
+    } catch (err) {
+      if (err instanceof RetryableError && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      console.error('[attribution] AI summary failed', {
+        error: err instanceof Error ? err.message : String(err),
+        tokenMint: input.tokenMint,
+        attempt,
+      });
       return '';
     }
-
-    const data = await res.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-
-    return data.choices?.[0]?.message?.content?.trim() ?? '';
-  } catch (err) {
-    console.error('[attribution] AI summary failed', {
-      error: err instanceof Error ? err.message : String(err),
-      tokenMint: input.tokenMint,
-    });
-    return '';
   }
+  return '';
 }

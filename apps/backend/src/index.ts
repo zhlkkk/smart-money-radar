@@ -39,8 +39,11 @@ const pinnedWallets = new Map(Object.entries(addressData));
 // Solana RPC
 const rpc = createSolanaRpc(env.SOLANA_RPC_URL);
 
-// Anthropic client
-const anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+// LLM client (supports Anthropic direct or OpenRouter proxy via LLM_BASE_URL)
+const anthropicClient = new Anthropic({
+  apiKey: env.ANTHROPIC_API_KEY,
+  ...(env.LLM_BASE_URL ? { baseURL: env.LLM_BASE_URL } : {}),
+});
 
 // Wallet state (mutable via single-reference swap for discovery)
 const walletStateRef: WalletStateRef = { current: createWalletState(pinnedWallets) };

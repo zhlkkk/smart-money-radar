@@ -31,6 +31,9 @@ const envSchema = z.object({
 
   // Backend API key (Phase 2b) — for frontend->backend authenticated calls
   BACKEND_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+
+  // LLM proxy (optional) — set to OpenRouter or other proxy base URL
+  LLM_BASE_URL: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;

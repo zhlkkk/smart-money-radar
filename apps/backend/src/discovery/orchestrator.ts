@@ -1,10 +1,12 @@
 import type { SmartMoneyWallet, WalletStateRef } from '../types.js';
+import type { PoolDatabase } from '@radar/db';
 import { createWalletState } from '../types.js';
 import { fetchTopWallets } from './birdeye.js';
 import { updateHeliusWebhookAddresses } from './helius-webhooks.js';
 import { scoreWallets, mergeWithPinned } from './scoring.js';
 import type { DiscoveryState, ScoredWallet } from './scoring.js';
 import { loadDiscoveryState, saveDiscoveryState } from './persistence.js';
+import { syncTrackedWallets, deactivateWallets } from '../persistence/wallets.js';
 
 export interface DiscoveryConfig {
   walletStateRef: WalletStateRef;
@@ -15,6 +17,7 @@ export interface DiscoveryConfig {
   statePath: string;
   intervalMs: number;
   walletCap: number;
+  db: PoolDatabase | null;
 }
 
 const STARTUP_DEBOUNCE_MS = 30_000;
@@ -97,9 +100,31 @@ export function createDiscovery(config: DiscoveryConfig) {
         return;
       }
 
-      // 7. Persist
+      // 7. Persist to JSON file
       const state: DiscoveryState = { discovered: scored, lastRefresh: Date.now() };
       const saved = saveDiscoveryState(config.statePath, state);
+
+      // 8. Sync to database
+      if (config.db) {
+        try {
+          const dbEntries = scored.map((w) => ({
+            address: w.address,
+            label: w.label,
+            category: w.category,
+            source: 'discovered' as const,
+            compositeScore: w.compositeScore,
+          }));
+          await syncTrackedWallets(config.db, dbEntries);
+
+          if (removed.length > 0) {
+            await deactivateWallets(config.db, removed.map((w) => w.address));
+          }
+        } catch (dbErr) {
+          console.error('[discovery] Database sync failed (non-fatal)', {
+            error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+          });
+        }
+      }
 
       console.info('[discovery] Cycle complete', {
         durationMs: Date.now() - startTime,

@@ -45,22 +45,8 @@ const anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 // Wallet state (mutable via single-reference swap for discovery)
 const walletStateRef: WalletStateRef = { current: createWalletState(pinnedWallets) };
 
-// Discovery: load persisted state and merge with pinned wallets before creating pipeline
+// Discovery state path (discovery created after db init below)
 const discoveryStatePath = resolve(import.meta.dirname, '../config/discovered-wallets.json');
-let discovery: ReturnType<typeof createDiscovery> | null = null;
-
-if (env.HELIUS_API_KEY && env.BIRDEYE_API_KEY && env.HELIUS_WEBHOOK_ID) {
-  discovery = createDiscovery({
-    walletStateRef,
-    pinnedWallets,
-    birdeyeApiKey: env.BIRDEYE_API_KEY,
-    heliusApiKey: env.HELIUS_API_KEY,
-    heliusWebhookId: env.HELIUS_WEBHOOK_ID,
-    statePath: discoveryStatePath,
-    intervalMs: env.DISCOVERY_INTERVAL_MS,
-    walletCap: env.DISCOVERY_WALLET_CAP,
-  });
-}
 
 // Pipeline (uses walletStateRef which may now include discovered wallets)
 const pipeline = createPipeline({
@@ -99,6 +85,23 @@ if (db) {
   }));
   await syncTrackedWallets(db, pinnedEntries);
   app.log.info(`Synced ${pinnedEntries.length} pinned wallets to database`);
+}
+
+// Discovery (created after db so discovered wallets sync to database)
+let discovery: ReturnType<typeof createDiscovery> | null = null;
+
+if (env.HELIUS_API_KEY && env.BIRDEYE_API_KEY && env.HELIUS_WEBHOOK_ID) {
+  discovery = createDiscovery({
+    walletStateRef,
+    pinnedWallets,
+    birdeyeApiKey: env.BIRDEYE_API_KEY,
+    heliusApiKey: env.HELIUS_API_KEY,
+    heliusWebhookId: env.HELIUS_WEBHOOK_ID,
+    statePath: discoveryStatePath,
+    intervalMs: env.DISCOVERY_INTERVAL_MS,
+    walletCap: env.DISCOVERY_WALLET_CAP,
+    db,
+  });
 }
 
 // REST API routes (Phase 2b)

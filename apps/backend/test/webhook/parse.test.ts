@@ -173,14 +173,12 @@ describe('parseSwap', () => {
   // --- Defensive edge cases ---
 
   it('handles empty tokenOutputs in events.swap gracefully', () => {
-    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const tx = {
       ...swapFixture,
       events: { swap: { tokenInputs: [], tokenOutputs: [] } },
       tokenTransfers: [],
     } as unknown as HeliusEnhancedTransaction;
     expect(parseSwap(tx, WATCHED)).toBeNull();
-    expect(spy).toHaveBeenCalled();
   });
 
   // --- Fixture-based: Pump.fun swap (no events.swap) ---

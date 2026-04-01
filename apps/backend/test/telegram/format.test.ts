@@ -34,7 +34,13 @@ describe('formatAlert', () => {
   const fullAlert: AlertData = {
     wallet: { label: 'Wintermute', category: 'DEX Whale' },
     swap: { signature: 'sig', buyerAddress: 'addr', tokenMint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', tokenSymbol: 'BONK', dexSource: 'JUPITER', timestamp: 0 },
-    enrichment: { liquidity: 1_240_000, fdv: 6_800_000, marketCap: 3_200_000, mintAuthority: null, freezeAuthority: null },
+    enrichment: {
+      liquidity: 1_240_000, fdv: 6_800_000, marketCap: 3_200_000,
+      volume24h: 500_000, txns24h: { buys: 1000, sells: 800 },
+      pairCreatedAt: Date.now() - 30 * 24 * 3600_000,
+      mintAuthority: null, freezeAuthority: null,
+    },
+    riskAssessment: { level: 'low', label: '🟢 低风险', factors: [] },
     aiSummary: '新 meme 叙事',
   };
 
@@ -62,5 +68,42 @@ describe('formatAlert', () => {
     const html = formatAlert({ ...fullAlert, wallet: { label: '<b>Evil</b>', category: 'Hacker' }, aiSummary: '<script>' });
     expect(html).toContain('&lt;b&gt;Evil&lt;/b&gt;');
     expect(html).not.toContain('<script>');
+  });
+
+  it('renders risk label and volume line', () => {
+    const alert: AlertData = {
+      wallet: { label: 'Birdeye #3', category: 'discovered' },
+      swap: { signature: 'sig', buyerAddress: 'addr', tokenMint: 'MintAddr1234567890abcdef', tokenSymbol: 'PEPE', dexSource: 'RAYDIUM', timestamp: 0 },
+      enrichment: {
+        liquidity: 15_600, fdv: 186_100_000, marketCap: 113_080_000,
+        volume24h: 2_300, txns24h: { buys: 15, sells: 8 },
+        pairCreatedAt: Date.now() - 3600_000,
+        mintAuthority: 'SomeAddr', freezeAuthority: null,
+      },
+      riskAssessment: { level: 'high', label: '🔴 高风险', factors: ['Mint Authority 未撤销', '流动性偏低'] },
+      aiSummary: '低流动性meme币，Mint未撤销有增发风险',
+    };
+    const html = formatAlert(alert);
+    expect(html).toContain('🔴 高风险');
+    expect(html).toContain('Vol 24h');
+    expect(html).toContain('Txns: 15 buys / 8 sells');
+    expect(html).toContain('$2.3K');
+  });
+
+  it('renders green risk label', () => {
+    const alert: AlertData = {
+      wallet: { label: 'Whale', category: 'Smart Money' },
+      swap: { signature: 'sig', buyerAddress: 'addr', tokenMint: 'Mint12345678', tokenSymbol: 'SOL', dexSource: 'JUPITER', timestamp: 0 },
+      enrichment: {
+        liquidity: 500_000, fdv: 10_000_000, marketCap: 5_000_000,
+        volume24h: 200_000, txns24h: { buys: 500, sells: 400 },
+        pairCreatedAt: Date.now() - 7 * 24 * 3600_000,
+        mintAuthority: null, freezeAuthority: null,
+      },
+      riskAssessment: { level: 'low', label: '🟢 低风险', factors: [] },
+      aiSummary: '主流代币，流动性充足',
+    };
+    const html = formatAlert(alert);
+    expect(html).toContain('🟢 低风险');
   });
 });

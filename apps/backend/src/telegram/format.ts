@@ -28,20 +28,25 @@ export function truncateMint(mint: string): string {
 }
 
 export function formatAlert(data: AlertData): string {
-  const { wallet, swap, enrichment, aiSummary } = data;
+  const { wallet, swap, enrichment, riskAssessment, aiSummary } = data;
   const label = escapeHtml(wallet.label);
   const category = escapeHtml(wallet.category);
   const tokenDisplay = swap.tokenSymbol ? escapeHtml(swap.tokenSymbol) : truncateMint(swap.tokenMint);
   const liq = formatUsd(enrichment.liquidity);
   const fdv = formatUsd(enrichment.fdv);
   const mc = formatUsd(enrichment.marketCap);
+  const vol = formatUsd(enrichment.volume24h);
+  const txns = enrichment.txns24h
+    ? `${enrichment.txns24h.buys} buys / ${enrichment.txns24h.sells} sells`
+    : 'N/A';
   const mintStatus = formatAuthority(enrichment.mintAuthority);
   const freezeStatus = formatAuthority(enrichment.freezeAuthority);
 
   const lines: string[] = [
-    `🐋 <b>${label}</b> (${category}) bought <code>${tokenDisplay}</code>`,
+    `🐋 <b>${label}</b> (${category}) bought <code>${tokenDisplay}</code>  ${riskAssessment.label}`,
     '',
     `💰 Liq: <b>${liq}</b> | FDV: <b>${fdv}</b> | MC: <b>${mc}</b>`,
+    `📊 Vol 24h: <b>${vol}</b> | Txns: ${txns}`,
     `🔒 Mint: ${mintStatus} | Freeze: ${freezeStatus}`,
   ];
   if (aiSummary) {

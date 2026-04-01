@@ -47,6 +47,8 @@ function setupSwapMocks() {
   });
   vi.mocked(enrichToken).mockResolvedValueOnce({
     liquidity: 1_000_000, fdv: 10_000_000, marketCap: 5_000_000,
+    volume24h: 500_000, txns24h: { buys: 1000, sells: 800 },
+    pairCreatedAt: Date.now() - 30 * 24 * 3600_000,
     mintAuthority: null, freezeAuthority: null,
   });
   vi.mocked(generateAttribution).mockResolvedValueOnce('AI summary');
@@ -111,7 +113,9 @@ describe('Pipeline', () => {
       tokenMint: 'Mint', dexSource: 'JUPITER', timestamp: 0,
     });
     vi.mocked(enrichToken).mockResolvedValueOnce({
-      liquidity: null, fdv: null, marketCap: null,
+      liquidity: 200_000, fdv: 500_000, marketCap: 300_000,
+      volume24h: 50_000, txns24h: { buys: 100, sells: 80 },
+      pairCreatedAt: Date.now() - 48 * 3600_000,
       mintAuthority: 'unchecked', freezeAuthority: 'unchecked',
     });
     vi.mocked(generateAttribution).mockResolvedValueOnce('');
@@ -120,7 +124,10 @@ describe('Pipeline', () => {
 
     await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
 
-    expect(formatAlert).toHaveBeenCalledWith(expect.objectContaining({ aiSummary: '' }));
+    expect(formatAlert).toHaveBeenCalledWith(expect.objectContaining({
+      aiSummary: '',
+      riskAssessment: expect.objectContaining({ level: expect.any(String) }),
+    }));
     expect(sendAlert).toHaveBeenCalledOnce();
   });
 
@@ -142,6 +149,8 @@ describe('Pipeline', () => {
     });
     vi.mocked(enrichToken).mockResolvedValueOnce({
       liquidity: 500_000, fdv: 2_000_000, marketCap: 1_000_000,
+      volume24h: 100_000, txns24h: { buys: 200, sells: 150 },
+      pairCreatedAt: Date.now() - 7 * 24 * 3600_000,
       mintAuthority: null, freezeAuthority: null,
     });
     vi.mocked(generateAttribution).mockResolvedValueOnce('New whale summary');

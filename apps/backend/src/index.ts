@@ -21,7 +21,11 @@ const env = loadEnv();
 
 // Sentry
 if (env.SENTRY_DSN) {
-  Sentry.init({ dsn: env.SENTRY_DSN, environment: env.NODE_ENV });
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    tracesSampleRate: env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  });
 }
 
 // Load pinned wallet config (always monitored regardless of discovery)
@@ -92,6 +96,14 @@ if (db) {
   }
   registerAlertsRoutes(app, { db });
   registerWalletsRoutes(app, { db });
+}
+
+// Sentry: capture all Fastify route errors (not just unhandled process errors)
+if (env.SENTRY_DSN) {
+  app.addHook('onError', (_request, _reply, error, done) => {
+    Sentry.captureException(error);
+    done();
+  });
 }
 
 // Global error handlers

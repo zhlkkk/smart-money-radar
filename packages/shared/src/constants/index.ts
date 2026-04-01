@@ -1,2 +1,2 @@
-export { PLANS } from './plans.js';
-export type { PlanDefinition } from './plans.js';
+export { PLANS } from './plans';
+export type { PlanDefinition } from './plans';

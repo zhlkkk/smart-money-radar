@@ -1,7 +1,7 @@
 // @radar/shared — shared types and constants for Smart Money Radar
 export {
   createWalletState,
-} from './types/domain.js';
+} from './types/domain';
 
 export type {
   SmartMoneyWallet,
@@ -13,9 +13,9 @@ export type {
   WalletStateRef,
   AlertData,
   WalletCandidate,
-} from './types/domain.js';
+} from './types/domain';
 
-export type { PaginatedResponse } from './types/api.js';
+export type { PaginatedResponse } from './types/api';
 
-export { PLANS } from './constants/index.js';
-export type { PlanDefinition } from './constants/index.js';
+export { PLANS } from './constants/index';
+export type { PlanDefinition } from './constants/index';

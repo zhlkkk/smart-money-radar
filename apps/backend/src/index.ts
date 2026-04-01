@@ -12,6 +12,7 @@ import { registerWalletsRoutes } from './api/wallets.js';
 import { registerHealthRoutes } from './api/health.js';
 import { registerApiAuthPlugin } from './api/auth.js';
 import { createPoolClient } from '@radar/db';
+import { syncTrackedWallets } from './persistence/wallets.js';
 import { createPipeline } from './pipeline.js';
 import { createDiscovery } from './discovery/orchestrator.js';
 import { createWalletState } from './types.js';
@@ -86,6 +87,18 @@ registerWebhookRoutes(app, {
 
 // Database (optional — Phase 2 features)
 const db = env.DATABASE_POOL_URL ? createPoolClient(env.DATABASE_POOL_URL) : null;
+
+// Sync pinned wallets to database on startup
+if (db) {
+  const pinnedEntries = [...pinnedWallets.entries()].map(([address, w]) => ({
+    address,
+    label: w.label,
+    category: w.category,
+    source: 'pinned' as const,
+  }));
+  await syncTrackedWallets(db, pinnedEntries);
+  app.log.info(`Synced ${pinnedEntries.length} pinned wallets to database`);
+}
 
 // REST API routes (Phase 2b)
 registerHealthRoutes(app, { db });

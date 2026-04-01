@@ -24,15 +24,23 @@ Telegram bot that tracks smart money wallet activity on Solana and pushes real-t
 - **Monitoring**: Sentry + structured logging
 - **Testing**: Vitest, TDD required (tests before implementation)
 
-## Project Structure
+## Project Structure (pnpm workspaces monorepo)
 
 ```
-src/                  # Application source (TypeScript)
-  webhook/            # Helius webhook handling (handler, parse, dedup)
-  enrichment/         # Token enrichment (DexScreener, authority check)
-  discovery/          # Auto wallet discovery (Birdeye client, scoring, orchestrator, persistence)
-  ai/                 # Claude AI attribution
-  telegram/           # Telegram bot + alert formatting
+apps/
+  backend/            # Fastify backend service (TypeScript)
+    src/
+      webhook/        # Helius webhook handling (handler, parse, dedup)
+      enrichment/     # Token enrichment (DexScreener, authority check)
+      discovery/      # Auto wallet discovery (Birdeye client, scoring, orchestrator, persistence)
+      ai/             # Claude AI attribution
+      telegram/       # Telegram bot + alert formatting
+    test/             # Vitest tests (mirrors src/ structure)
+    config/           # Runtime config (smart-money-addresses.json)
+  web/                # Next.js frontend (Phase 2, placeholder)
+packages/
+  shared/             # @radar/shared — shared types + constants (Phase 2)
+  db/                 # @radar/db — database schema + clients (Phase 2)
 docs/prd/             # Product requirements
 docs/plans/           # Implementation plans
 docs/solutions/       # Documented solutions and learnings, organized by category with YAML frontmatter (module, tags, problem_type). Relevant when implementing or debugging in documented areas.
@@ -51,13 +59,14 @@ docs/solutions/       # Documented solutions and learnings, organized by categor
 
 ## MVP Scope (Phase 1, Weeks 1-4)
 
-The MVP is deliberately minimal. Only three concerns exist:
+The MVP is deliberately minimal. Core concerns:
 
-1. **Monitor**: Receive Helius webhook events for 20 fixed smart money addresses
+1. **Monitor**: Receive Helius webhook events for smart money addresses (pinned + auto-discovered via Birdeye scoring pipeline)
 2. **Enrich**: Parallel DexScreener + Solana RPC calls within 2-second budget
 3. **Push**: Format and send Telegram alert (with AI summary or raw data fallback)
+4. **Discover**: Birdeye API -> score & rank wallets -> hot-swap Helius webhook subscriptions (see `src/discovery/`)
 
-**NOT in MVP**: Web UI, auto wallet discovery, payment system, backtesting, multi-chain. See `docs/solutions/documentation-gaps/smart-money-radar-mvp-prd-v1-1-2026-03-31.md` for the full PRD and cut list.
+**NOT in scope**: Web UI, payment system, backtesting, multi-chain. See `docs/solutions/documentation-gaps/smart-money-radar-mvp-prd-v1-1-2026-03-31.md` for the full PRD.
 
 ## Performance Targets
 

@@ -1,0 +1,13 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "typecheck": "echo 'web typecheck: no-op until Next.js is set up in Unit 6'"
+  },
+  "dependencies": {
+    "@radar/shared": "workspace:*",
+    "@radar/db": "workspace:*"
+  }
+}

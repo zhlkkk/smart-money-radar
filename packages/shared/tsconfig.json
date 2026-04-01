@@ -7,12 +7,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
     "noUncheckedIndexedAccess": true
   },
-  "references": [
-    { "path": "apps/backend" },
-    { "path": "packages/shared" },
-    { "path": "packages/db" }
-  ],
-  "include": []
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

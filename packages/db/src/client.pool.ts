@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool } from '@neondatabase/serverless';
-import * as schema from './schema/index.js';
+import * as schema from './schema/index';
 
 /**
  * Pool client for Railway long-running service.

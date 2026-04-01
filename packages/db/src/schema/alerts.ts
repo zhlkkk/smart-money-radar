@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, boolean, real } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
-import { users } from './users.js';
+import { users } from './users';
 
 export const alertsHistory = pgTable('alerts_history', {
   id: text('id')

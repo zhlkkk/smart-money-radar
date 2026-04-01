@@ -1,37 +1,66 @@
-// 告警历史页（Server Component）
-// 首屏加载 20 条告警，支持游标分页加载更多
+// 告警历史页 — 时间线布局 + 筛选工具栏
 
 import { getAlerts } from '@/lib/backend-client';
-
-export const dynamic = 'force-dynamic';
 import { AlertCard } from '@/components/alert-card';
 import { LoadMoreAlerts } from '@/components/load-more-alerts';
+import { EmptyState } from '@/components/ui/empty-state';
+import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AlertsPage() {
   const { data: alerts, cursor, hasMore } = await getAlerts(undefined, 20);
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-2xl font-bold text-white">告警历史</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-smr-text">告警历史</h1>
+        {alerts.length > 0 && (
+          <span className="font-data text-sm text-smr-text-muted">
+            最新 {alerts.length} 条
+          </span>
+        )}
+      </div>
 
       {alerts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-zinc-800 bg-[#111111] py-16">
-          <span className="mb-3 text-4xl">📡</span>
-          <p className="text-zinc-400">暂无告警记录</p>
-          <p className="mt-1 text-sm text-zinc-500">
-            系统正在监控聪明钱动态，有新交易时会自动推送
-          </p>
-        </div>
+        <EmptyState
+          title="暂无告警记录"
+          description="系统正在监控聪明钱动态，有新交易时会自动推送告警到这里和 Telegram。"
+          action={
+            <Link
+              href="/dashboard"
+              className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-5 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
+            >
+              返回控制台
+            </Link>
+          }
+        />
       ) : (
-        <div className="flex flex-col gap-3">
-          {/* 首屏服务端渲染的告警 */}
-          {alerts.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} />
-          ))}
+        <>
+          {/* 时间线布局 */}
+          <div className="relative">
+            {/* 时间线竖线 */}
+            <div
+              aria-hidden
+              className="absolute bottom-0 left-3 top-0 w-px bg-gradient-to-b from-[var(--smr-accent-cyan)]/30 via-[var(--smr-glass-border)] to-transparent"
+            />
 
-          {/* 客户端加载更多 */}
-          <LoadMoreAlerts initialCursor={cursor} initialHasMore={hasMore} />
-        </div>
+            <div className="flex flex-col gap-4 pl-8">
+              {alerts.map((alert) => (
+                <div key={alert.id} className="relative">
+                  {/* 时间线节点圆点 */}
+                  <div className="absolute -left-8 top-5 flex items-center justify-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[var(--smr-accent-cyan)] shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
+                  </div>
+                  <AlertCard alert={alert} />
+                </div>
+              ))}
+
+              {/* 客户端加载更多 */}
+              <LoadMoreAlerts initialCursor={cursor} initialHasMore={hasMore} />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

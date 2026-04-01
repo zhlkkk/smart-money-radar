@@ -5,6 +5,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { Lock } from 'lucide-react';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -13,7 +14,6 @@ interface SubscriptionGuardProps {
 export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
   const { user, isLoaded } = useUser();
 
-  // 加载中不阻塞渲染
   if (!isLoaded) {
     return <>{children}</>;
   }
@@ -29,16 +29,19 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
         <div className="pointer-events-none select-none blur-sm">
           {children}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-[#0A0A0A]/80">
-          <div className="flex flex-col items-center gap-4 rounded-lg border border-zinc-800 bg-[#111111] p-8 text-center">
-            <div className="text-3xl">🔒</div>
-            <h2 className="text-xl font-bold text-white">需要订阅才能查看</h2>
-            <p className="max-w-sm text-sm text-zinc-400">
+        <div className="absolute inset-0 flex items-center justify-center bg-smr-bg/80">
+          <div className="glass-card flex flex-col items-center gap-4 p-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--smr-accent-cyan)]/10">
+              <Lock size={24} className="text-[var(--smr-accent-cyan)]" />
+            </div>
+            <h2 className="text-xl font-bold text-smr-text">需要订阅才能查看</h2>
+            <p className="max-w-sm text-sm text-smr-text-muted">
               升级到 Pro 计划，解锁实时聪明钱告警、钱包追踪和 AI 分析。
             </p>
             <Link
               href="/pricing"
-              className="rounded-md bg-[#00F0FF] px-6 py-2.5 font-medium text-black transition hover:bg-[#00F0FF]/80"
+              className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-6 py-2.5 font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
+              style={{ boxShadow: 'var(--smr-glow-cyan)', transition: 'all var(--smr-transition-normal)' }}
             >
               升级订阅
             </Link>

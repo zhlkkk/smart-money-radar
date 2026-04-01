@@ -1,33 +1,54 @@
 'use client';
 
-// 侧边栏导航组件（Client Component，需要 usePathname）
-
+// 侧边栏导航 — Lucide 图标 + 折叠 + 系统状态
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
+import {
+  LayoutDashboard,
+  Zap,
+  Wallet,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { StatusPulse } from '@/components/ui/status-pulse';
 
 interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 const navItems: NavItem[] = [
-  { label: '总览', href: '/dashboard', icon: '◈' },
-  { label: '告警历史', href: '/dashboard/alerts', icon: '⚡' },
-  { label: '钱包列表', href: '/dashboard/wallets', icon: '◎' },
+  { label: '总览', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
+  { label: '告警历史', href: '/dashboard/alerts', icon: <Zap size={18} /> },
+  { label: '钱包列表', href: '/dashboard/wallets', icon: <Wallet size={18} /> },
 ];
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-zinc-800 bg-[#0A0A0A]">
+    <aside
+      className={`flex h-screen flex-col border-r border-[var(--smr-glass-border)] bg-[var(--smr-bg-card)] transition-[width] ${collapsed ? 'w-16' : 'w-56'}`}
+      style={{ transition: 'width var(--smr-transition-normal)' }}
+    >
       {/* Logo */}
-      <div className="border-b border-zinc-800 px-4 py-5">
+      <div className="relative border-b border-[var(--smr-glass-border)] px-4 py-5">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-lg font-bold text-[#00F0FF]">SMR</span>
-          <span className="text-xs text-zinc-500">Smart Money Radar</span>
+          <span
+            className="text-lg font-bold text-[var(--smr-accent-cyan)]"
+            style={{ textShadow: '0 0 20px rgba(0, 240, 255, 0.3)' }}
+          >
+            SMR
+          </span>
+          {!collapsed && (
+            <span className="text-xs text-smr-text-muted">
+              Smart Money Radar
+            </span>
+          )}
         </Link>
       </div>
 
@@ -43,28 +64,46 @@ export function SidebarNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition ${
+              title={collapsed ? item.label : undefined}
+              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium cursor-pointer transition-all ${
                 isActive
-                  ? 'bg-[#00F0FF]/10 text-[#00F0FF]'
-                  : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+                  ? 'border-l-2 border-[var(--smr-accent-cyan)] bg-gradient-to-r from-[var(--smr-accent-cyan)]/10 to-transparent text-[var(--smr-accent-cyan)]'
+                  : 'border-l-2 border-transparent text-smr-text-secondary hover:bg-[var(--smr-bg-hover)] hover:text-smr-text'
               }`}
+              style={{ transition: 'all var(--smr-transition-fast)' }}
             >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
+              <span className="shrink-0">{item.icon}</span>
+              {!collapsed && item.label}
             </Link>
           );
         })}
       </nav>
 
-      {/* 底部用户按钮 */}
-      <div className="border-t border-zinc-800 px-4 py-4">
+      {/* 系统状态 */}
+      <div className="border-t border-[var(--smr-glass-border)] px-3 py-3">
+        {!collapsed ? (
+          <StatusPulse status="ok" label="系统正常" />
+        ) : (
+          <StatusPulse status="ok" />
+        )}
+      </div>
+
+      {/* 折叠按钮 + 用户头像 */}
+      <div className="flex items-center justify-between border-t border-[var(--smr-glass-border)] px-3 py-3">
         <UserButton
           appearance={{
             elements: {
-              rootBox: 'flex items-center gap-2',
+              rootBox: 'flex items-center',
             },
           }}
         />
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="cursor-pointer rounded p-1 text-smr-text-muted transition-colors hover:bg-[var(--smr-bg-hover)] hover:text-smr-text"
+          aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
       </div>
     </aside>
   );

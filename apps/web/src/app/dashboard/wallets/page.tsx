@@ -1,10 +1,12 @@
-// 钱包列表页（Server Component）
-// 加载活跃钱包，网格布局展示
+// 钱包列表页
+// Server Component 获取数据 + Client Component 处理筛选/排序/视图
 
 import { getWallets } from '@/lib/backend-client';
+import { WalletListClient } from '@/components/wallet-list-client';
+import { EmptyState } from '@/components/ui/empty-state';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
-import { WalletCard } from '@/components/wallet-card';
 
 export default async function WalletsPage() {
   const { data: wallets } = await getWallets();
@@ -12,26 +14,27 @@ export default async function WalletsPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">钱包列表</h1>
-        <span className="text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold text-smr-text">钱包列表</h1>
+        <span className="font-data text-sm text-smr-text-muted">
           {wallets.length} 个活跃钱包
         </span>
       </div>
 
       {wallets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-zinc-800 bg-[#111111] py-16">
-          <span className="mb-3 text-4xl">🔍</span>
-          <p className="text-zinc-400">暂无追踪中的钱包</p>
-          <p className="mt-1 text-sm text-zinc-500">
-            系统会自动发现并追踪高评分的聪明钱地址
-          </p>
-        </div>
+        <EmptyState
+          title="暂无追踪中的钱包"
+          description="系统会自动发现并追踪高评分的聪明钱地址，也可以手动添加。"
+          action={
+            <Link
+              href="/dashboard"
+              className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-5 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
+            >
+              返回控制台
+            </Link>
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {wallets.map((wallet) => (
-            <WalletCard key={wallet.id} wallet={wallet} />
-          ))}
-        </div>
+        <WalletListClient wallets={wallets} />
       )}
     </div>
   );

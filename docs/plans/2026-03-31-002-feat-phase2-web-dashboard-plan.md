@@ -291,7 +291,7 @@ Phase 1 MVP 通过 Telegram 私密频道 + 手动邀请验证了核心需求（1
 
 ---
 
-- [ ] **Unit 3: 共享类型包 — @radar/shared**
+- [x] **Unit 3: 共享类型包 — @radar/shared**
 
   **Goal:** 从现有 `types.ts` 提取共享域类型到独立包，前后端共用
 

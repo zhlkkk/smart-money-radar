@@ -1,4 +1,22 @@
-// --- Helius Enhanced Transaction (subset we use) ---
+// --- Re-export shared domain types ---
+// Backend code continues to import from './types.js' with zero changes.
+export {
+  createWalletState,
+} from '@radar/shared';
+
+export type {
+  SmartMoneyWallet,
+  ParsedSwap,
+  DexScreenerData,
+  AuthorityData,
+  EnrichmentResult,
+  WalletState,
+  WalletStateRef,
+  AlertData,
+  WalletCandidate,
+} from '@radar/shared';
+
+// --- Helius Enhanced Transaction (backend-only) ---
 // Types reflect reality: many fields are optional because Helius omits them
 // for unsupported DEXes, failed parses, or certain transaction types.
 
@@ -51,75 +69,6 @@ export interface HeliusEnhancedTransaction {
     swap?: HeliusSwapEvent;
   };
   transactionError: unknown;
-}
-
-// --- Our domain types ---
-
-export interface SmartMoneyWallet {
-  label: string;
-  category: string;
-}
-
-export interface ParsedSwap {
-  signature: string;
-  buyerAddress: string;
-  tokenMint: string;
-  tokenSymbol?: string;
-  amountRaw?: string;
-  dexSource: string;
-  timestamp: number;
-}
-
-export interface DexScreenerData {
-  liquidity: number | null;
-  fdv: number | null;
-  marketCap: number | null;
-}
-
-export interface AuthorityData {
-  mintAuthority: string | null;
-  freezeAuthority: string | null;
-}
-
-export interface EnrichmentResult {
-  liquidity: number | null;
-  fdv: number | null;
-  marketCap: number | null;
-  mintAuthority: string | null | 'unchecked';
-  freezeAuthority: string | null | 'unchecked';
-}
-
-export interface WalletState {
-  walletMap: Map<string, SmartMoneyWallet>;
-  watchedAddresses: Set<string>;
-}
-
-export interface WalletStateRef {
-  current: WalletState;
-}
-
-export function createWalletState(wallets: Map<string, SmartMoneyWallet>): WalletState {
-  return {
-    walletMap: wallets,
-    watchedAddresses: new Set(wallets.keys()),
-  };
-}
-
-export interface AlertData {
-  wallet: SmartMoneyWallet;
-  swap: ParsedSwap;
-  enrichment: EnrichmentResult;
-  aiSummary: string;
-}
-
-// --- Wallet discovery (Phase 2) ---
-
-export interface WalletCandidate {
-  address: string;
-  pnl: number;
-  winRate: number;
-  tradeCount: number;
-  lastActiveTimestamp: number;
 }
 
 // --- Helius Webhook Management API ---

@@ -17,5 +17,13 @@
   "dependencies": {
     "chokidar": "^5.0.0",
     "js-yaml": "^4.1.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

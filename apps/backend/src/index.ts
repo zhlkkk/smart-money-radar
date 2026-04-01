@@ -7,6 +7,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadEnv } from './env.js';
 import { registerWebhookRoutes } from './webhook/handler.js';
+import { registerAlertsRoutes } from './api/alerts.js';
+import { registerWalletsRoutes } from './api/wallets.js';
+import { registerHealthRoutes } from './api/health.js';
+import { registerApiAuthPlugin } from './api/auth.js';
+import { createPoolClient } from '@radar/db';
 import { createPipeline } from './pipeline.js';
 import { createDiscovery } from './discovery/orchestrator.js';
 import { createWalletState } from './types.js';
@@ -74,6 +79,20 @@ registerWebhookRoutes(app, {
   authToken: env.HELIUS_AUTH_TOKEN,
   processTransaction: pipeline.processTransaction,
 });
+
+// Database (optional — Phase 2 features)
+const db = env.DATABASE_POOL_URL ? createPoolClient(env.DATABASE_POOL_URL) : null;
+
+// REST API routes (Phase 2b)
+registerHealthRoutes(app, { db });
+
+if (db) {
+  if (env.BACKEND_API_KEY) {
+    await app.register(registerApiAuthPlugin, { apiKey: env.BACKEND_API_KEY });
+  }
+  registerAlertsRoutes(app, { db });
+  registerWalletsRoutes(app, { db });
+}
 
 // Global error handlers
 process.on('unhandledRejection', (err) => {

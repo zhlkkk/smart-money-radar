@@ -2,7 +2,7 @@
 // Glassmorphism 统计卡片 + Bento Grid 导航 + 最近告警预览
 
 import Link from 'next/link';
-import { Zap, Wallet, TrendingUp } from 'lucide-react';
+import { Zap, Wallet, TrendingUp, Activity, ArrowRight } from 'lucide-react';
 import { getAlerts, getWallets } from '@/lib/backend-client';
 import { GlassCard } from '@/components/ui/glass-card';
 import { StatusPulse } from '@/components/ui/status-pulse';
@@ -48,62 +48,69 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {/* ─── 统计卡片 ─── */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* 活跃钱包 */}
-        <GlassCard className="p-5" hover={false}>
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs text-smr-text-muted">活跃钱包</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-cyan)]/10">
-              <Wallet size={16} className="text-[var(--smr-accent-cyan)]" />
+        {/* 活跃钱包 — 青色主调 */}
+        <GlassCard className="relative overflow-hidden p-5" hover={false}>
+          <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[var(--smr-accent-cyan)]/5 blur-2xl" />
+          <div className="relative">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs text-smr-text-muted">活跃钱包</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-cyan)]/10">
+                <Wallet size={16} className="text-[var(--smr-accent-cyan)]" />
+              </div>
             </div>
-          </div>
-          <div className="font-data text-2xl font-bold text-[var(--smr-accent-cyan)]">
-            {walletCount}
-          </div>
-          <DashboardCharts type="sparkline" data={walletTrendData} />
-        </GlassCard>
-
-        {/* 告警状态 */}
-        <GlassCard className="p-5" hover={false}>
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs text-smr-text-muted">告警状态</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
-              <Zap size={16} className="text-[var(--smr-accent-green)]" />
+            <div className="font-data text-2xl font-bold text-[var(--smr-accent-cyan)]">
+              {walletCount}
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="font-data text-2xl font-bold text-smr-text">
-              {hasAlerts ? '有新告警' : '暂无告警'}
-            </span>
-          </div>
-          <div className="mt-2">
-            <StatusPulse status={hasAlerts ? 'warning' : 'ok'} label={hasAlerts ? `${alerts.length} 条待查看` : '一切正常'} />
+            <DashboardCharts type="sparkline" data={walletTrendData} color="cyan" />
           </div>
         </GlassCard>
 
-        {/* 系统状态 */}
-        <GlassCard className="p-5" hover={false}>
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs text-smr-text-muted">系统状态</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
-              <TrendingUp size={16} className="text-[var(--smr-accent-green)]" />
+        {/* 告警状态 — 金色/绿色（根据状态变化） */}
+        <GlassCard className="relative overflow-hidden p-5" hover={false}>
+          <div className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl ${hasAlerts ? 'bg-[var(--smr-accent-gold)]/5' : 'bg-[var(--smr-accent-green)]/5'}`} />
+          <div className="relative">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs text-smr-text-muted">告警状态</span>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${hasAlerts ? 'bg-[var(--smr-accent-gold)]/10' : 'bg-[var(--smr-accent-green)]/10'}`}>
+                <Zap size={16} className={hasAlerts ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'} />
+              </div>
+            </div>
+            <div className={`font-data text-2xl font-bold ${hasAlerts ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'}`}>
+              {hasAlerts ? `${alerts.length} 条新告警` : '一切正常'}
+            </div>
+            <div className="mt-2">
+              <StatusPulse status={hasAlerts ? 'warning' : 'ok'} label={hasAlerts ? '待查看' : '无新告警'} />
             </div>
           </div>
-          <div className="font-data text-2xl font-bold text-[var(--smr-accent-green)]">
-            运行中
-          </div>
-          {/* SVG 心跳线 */}
-          <div className="mt-2">
-            <svg width="100" height="24" viewBox="0 0 100 24" className="text-[var(--smr-accent-green)]">
-              <path
-                d="M0 12 L20 12 L28 4 L36 20 L44 12 L60 12 L68 6 L76 18 L84 12 L100 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.6"
-              />
-            </svg>
+        </GlassCard>
+
+        {/* 系统状态 — 绿色主调 */}
+        <GlassCard className="relative overflow-hidden p-5" hover={false}>
+          <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[var(--smr-accent-green)]/5 blur-2xl" />
+          <div className="relative">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs text-smr-text-muted">系统状态</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
+                <Activity size={16} className="text-[var(--smr-accent-green)]" />
+              </div>
+            </div>
+            <div className="font-data text-2xl font-bold text-[var(--smr-accent-green)]">
+              运行中
+            </div>
+            {/* SVG 心跳线 */}
+            <div className="mt-2">
+              <svg width="120" height="28" viewBox="0 0 120 28" className="text-[var(--smr-accent-green)]">
+                <path
+                  d="M0 14 L20 14 L28 4 L36 24 L44 14 L60 14 L68 6 L76 22 L84 14 L100 14 L108 8 L116 20 L120 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.7"
+                />
+              </svg>
+            </div>
           </div>
         </GlassCard>
       </div>
@@ -111,34 +118,49 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       {/* ─── Bento Grid 快速导航 ─── */}
       <h2 className="mb-4 text-lg font-medium text-smr-text-secondary">快速导航</h2>
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* 告警历史 — 金色渐变 */}
         <Link href="/dashboard/alerts">
-          <GlassCard className="group cursor-pointer bg-gradient-to-br from-[var(--smr-accent-cyan)]/5 to-transparent p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--smr-accent-cyan)]/10">
-                <Zap size={20} className="text-[var(--smr-accent-cyan)]" />
+          <GlassCard className="group relative cursor-pointer overflow-hidden p-5">
+            <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-[var(--smr-accent-gold)]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
+            <div className="relative">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--smr-accent-gold)]/10">
+                    <Zap size={20} className="text-[var(--smr-accent-gold)]" />
+                  </div>
+                  <span className="font-medium text-smr-text transition group-hover:text-[var(--smr-accent-gold)]" style={{ transition: 'color var(--smr-transition-fast)' }}>
+                    告警历史
+                  </span>
+                </div>
+                <ArrowRight size={16} className="text-smr-text-muted transition-transform group-hover:translate-x-1 group-hover:text-[var(--smr-accent-gold)]" />
               </div>
-              <span className="font-medium text-smr-text transition group-hover:text-[var(--smr-accent-cyan)]" style={{ transition: 'color var(--smr-transition-fast)' }}>
-                告警历史
-              </span>
+              <p className="text-sm text-smr-text-muted">
+                查看所有聪明钱交易告警，包含 AI 智能分析摘要
+              </p>
             </div>
-            <p className="text-sm text-smr-text-muted">
-              查看所有聪明钱交易告警，包含 AI 智能分析摘要
-            </p>
           </GlassCard>
         </Link>
+
+        {/* 钱包列表 — 绿色渐变 */}
         <Link href="/dashboard/wallets">
-          <GlassCard className="group cursor-pointer bg-gradient-to-br from-[var(--smr-accent-green)]/5 to-transparent p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
-                <Wallet size={20} className="text-[var(--smr-accent-green)]" />
+          <GlassCard className="group relative cursor-pointer overflow-hidden p-5">
+            <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-[var(--smr-accent-green)]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
+            <div className="relative">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
+                    <Wallet size={20} className="text-[var(--smr-accent-green)]" />
+                  </div>
+                  <span className="font-medium text-smr-text transition group-hover:text-[var(--smr-accent-green)]" style={{ transition: 'color var(--smr-transition-fast)' }}>
+                    钱包列表
+                  </span>
+                </div>
+                <ArrowRight size={16} className="text-smr-text-muted transition-transform group-hover:translate-x-1 group-hover:text-[var(--smr-accent-green)]" />
               </div>
-              <span className="font-medium text-smr-text transition group-hover:text-[var(--smr-accent-green)]" style={{ transition: 'color var(--smr-transition-fast)' }}>
-                钱包列表
-              </span>
+              <p className="text-sm text-smr-text-muted">
+                浏览追踪中的聪明钱地址，查看评分和盈亏数据
+              </p>
             </div>
-            <p className="text-sm text-smr-text-muted">
-              浏览追踪中的聪明钱地址，查看评分和盈亏数据
-            </p>
           </GlassCard>
         </Link>
       </div>
@@ -150,7 +172,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <h2 className="text-lg font-medium text-smr-text-secondary">最近告警</h2>
             <Link
               href="/dashboard/alerts"
-              className="cursor-pointer text-xs text-[var(--smr-accent-cyan)] transition hover:text-[var(--smr-accent-cyan)]/80"
+              className="cursor-pointer text-xs text-[var(--smr-accent-gold)] transition hover:text-[var(--smr-accent-gold)]/80"
             >
               查看全部 →
             </Link>
@@ -159,7 +181,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             {alerts.slice(0, 3).map((alert) => (
               <GlassCard key={alert.id} className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <Zap size={14} className="text-[var(--smr-accent-cyan)]" />
+                  <div className="h-2 w-2 rounded-full bg-[var(--smr-accent-gold)]" />
                   <span className="text-sm font-medium text-smr-text">
                     {alert.walletLabel ?? truncateAddress(alert.walletAddress)}
                   </span>

@@ -4,15 +4,23 @@
 
 import { MiniSparkline } from '@/components/ui/mini-sparkline';
 
+const colorMap = {
+  cyan: 'var(--smr-accent-cyan)',
+  green: 'var(--smr-accent-green)',
+  gold: 'var(--smr-accent-gold)',
+  red: 'var(--smr-accent-red)',
+} as const;
+
 interface DashboardChartsProps {
   type: 'sparkline';
   data: number[];
+  color?: keyof typeof colorMap;
 }
 
-export function DashboardCharts({ data }: DashboardChartsProps) {
+export function DashboardCharts({ data, color = 'cyan' }: DashboardChartsProps) {
   return (
     <div className="mt-2">
-      <MiniSparkline data={data} color="var(--smr-accent-cyan)" width={140} height={28} />
+      <MiniSparkline data={data} color={colorMap[color]} width={140} height={28} />
     </div>
   );
 }

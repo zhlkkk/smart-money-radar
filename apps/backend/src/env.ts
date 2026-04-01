@@ -28,6 +28,9 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
   STRIPE_PRICE_ID: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+
+  // Backend API key (Phase 2b) — for frontend->backend authenticated calls
+  BACKEND_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;

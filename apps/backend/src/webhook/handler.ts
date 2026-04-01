@@ -25,7 +25,5 @@ export function registerWebhookRoutes(
     }
   });
 
-  app.get('/health', async (_request, reply) => {
-    return reply.status(200).send({ status: 'ok' });
-  });
+  // Health check moved to src/api/health.ts (enhanced with DB status)
 }

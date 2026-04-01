@@ -72,15 +72,3 @@ describe('POST /webhook', () => {
     expect(mockProcess).toHaveBeenCalledTimes(2);
   });
 });
-
-describe('GET /health', () => {
-  it('returns 200 with status ok', async () => {
-    const app = Fastify();
-    registerWebhookRoutes(app, { authToken: 'Bearer test', processTransaction: vi.fn() });
-    await app.ready();
-    const res = await app.inject({ method: 'GET', url: '/health' });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok' });
-    await app.close();
-  });
-});

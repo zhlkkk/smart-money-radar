@@ -242,7 +242,7 @@ Phase 1 MVP 通过 Telegram 私密频道 + 手动邀请验证了核心需求（1
 
 ---
 
-- [ ] **Unit 2: 数据库 Schema + 迁移 — Neon PostgreSQL + Drizzle**
+- [x] **Unit 2: 数据库 Schema + 迁移 — Neon PostgreSQL + Drizzle**
 
   **Goal:** 建立 PostgreSQL 数据库 schema，包含 users、subscriptions、alerts_history、tracked_wallets 表
 

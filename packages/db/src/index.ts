@@ -1,3 +1,6 @@
 // @radar/db — database schema and clients for Smart Money Radar
-// Unit 2 will populate this with Drizzle schema and Neon clients
-export {};
+export * from './schema/index.js';
+export { createHttpClient } from './client.js';
+export type { HttpDatabase } from './client.js';
+export { createPoolClient } from './client.pool.js';
+export type { PoolDatabase } from './client.pool.js';

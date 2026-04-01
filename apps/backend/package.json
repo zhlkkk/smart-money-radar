@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@radar/shared": "workspace:*",
+    "@radar/db": "workspace:*",
     "@anthropic-ai/sdk": "^0.80.0",
     "@fastify/rate-limit": "^10.3.0",
     "@sentry/node": "^9.47.1",

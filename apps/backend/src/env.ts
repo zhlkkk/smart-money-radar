@@ -20,6 +20,9 @@ const envSchema = z.object({
   BIRDEYE_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
   DISCOVERY_INTERVAL_MS: z.coerce.number().default(21_600_000), // 6 hours
   DISCOVERY_WALLET_CAP: z.coerce.number().default(30),
+
+  // Database (Phase 2) — optional so Phase 1 deployments continue working without DB
+  DATABASE_POOL_URL: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;

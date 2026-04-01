@@ -335,7 +335,7 @@ Phase 1 MVP 通过 Telegram 私密频道 + 手动邀请验证了核心需求（1
 
 ### Phase B: 后端扩展（Unit 4-5）
 
-- [ ] **Unit 4: 管道集成 — 告警持久化到 DB**
+- [x] **Unit 4: 管道集成 — 告警持久化到 DB**
 
   **Goal:** 在现有 fire-and-forget 管道中异步写入告警到 PostgreSQL，保持 Telegram 推送不受影响
 

@@ -21,15 +21,38 @@ vi.mock('../src/telegram/bot.js', () => ({
   sendAlert: vi.fn(),
 }));
 
+vi.mock('../src/persistence/alerts.js', () => ({
+  persistAlert: vi.fn(),
+}));
+
 import { createPipeline } from '../src/pipeline.js';
 import { parseSwap } from '../src/webhook/parse.js';
 import { enrichToken } from '../src/enrichment/enrich.js';
 import { generateAttribution } from '../src/ai/attribution.js';
 import { formatAlert } from '../src/telegram/format.js';
 import { sendAlert } from '../src/telegram/bot.js';
+import { persistAlert } from '../src/persistence/alerts.js';
 import { createWalletState } from '../src/types.js';
 import type { HeliusEnhancedTransaction, WalletStateRef } from '../src/types.js';
 import swapFixture from './fixtures/swap-event.json' with { type: 'json' };
+
+function setupSwapMocks() {
+  vi.mocked(parseSwap).mockReturnValueOnce({
+    signature: 'sig1',
+    buyerAddress: '7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB',
+    tokenMint: 'TokenMint123',
+    tokenSymbol: 'BONK',
+    dexSource: 'JUPITER',
+    timestamp: 1711900800,
+  });
+  vi.mocked(enrichToken).mockResolvedValueOnce({
+    liquidity: 1_000_000, fdv: 10_000_000, marketCap: 5_000_000,
+    mintAuthority: null, freezeAuthority: null,
+  });
+  vi.mocked(generateAttribution).mockResolvedValueOnce('AI summary');
+  vi.mocked(formatAlert).mockReturnValueOnce('<b>formatted</b>');
+  vi.mocked(sendAlert).mockResolvedValueOnce(undefined);
+}
 
 describe('Pipeline', () => {
   let pipeline: ReturnType<typeof createPipeline>;
@@ -54,21 +77,7 @@ describe('Pipeline', () => {
   });
 
   it('processes a valid swap end-to-end', async () => {
-    vi.mocked(parseSwap).mockReturnValueOnce({
-      signature: 'sig1',
-      buyerAddress: '7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB',
-      tokenMint: 'TokenMint123',
-      tokenSymbol: 'BONK',
-      dexSource: 'JUPITER',
-      timestamp: 1711900800,
-    });
-    vi.mocked(enrichToken).mockResolvedValueOnce({
-      liquidity: 1_000_000, fdv: 10_000_000, marketCap: 5_000_000,
-      mintAuthority: null, freezeAuthority: null,
-    });
-    vi.mocked(generateAttribution).mockResolvedValueOnce('AI summary');
-    vi.mocked(formatAlert).mockReturnValueOnce('<b>formatted</b>');
-    vi.mocked(sendAlert).mockResolvedValueOnce(undefined);
+    setupSwapMocks();
 
     await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
 
@@ -117,7 +126,6 @@ describe('Pipeline', () => {
 
   it('picks up a newly added wallet after swapping walletStateRef.current', async () => {
     const newWalletAddress = 'NewWallet1111111111111111111111111111111111';
-    // Swap in new state that includes the new wallet
     walletStateRef.current = createWalletState(
       new Map([
         ['7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB', { label: 'Wintermute', category: 'DEX Whale' }],
@@ -147,7 +155,6 @@ describe('Pipeline', () => {
   });
 
   it('rejects transactions from a wallet removed from state', async () => {
-    // Swap in empty state — removes all wallets
     walletStateRef.current = createWalletState(new Map());
 
     vi.mocked(parseSwap).mockReturnValueOnce({
@@ -162,5 +169,90 @@ describe('Pipeline', () => {
 
     expect(enrichToken).not.toHaveBeenCalled();
     expect(sendAlert).not.toHaveBeenCalled();
+  });
+});
+
+describe('Pipeline with DB persistence', () => {
+  let pipeline: ReturnType<typeof createPipeline>;
+  let walletStateRef: WalletStateRef;
+  const mockDb = {} as any;
+  const mockLogger = { error: vi.fn() };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    walletStateRef = {
+      current: createWalletState(
+        new Map([
+          ['7xKXtRQpkjR5E9aFbNdWAqFTgBZm8PqVGn8VfJdXKNYB', { label: 'Wintermute', category: 'DEX Whale' }],
+        ]),
+      ),
+    };
+    pipeline = createPipeline({
+      walletStateRef,
+      rpc: {} as unknown,
+      anthropicClient: {} as unknown,
+      botToken: '123:ABC',
+      channelId: '-100999',
+      db: mockDb,
+      logger: mockLogger,
+    });
+  });
+
+  it('calls persistAlert when db is configured', async () => {
+    setupSwapMocks();
+    vi.mocked(persistAlert).mockResolvedValueOnce(true);
+
+    await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    expect(persistAlert).toHaveBeenCalledWith(mockDb, expect.objectContaining({
+      swap: expect.objectContaining({ signature: 'sig1' }),
+      enrichment: expect.objectContaining({ liquidity: 1_000_000 }),
+      wallet: expect.objectContaining({ label: 'Wintermute' }),
+      aiSummary: 'AI summary',
+    }));
+    expect(sendAlert).toHaveBeenCalledOnce();
+  });
+
+  it('sends Telegram alert even when DB write fails', async () => {
+    setupSwapMocks();
+    vi.mocked(persistAlert).mockRejectedValueOnce(new Error('DB connection timeout'));
+
+    await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    expect(sendAlert).toHaveBeenCalledWith('<b>formatted</b>', '123:ABC', '-100999');
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ signature: 'sig1' }),
+      'Failed to persist alert to database',
+    );
+  });
+
+  it('sends Telegram alert even when DB write throws synchronously', async () => {
+    setupSwapMocks();
+    vi.mocked(persistAlert).mockImplementationOnce(() => {
+      throw new Error('Synchronous DB error');
+    });
+
+    await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    expect(sendAlert).toHaveBeenCalledOnce();
+    expect(mockLogger.error).toHaveBeenCalledOnce();
+  });
+
+  it('does not call persistAlert when db is null', async () => {
+    const noPipeline = createPipeline({
+      walletStateRef,
+      rpc: {} as unknown,
+      anthropicClient: {} as unknown,
+      botToken: '123:ABC',
+      channelId: '-100999',
+      db: null,
+    });
+
+    setupSwapMocks();
+
+    await noPipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    expect(persistAlert).not.toHaveBeenCalled();
+    expect(sendAlert).toHaveBeenCalledOnce();
   });
 });

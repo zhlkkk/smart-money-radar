@@ -1,4 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import type { PoolDatabase } from '@radar/db';
 import type { HeliusEnhancedTransaction, WalletStateRef } from './types.js';
 import { TxDedup } from './webhook/dedup.js';
 import { parseSwap } from './webhook/parse.js';
@@ -6,6 +7,7 @@ import { enrichToken } from './enrichment/enrich.js';
 import { generateAttribution } from './ai/attribution.js';
 import { formatAlert } from './telegram/format.js';
 import { sendAlert } from './telegram/bot.js';
+import { persistAlert } from './persistence/alerts.js';
 
 export interface PipelineConfig {
   walletStateRef: WalletStateRef;
@@ -13,6 +15,8 @@ export interface PipelineConfig {
   anthropicClient: Anthropic;
   botToken: string;
   channelId: string;
+  db?: PoolDatabase | null;
+  logger?: { error: (obj: unknown, msg: string) => void };
 }
 
 export function createPipeline(config: PipelineConfig) {
@@ -45,7 +49,26 @@ export function createPipeline(config: PipelineConfig) {
     );
 
     const html = formatAlert({ wallet, swap, enrichment, aiSummary });
-    await sendAlert(html, config.botToken, config.channelId);
+
+    // DB write and Telegram send run in parallel — DB failure never blocks alerts
+    // Wrap persistAlert in an async IIFE to catch synchronous throws
+    const dbWrite = config.db
+      ? (async () => persistAlert(config.db!, { swap, enrichment, wallet, aiSummary }))()
+      : Promise.resolve(false);
+
+    const results = await Promise.allSettled([
+      sendAlert(html, config.botToken, config.channelId),
+      dbWrite,
+    ]);
+
+    // Log DB write failure but never throw
+    const dbResult = results[1];
+    if (dbResult && dbResult.status === 'rejected') {
+      config.logger?.error(
+        { err: dbResult.reason, signature: swap.signature },
+        'Failed to persist alert to database',
+      );
+    }
   }
 
   return { processTransaction };

@@ -8,6 +8,21 @@ import { generateAttribution } from './ai/attribution.js';
 import { formatAlert } from './telegram/format.js';
 import { sendAlert } from './telegram/bot.js';
 import { persistAlert } from './persistence/alerts.js';
+import type { EnrichmentResult } from './types.js';
+
+// Minimum thresholds to filter out inactive/low-quality tokens
+const MIN_LIQUIDITY = 5_000;   // $5K — below this, can't exit position without massive slippage
+const MIN_FDV = 50_000;        // $50K — filters out dead/abandoned tokens
+
+function passesQualityFilter(enrichment: EnrichmentResult): boolean {
+  // If DexScreener returned no data at all, skip (token not listed)
+  if (enrichment.liquidity === null && enrichment.fdv === null) return false;
+  // Check liquidity threshold
+  if (enrichment.liquidity !== null && enrichment.liquidity < MIN_LIQUIDITY) return false;
+  // Check FDV threshold
+  if (enrichment.fdv !== null && enrichment.fdv < MIN_FDV) return false;
+  return true;
+}
 
 export interface PipelineConfig {
   walletStateRef: WalletStateRef;
@@ -34,6 +49,9 @@ export function createPipeline(config: PipelineConfig) {
     if (!wallet) return;
 
     const enrichment = await enrichToken(swap.tokenMint, config.rpc);
+
+    // Quality filter — skip low-quality tokens to reduce noise
+    if (!passesQualityFilter(enrichment)) return;
 
     const aiSummary = await generateAttribution(
       {

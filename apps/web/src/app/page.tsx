@@ -31,6 +31,12 @@ import { MiniSparkline } from '@/components/ui/mini-sparkline';
 import { ScoreRing } from '@/components/ui/score-ring';
 import { StatusPulse } from '@/components/ui/status-pulse';
 import { Badge } from '@/components/ui/badge';
+import { AnimateOnScroll } from '@/components/ui/animate-on-scroll';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
+import { TypingText } from '@/components/ui/typing-text';
+import { ParticleField } from '@/components/ui/particle-field';
+import { LiveAlertFeed } from '@/components/ui/live-alert-feed';
+import { GlowCursor } from '@/components/ui/glow-cursor';
 
 // ─── 模拟数据 ───
 const demoPrice = [20, 25, 22, 30, 28, 35, 32, 42, 38, 45, 50, 48, 55, 52, 60, 58, 65, 70, 68, 75];
@@ -200,13 +206,18 @@ export default function HomePage() {
           Hero 区 — 居中大标题 + 实时数据面板
       ═══════════════════════════════════════════ */}
       <section className="relative mx-auto max-w-6xl px-6 pb-16 pt-16 md:pt-24">
+        {/* 粒子背景 */}
+        <ParticleField count={35} className="opacity-60" />
+        {/* 鼠标跟随光晕 */}
+        <GlowCursor />
+
         {/* 多层背景光晕 */}
         <div aria-hidden className="pointer-events-none absolute -left-40 -top-20 h-[500px] w-[500px] rounded-full opacity-15 blur-[120px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-cyan) 0%, transparent 70%)' }} />
         <div aria-hidden className="pointer-events-none absolute -right-20 top-20 h-[300px] w-[300px] rounded-full opacity-10 blur-[100px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-gold) 0%, transparent 70%)' }} />
 
         {/* 居中文案 */}
-        <div className="relative mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--smr-glass-border)] bg-[var(--smr-glass-bg)] px-4 py-1.5 backdrop-blur-sm">
+        <div className="relative mx-auto max-w-3xl text-center" style={{ animation: 'float-up 800ms ease-out' }}>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--smr-glass-border)] bg-[var(--smr-glass-bg)] px-4 py-1.5 backdrop-blur-sm" style={{ animation: 'scale-in 600ms ease-out 200ms both' }}>
             <StatusPulse status="ok" size="sm" />
             <span className="font-data text-xs text-smr-text-secondary">实时监控中 · Solana Mainnet</span>
           </div>
@@ -217,11 +228,13 @@ export default function HomePage() {
               实时追踪引擎
             </span>
           </h1>
-          <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-smr-text-secondary md:text-lg">
-            Webhook 监听 → 多维富集 → AI 归因 → 即时推送。
-            <br className="hidden md:block" />
-            端到端 &lt; 5 秒，让你比散户快 10 分钟收到买入信号。
-          </p>
+          <div className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-smr-text-secondary md:text-lg">
+            <TypingText
+              text="Webhook 监听 → 多维富集 → AI 归因 → 即时推送。端到端 < 5 秒，让你比散户快 10 分钟收到买入信号。"
+              speed={30}
+              delay={800}
+            />
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <SignedOut>
               <Link
@@ -255,38 +268,13 @@ export default function HomePage() {
 
         {/* 实时数据面板 — 三列 */}
         <div className="relative mt-16 grid gap-4 md:grid-cols-3">
-          {/* 模拟告警卡片 */}
-          <GlassCard className="p-4" glow="cyan">
-            <div className="mb-2 flex items-center justify-between">
-              <Badge variant="cyan" size="md">实时告警</Badge>
-              <span className="font-data text-[10px] text-smr-text-muted">2 秒前</span>
-            </div>
-            <div className="mb-1 flex items-center gap-2">
-              <span className="font-data text-sm font-bold text-[var(--smr-accent-cyan)]">$BONK</span>
-              <Badge variant="green" size="sm">买入</Badge>
-            </div>
-            <div className="mb-2 font-data text-xs text-smr-text-muted">7nYp...x3Kq · Raydium</div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <div className="text-[9px] text-smr-text-muted">流动性</div>
-                <div className="font-data text-xs text-smr-text">$4.2M</div>
-              </div>
-              <div>
-                <div className="text-[9px] text-smr-text-muted">FDV</div>
-                <div className="font-data text-xs text-smr-text">$890M</div>
-              </div>
-              <div>
-                <div className="text-[9px] text-smr-text-muted">风险</div>
-                <div className="font-data text-xs text-[var(--smr-accent-green)]">低</div>
-              </div>
-            </div>
-            <div className="mt-2 rounded-md bg-[var(--smr-bg-elevated)] px-2 py-1.5 text-[11px] leading-relaxed text-smr-text-secondary">
-              <Brain size={10} className="mr-1 inline text-[var(--smr-accent-cyan)]" />
-              高流动性 meme 代币，该钱包近期胜率 78%，或为短线波段布局。
-            </div>
-          </GlassCard>
+          {/* 模拟告警轮播 */}
+          <AnimateOnScroll animation="fade-up" delay={0}>
+            <LiveAlertFeed />
+          </AnimateOnScroll>
 
           {/* 价格走势面板 */}
+          <AnimateOnScroll animation="fade-up" delay={150}>
           <GlassCard className="p-4">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-smr-text-secondary">追踪钱包动态</span>
@@ -310,8 +298,10 @@ export default function HomePage() {
               </div>
             </div>
           </GlassCard>
+          </AnimateOnScroll>
 
           {/* 钱包评分面板 */}
+          <AnimateOnScroll animation="fade-up" delay={300}>
           <GlassCard className="p-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-medium text-smr-text-secondary">钱包评分</span>
@@ -336,6 +326,7 @@ export default function HomePage() {
               ))}
             </div>
           </GlassCard>
+          </AnimateOnScroll>
         </div>
       </section>
 
@@ -349,12 +340,14 @@ export default function HomePage() {
             { value: '50+', label: '追踪钱包', sub: '自动发现 + 人工标记' },
             { value: '24/7', label: '全天候监控', sub: '零停机运行' },
             { value: '99.9%', label: '消息可靠性', sub: 'Graceful Degradation' },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="font-data text-3xl font-bold text-[var(--smr-accent-cyan)] md:text-4xl">{stat.value}</div>
-              <div className="mt-1 text-sm font-medium text-smr-text">{stat.label}</div>
-              <div className="font-data mt-0.5 text-[10px] text-smr-text-muted">{stat.sub}</div>
-            </div>
+          ].map((stat, i) => (
+            <AnimateOnScroll key={stat.label} animation="scale-in" delay={i * 100}>
+              <div className="text-center">
+                <AnimatedCounter value={stat.value} className="font-data text-3xl font-bold text-[var(--smr-accent-cyan)] md:text-4xl" />
+                <div className="mt-1 text-sm font-medium text-smr-text">{stat.label}</div>
+                <div className="font-data mt-0.5 text-[10px] text-smr-text-muted">{stat.sub}</div>
+              </div>
+            </AnimateOnScroll>
           ))}
         </div>
       </section>
@@ -378,7 +371,8 @@ export default function HomePage() {
             const c = colorClasses[cap.color];
             const isReversed = i % 2 === 1;
             return (
-              <div key={cap.title} className={`flex flex-col gap-6 md:flex-row md:items-center ${isReversed ? 'md:flex-row-reverse' : ''}`}>
+              <AnimateOnScroll key={cap.title} animation={isReversed ? 'slide-right' : 'slide-left'} delay={100}>
+              <div className={`flex flex-col gap-6 md:flex-row md:items-center ${isReversed ? 'md:flex-row-reverse' : ''}`}>
                 {/* 文字侧 */}
                 <div className="flex-1">
                   <div className={`mb-3 inline-flex items-center gap-2 rounded-full ${c.bg} px-3 py-1`}>
@@ -477,6 +471,7 @@ export default function HomePage() {
                   </GlassCard>
                 </div>
               </div>
+              </AnimateOnScroll>
             );
           })}
         </div>
@@ -501,10 +496,11 @@ export default function HomePage() {
             {/* 连接线（桌面端） */}
             <div aria-hidden className="pointer-events-none absolute left-0 right-0 top-14 hidden h-px bg-gradient-to-r from-transparent via-[var(--smr-glass-border)] to-transparent md:block" />
 
-            {workflow.map((step) => {
+            {workflow.map((step, i) => {
               const c = colorClasses[step.color];
               return (
-                <div key={step.step} className="relative text-center">
+                <AnimateOnScroll key={step.step} animation="fade-up" delay={i * 150}>
+                <div className="relative text-center">
                   {/* 步骤编号 */}
                   <div className={`relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl ${c.bg} ring-4 ring-[var(--smr-bg-primary)]`}>
                     <span className={c.text}>{step.icon}</span>
@@ -513,6 +509,7 @@ export default function HomePage() {
                   <h3 className="mb-2 text-lg font-semibold text-smr-text">{step.title}</h3>
                   <p className="text-sm leading-relaxed text-smr-text-muted">{step.description}</p>
                 </div>
+                </AnimateOnScroll>
               );
             })}
           </div>
@@ -530,8 +527,9 @@ export default function HomePage() {
           安全是底线，不是卖点
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
-          {securityFeatures.map((item) => (
-            <GlassCard key={item.title} className="flex items-start gap-4 p-5" hover>
+          {securityFeatures.map((item, i) => (
+            <AnimateOnScroll key={item.title} animation="fade-up" delay={i * 100}>
+            <GlassCard className="flex items-start gap-4 p-5" hover>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
                 <span className="text-[var(--smr-accent-green)]">{item.icon}</span>
               </div>
@@ -540,6 +538,7 @@ export default function HomePage() {
                 <p className="text-sm text-smr-text-muted">{item.description}</p>
               </div>
             </GlassCard>
+            </AnimateOnScroll>
           ))}
         </div>
       </section>
@@ -549,6 +548,7 @@ export default function HomePage() {
       ═══════════════════════════════════════════ */}
       <section className="relative mx-auto max-w-6xl px-6 py-20">
         <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-10 blur-[120px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-cyan) 0%, transparent 70%)' }} />
+        <AnimateOnScroll animation="scale-in">
         <GlassCard className="relative mx-auto max-w-2xl overflow-hidden p-10 text-center" hover={false}>
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[var(--smr-accent-cyan)]/5 blur-2xl" />
           <div aria-hidden className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-[var(--smr-accent-gold)]/5 blur-2xl" />
@@ -576,6 +576,7 @@ export default function HomePage() {
             </div>
           </div>
         </GlassCard>
+        </AnimateOnScroll>
       </section>
 
       {/* Footer */}

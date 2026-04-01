@@ -14,6 +14,8 @@ export type {
   WalletStateRef,
   AlertData,
   WalletCandidate,
+  RiskLevel,
+  RiskAssessment,
 } from '@radar/shared';
 
 // --- Helius Enhanced Transaction (backend-only) ---

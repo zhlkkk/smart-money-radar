@@ -657,7 +657,7 @@ Phase 1 MVP 通过 Telegram 私密频道 + 手动邀请验证了核心需求（1
 
 ### Phase E: 部署（Unit 10a + 10b）
 
-- [ ] **Unit 10a: 后端部署 — Railway + Neon（Phase 2a 结束时执行）**
+- [x] **Unit 10a: 后端部署 — Railway + Neon（Phase 2a 结束时执行）**
 
   **Goal:** Phase A/B 完成后立即部署后端到 Railway，验证 monorepo 构建、DB 连接和 Helius webhook
 

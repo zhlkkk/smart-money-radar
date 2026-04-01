@@ -1,0 +1,10 @@
+node_modules
+.git
+.env*
+apps/web
+docs
+test
+*.test.ts
+dist
+.next
+.serena

@@ -148,6 +148,26 @@ The MVP is deliberately minimal. Core concerns:
 - Unit 10b: 前端部署准备（Clerk Webhook/Proxy、Vercel 配置、部署清单、@radar/db .js 导入修复）✅
 - 详见 `docs/plans/phase_2b_plan.md`
 
+### Phase 3（进行中 🚧）— 产品打磨 + 数据可信度
+
+#### Phase 3a: UI 体验优化
+- 明暗模式切换 + Dashboard 层次感优化（`docs/plans/2026-04-02-001-feat-light-dark-theme-toggle-plan.md`）🚧
+- AI 成本优化（`docs/plans/2026-04-02-002-feat-ai-cost-optimization-plan.md`）
+- 中英文国际化（`docs/plans/2026-04-02-003-feat-i18n-zh-en-plan.md`）
+- SSE 实时告警推送（`docs/plans/2026-04-02-004-feat-sse-realtime-alerts-plan.md`）
+
+#### Phase 3b: 数据信任层（短期）
+- 告警置信度评分系统（链上验证 + 数据完整度 + 流动性 + 钱包评分 → 高/中/低）
+- Telegram 告警模板改造（置信度标签 + 数据源溯源 + disclaimer）
+- Dashboard 告警卡片置信度展示
+- Landing Page 数据方法论 section
+- 详见 `docs/superpowers/specs/2026-04-02-data-trust-layer-design.md`
+
+#### Phase 3c: 数据可靠性提升（中期）
+- P0: Birdeye 聪明钱评分回测验证（离线脚本，验证真实预测力）
+- P1: DexScreener 本地缓存 + Webhook HMAC 签名
+- P2: 链上价格交叉校验 + 置信度权重自动调优
+
 ## Performance Targets
 
 - End-to-end latency: < 5 seconds (Helius webhook -> Telegram message)

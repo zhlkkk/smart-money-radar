@@ -121,8 +121,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <h2 className="mb-4 text-lg font-medium text-smr-text-secondary">{t('quickNav')}</h2>
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* 告警历史 — 金色渐变 */}
-        <Link href="/dashboard/alerts">
-          <GlassCard className="group relative cursor-pointer overflow-hidden p-5">
+        <Link href="/dashboard/alerts" className="h-full">
+          <GlassCard className="group relative h-full cursor-pointer overflow-hidden p-5">
             <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-[var(--smr-accent-gold)]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
             <div className="relative">
               <div className="mb-3 flex items-center justify-between">
@@ -144,8 +144,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </Link>
 
         {/* 钱包列表 — 绿色渐变 */}
-        <Link href="/dashboard/wallets">
-          <GlassCard className="group relative cursor-pointer overflow-hidden p-5">
+        <Link href="/dashboard/wallets" className="h-full">
+          <GlassCard className="group relative h-full cursor-pointer overflow-hidden p-5">
             <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-[var(--smr-accent-green)]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
             <div className="relative">
               <div className="mb-3 flex items-center justify-between">

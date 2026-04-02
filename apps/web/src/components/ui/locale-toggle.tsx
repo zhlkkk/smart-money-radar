@@ -47,9 +47,11 @@ export function LocaleToggle({ className = '' }: LocaleToggleProps) {
   }, [open]);
 
   function selectLocale(code: string) {
+    if (code === locale) { setOpen(false); return; }
     document.cookie = `smr-locale=${code};path=/;max-age=${365 * 24 * 60 * 60}`;
     setOpen(false);
-    router.refresh();
+    // 强制整页刷新确保 Server Component 读取新 cookie
+    window.location.reload();
   }
 
   return (

@@ -20,6 +20,7 @@ import { registerPaddleWebhookRoutes } from './stripe/webhook.js';
 import { registerHelioWebhookRoutes } from './helio/webhook.js';
 import { telegramWebhookPlugin } from './telegram/webhook.js';
 import { handleBindCommand } from './telegram/bind.js';
+import { handleJoinRequest } from './telegram/join-request.js';
 import { generateBindCode } from './telegram/bind-codes.js';
 import { telegramBindings } from '@radar/db';
 import { eq } from 'drizzle-orm';
@@ -169,7 +170,11 @@ if (env.TELEGRAM_WEBHOOK_SECRET && env.TELEGRAM_BOT_TOKEN) {
         await handleBindCommand(update, db, env.TELEGRAM_BOT_TOKEN, inviteLink);
       }
     },
-    onChatJoinRequest: async () => {}, // Unit 4 填充
+    onChatJoinRequest: async (update) => {
+      if (db) {
+        await handleJoinRequest(update, db, env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID);
+      }
+    },
   }));
   app.log.info('Telegram Bot webhook route registered');
 }

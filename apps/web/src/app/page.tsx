@@ -625,21 +625,12 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* 局限性说明 */}
-          <AnimateOnScroll animation="fade-in">
-            <GlassCard className="mt-10 p-5">
-              <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-smr-text-secondary">
-                <ShieldAlert size={16} className="text-[var(--smr-accent-gold)]" />
-                {tMethod('limitationsTitle')}
-              </h3>
-              <ul className="space-y-1.5 text-xs text-smr-text-muted">
-                <li>· {tMethod('limitation1')}</li>
-                <li>· {tMethod('limitation2')}</li>
-                <li>· {tMethod('limitation3')}</li>
-                <li>· {tMethod('limitation4')}</li>
-              </ul>
-            </GlassCard>
-          </AnimateOnScroll>
+          {/* 局限性说明 — 低调内联 */}
+          <div className="mt-8 border-t border-[var(--smr-glass-border)] pt-6 text-center">
+            <p className="text-xs leading-relaxed text-smr-text-muted">
+              {tMethod('limitation1')} · {tMethod('limitation2')} · {tMethod('limitation3')} · {tMethod('limitation4')}
+            </p>
+          </div>
         </div>
       </section>
 

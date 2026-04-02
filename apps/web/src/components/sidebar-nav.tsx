@@ -22,6 +22,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
+  external?: boolean;
 }
 
 export function SidebarNav() {
@@ -34,7 +35,7 @@ export function SidebarNav() {
     { label: t('overview'), href: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: t('alertHistory'), href: '/dashboard/alerts', icon: <Zap size={18} /> },
     { label: t('walletList'), href: '/dashboard/wallets', icon: <Wallet size={18} /> },
-    { label: t('dataMethodology'), href: '/#methodology', icon: <FileText size={18} /> },
+    { label: t('dataMethodology'), href: '/#methodology', icon: <FileText size={18} />, external: true },
   ];
 
   return (
@@ -71,6 +72,7 @@ export function SidebarNav() {
             <Link
               key={item.href}
               href={item.href}
+              {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               title={collapsed ? item.label : undefined}
               className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium cursor-pointer transition-all ${
                 isActive

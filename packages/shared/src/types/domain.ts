@@ -16,6 +16,7 @@ export interface ParsedSwap {
 }
 
 export interface DexScreenerData {
+  tokenSymbol: string | null;
   liquidity: number | null;
   fdv: number | null;
   marketCap: number | null;
@@ -30,6 +31,7 @@ export interface AuthorityData {
 }
 
 export interface EnrichmentResult {
+  tokenSymbol: string | null;
   liquidity: number | null;
   fdv: number | null;
   marketCap: number | null;

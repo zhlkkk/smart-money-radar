@@ -22,6 +22,7 @@ export async function enrichToken(
   ]);
 
   return {
+    tokenSymbol: dexResult.status === 'fulfilled' ? dexResult.value.tokenSymbol : null,
     liquidity: dexResult.status === 'fulfilled' ? dexResult.value.liquidity : null,
     fdv: dexResult.status === 'fulfilled' ? dexResult.value.fdv : null,
     marketCap: dexResult.status === 'fulfilled' ? dexResult.value.marketCap : null,

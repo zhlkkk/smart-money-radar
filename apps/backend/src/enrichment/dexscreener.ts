@@ -3,6 +3,7 @@ import type { DexScreenerData } from '../types.js';
 const DEXSCREENER_BASE = 'https://api.dexscreener.com/tokens/v1/solana';
 
 interface DexScreenerPair {
+  baseToken?: { symbol?: string };
   liquidity?: { usd?: number };
   fdv?: number;
   marketCap?: number;
@@ -12,7 +13,7 @@ interface DexScreenerPair {
 }
 
 const NULL_RESULT: DexScreenerData = {
-  liquidity: null, fdv: null, marketCap: null,
+  tokenSymbol: null, liquidity: null, fdv: null, marketCap: null,
   volume24h: null, txns24h: null, pairCreatedAt: null,
 };
 
@@ -34,6 +35,7 @@ export async function fetchDexScreenerData(mintAddress: string): Promise<DexScre
     if (!bestPair) return NULL_RESULT;
 
     return {
+      tokenSymbol: bestPair.baseToken?.symbol ?? null,
       liquidity: bestPair.liquidity?.usd ?? null,
       fdv: bestPair.fdv ?? null,
       marketCap: bestPair.marketCap ?? null,

@@ -39,13 +39,13 @@ describe('fetchDexScreenerData', () => {
       new Response(JSON.stringify([]), { status: 200 }),
     );
     const result = await fetchDexScreenerData('TokenMint123');
-    expect(result).toEqual({ liquidity: null, fdv: null, marketCap: null, volume24h: null, txns24h: null, pairCreatedAt: null });
+    expect(result).toEqual({ tokenSymbol: null, liquidity: null, fdv: null, marketCap: null, volume24h: null, txns24h: null, pairCreatedAt: null });
   });
 
   it('returns all nulls on network error', async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
     const result = await fetchDexScreenerData('TokenMint123');
-    expect(result).toEqual({ liquidity: null, fdv: null, marketCap: null, volume24h: null, txns24h: null, pairCreatedAt: null });
+    expect(result).toEqual({ tokenSymbol: null, liquidity: null, fdv: null, marketCap: null, volume24h: null, txns24h: null, pairCreatedAt: null });
   });
 
   it('returns all nulls on non-200 response', async () => {
@@ -53,7 +53,7 @@ describe('fetchDexScreenerData', () => {
       new Response('rate limited', { status: 429 }),
     );
     const result = await fetchDexScreenerData('TokenMint123');
-    expect(result).toEqual({ liquidity: null, fdv: null, marketCap: null, volume24h: null, txns24h: null, pairCreatedAt: null });
+    expect(result).toEqual({ tokenSymbol: null, liquidity: null, fdv: null, marketCap: null, volume24h: null, txns24h: null, pairCreatedAt: null });
   });
 
   it('extracts volume, txns, and pairCreatedAt from best pair', async () => {

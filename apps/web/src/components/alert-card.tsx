@@ -56,20 +56,38 @@ export function AlertCard({ alert, defaultExpanded = true }: AlertCardProps) {
           </span>
         </div>
 
-        {/* 代币信息 */}
+        {/* 代币信息 + 外链 */}
         <div className="mb-3 flex items-center gap-3">
           <span className="font-data text-base font-bold text-[var(--smr-accent-cyan)]">
-            {alert.tokenSymbol ?? '未知代币'}
+            {alert.tokenSymbol ?? truncateAddress(alert.tokenMint)}
           </span>
           <span className="font-data text-xs text-smr-text-muted">
             {truncateAddress(alert.tokenMint)}
           </span>
+          <div className="ml-auto flex items-center gap-2">
+            <a
+              href={`https://birdeye.so/token/${alert.tokenMint}?chain=solana`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex cursor-pointer items-center gap-1 text-[10px] text-smr-text-muted transition hover:text-[var(--smr-accent-cyan)]"
+            >
+              Birdeye <ExternalLink size={10} />
+            </a>
+            <a
+              href={`https://dexscreener.com/solana/${alert.tokenMint}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex cursor-pointer items-center gap-1 text-[10px] text-smr-text-muted transition hover:text-[var(--smr-accent-cyan)]"
+            >
+              DexScreener <ExternalLink size={10} />
+            </a>
+          </div>
         </div>
 
         {/* 指标行 */}
         <div className="mb-3 grid grid-cols-3 gap-3">
           <div>
-            <div className="text-[10px] text-smr-text-muted">流动性</div>
+            <div className="text-[10px] text-smr-text-muted">Liquidity</div>
             <div className="font-data text-sm font-medium text-smr-text">
               ${formatCompact(alert.liquidity)}
             </div>
@@ -81,7 +99,7 @@ export function AlertCard({ alert, defaultExpanded = true }: AlertCardProps) {
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-smr-text-muted">市值</div>
+            <div className="text-[10px] text-smr-text-muted">Market Cap</div>
             <div className="font-data text-sm font-medium text-smr-text">
               ${formatCompact(alert.marketCap)}
             </div>

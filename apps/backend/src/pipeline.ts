@@ -90,6 +90,9 @@ export function createPipeline(config: PipelineConfig) {
 
     const enrichment = await enrichToken(swap.tokenMint, config.rpc);
 
+    // 用 DexScreener 的 tokenSymbol 补充 Helius 解析可能缺失的 symbol
+    const tokenSymbol = swap.tokenSymbol ?? enrichment.tokenSymbol ?? null;
+
     // 质量过滤 — 跳过低质量代币以减少噪音
     if (!passesQualityFilter(enrichment)) return;
 
@@ -98,7 +101,7 @@ export function createPipeline(config: PipelineConfig) {
 
     const aiSummary = await generateAttribution(
       {
-        tokenSymbol: swap.tokenSymbol,
+        tokenSymbol,
         tokenMint: swap.tokenMint,
         liquidity: enrichment.liquidity,
         fdv: enrichment.fdv,
@@ -123,7 +126,7 @@ export function createPipeline(config: PipelineConfig) {
       walletAddress: swap.buyerAddress,
       walletLabel: wallet.label,
       tokenMint: swap.tokenMint,
-      tokenSymbol: swap.tokenSymbol ?? null,
+      tokenSymbol,
       dexSource: swap.dexSource,
       liquidity: enrichment.liquidity,
       fdv: enrichment.fdv,

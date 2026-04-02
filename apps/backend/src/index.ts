@@ -19,6 +19,10 @@ import { registerCheckoutRoutes } from './stripe/checkout.js';
 import { registerPaddleWebhookRoutes } from './stripe/webhook.js';
 import { registerHelioWebhookRoutes } from './helio/webhook.js';
 import { telegramWebhookPlugin } from './telegram/webhook.js';
+import { handleBindCommand } from './telegram/bind.js';
+import { generateBindCode } from './telegram/bind-codes.js';
+import { telegramBindings } from '@radar/db';
+import { eq } from 'drizzle-orm';
 import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
@@ -157,12 +161,51 @@ if (env.HELIO_WEBHOOK_SHARED_TOKEN && db) {
 
 // Telegram Bot Webhook（Phase 3 — 双向交互：命令 + 加入请求）
 if (env.TELEGRAM_WEBHOOK_SECRET && env.TELEGRAM_BOT_TOKEN) {
+  const inviteLink = env.TELEGRAM_INVITE_LINK ?? '';
   app.register(telegramWebhookPlugin({
     secretToken: env.TELEGRAM_WEBHOOK_SECRET,
-    onMessage: async () => {}, // Unit 3 填充
+    onMessage: async (update) => {
+      if (db) {
+        await handleBindCommand(update, db, env.TELEGRAM_BOT_TOKEN, inviteLink);
+      }
+    },
     onChatJoinRequest: async () => {}, // Unit 4 填充
   }));
   app.log.info('Telegram Bot webhook route registered');
+}
+
+// Telegram 绑定 REST API（Phase 3 — Dashboard 获取验证码 + 查询绑定状态）
+if (db) {
+  app.get('/api/v1/telegram/bind-code', async (request, reply) => {
+    const { clerkUserId } = request.query as { clerkUserId?: string };
+    if (!clerkUserId) {
+      return reply.code(400).send({ error: 'Missing clerkUserId query parameter' });
+    }
+    const code = generateBindCode(clerkUserId);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    return reply.send({ code, expiresAt });
+  });
+
+  app.get('/api/v1/telegram/status', async (request, reply) => {
+    const { clerkUserId } = request.query as { clerkUserId?: string };
+    if (!clerkUserId) {
+      return reply.code(400).send({ error: 'Missing clerkUserId query parameter' });
+    }
+    const rows = await db
+      .select()
+      .from(telegramBindings)
+      .where(eq(telegramBindings.clerkUserId, clerkUserId));
+
+    if (rows.length === 0) {
+      return reply.send({ status: 'not_bound' });
+    }
+    const binding = rows[0]!;
+    // TODO: Unit 4 加入请求审批后可区分 bound_not_subscribed vs bound_and_subscribed
+    return reply.send({
+      status: 'bound_not_subscribed',
+      telegramUsername: binding.telegramUsername ?? undefined,
+    });
+  });
 }
 
 // SSE 实时告警推送（无需鉴权，只读事件流）

@@ -3,6 +3,7 @@
 import { getAlerts } from '@/lib/backend-client';
 import { AlertCard } from '@/components/alert-card';
 import { LoadMoreAlerts } from '@/components/load-more-alerts';
+import { RealtimeAlerts } from '@/components/realtime-alerts';
 import { EmptyState } from '@/components/ui/empty-state';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -24,6 +25,9 @@ export default async function AlertsPage() {
           </span>
         )}
       </div>
+
+      {/* 实时告警流 */}
+      <RealtimeAlerts className="mb-6" />
 
       {alerts.length === 0 ? (
         <EmptyState

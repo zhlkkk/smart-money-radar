@@ -9,6 +9,7 @@ import { registerWebhookRoutes } from './webhook/handler.js';
 import { registerAlertsRoutes } from './api/alerts.js';
 import { registerWalletsRoutes } from './api/wallets.js';
 import { registerHealthRoutes } from './api/health.js';
+import { registerAlertsStreamRoute } from './api/alerts-stream.js';
 import { registerApiAuthPlugin } from './api/auth.js';
 import { createPoolClient } from '@radar/db';
 import { syncTrackedWallets } from './persistence/wallets.js';
@@ -152,6 +153,9 @@ if (env.HELIO_WEBHOOK_SHARED_TOKEN && db) {
   });
   app.log.info('Helio Pay webhook route registered');
 }
+
+// SSE 实时告警推送（无需鉴权，只读事件流）
+registerAlertsStreamRoute(app);
 
 // Sentry: capture all Fastify route errors (not just unhandled process errors)
 if (env.SENTRY_DSN) {

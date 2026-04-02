@@ -9,6 +9,7 @@ import { formatAlert } from './telegram/format.js';
 import { sendAlert } from './telegram/bot.js';
 import { persistAlert } from './persistence/alerts.js';
 import type { EnrichmentResult, RiskAssessment } from './types.js';
+import { alertBus } from './events.js';
 
 // 质量过滤最低阈值
 const MIN_LIQUIDITY = 5_000;       // $5K — 低于此值无法退出仓位
@@ -114,6 +115,24 @@ export function createPipeline(config: PipelineConfig) {
       },
       config.llmConfig,
     );
+
+    // 广播告警事件到 SSE 连接
+    alertBus.emit('alert', {
+      id: swap.signature,
+      signature: swap.signature,
+      walletAddress: swap.buyerAddress,
+      walletLabel: wallet.label,
+      tokenMint: swap.tokenMint,
+      tokenSymbol: swap.tokenSymbol ?? null,
+      dexSource: swap.dexSource,
+      liquidity: enrichment.liquidity,
+      fdv: enrichment.fdv,
+      marketCap: enrichment.marketCap,
+      mintAuthority: enrichment.mintAuthority,
+      freezeAuthority: enrichment.freezeAuthority,
+      aiSummary,
+      createdAt: new Date().toISOString(),
+    });
 
     const html = formatAlert({ wallet, swap, enrichment, riskAssessment, aiSummary });
 

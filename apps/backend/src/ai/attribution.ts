@@ -111,16 +111,55 @@ class RetryableError extends Error {
   constructor(message: string) { super(message); }
 }
 
+// ─── AI 归因缓存 ───
+// 同一代币 10 分钟内返回缓存，LRU 驱逐最多 500 条
+
+interface CacheEntry {
+  summary: string;
+  cachedAt: number;
+}
+
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 分钟
+const CACHE_MAX_SIZE = 500;
+
+const attributionCache = new Map<string, CacheEntry>();
+
+export function clearAttributionCache(): void {
+  attributionCache.clear();
+}
+
 export async function generateAttribution(
   input: AttributionInput,
   llmConfig: LLMConfig,
   timeoutMs = 3000,
 ): Promise<string> {
+  const cacheKey = input.tokenMint;
+
+  // 检查缓存
+  const cached = attributionCache.get(cacheKey);
+  if (cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
+    console.log('[attribution] cache hit', { tokenMint: cacheKey });
+    return cached.summary;
+  }
+
   const prompt = buildPrompt(input);
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      return await callLLM(prompt, llmConfig, timeoutMs);
+      const summary = await callLLM(prompt, llmConfig, timeoutMs);
+
+      // 只缓存非空结果
+      if (summary) {
+        // LRU 驱逐：超过上限时删除最早的条目
+        if (attributionCache.size >= CACHE_MAX_SIZE) {
+          const oldestKey = attributionCache.keys().next().value;
+          if (oldestKey !== undefined) attributionCache.delete(oldestKey);
+        }
+        attributionCache.set(cacheKey, { summary, cachedAt: Date.now() });
+        console.log('[attribution] cache miss — stored', { tokenMint: cacheKey });
+      }
+
+      return summary;
     } catch (err) {
       if (err instanceof RetryableError && attempt === 0) {
         await new Promise((r) => setTimeout(r, 1000));

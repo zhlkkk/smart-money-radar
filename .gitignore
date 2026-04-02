@@ -147,5 +147,8 @@ vite.config.ts.timestamp-*
 # Claude Code
 .claude/
 
+# Serena MCP
+.serena/
+
 # Vercel
 .vercel/

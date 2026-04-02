@@ -5,6 +5,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { Lock } from 'lucide-react';
 import { SidebarNav } from '@/components/sidebar-nav';
+import { getTranslations } from 'next-intl/server';
 
 export default async function DashboardLayout({
   children,
@@ -27,23 +28,25 @@ export default async function DashboardLayout({
   );
 }
 
-function Paywall() {
+async function Paywall() {
+  const t = await getTranslations('paywall');
+
   return (
     <div className="flex h-full items-center justify-center">
       <div className="glass-card flex flex-col items-center gap-4 p-8 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--smr-accent-cyan)]/10">
           <Lock size={24} className="text-[var(--smr-accent-cyan)]" />
         </div>
-        <h2 className="text-xl font-bold text-smr-text">需要订阅才能查看</h2>
+        <h2 className="text-xl font-bold text-smr-text">{t('title')}</h2>
         <p className="max-w-sm text-sm text-smr-text-muted">
-          升级到 Pro 计划，解锁实时聪明钱告警、钱包追踪和 AI 分析。
+          {t('description')}
         </p>
         <Link
           href="/pricing"
           className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-6 py-2.5 font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
           style={{ boxShadow: 'var(--smr-glow-cyan)', transition: 'all var(--smr-transition-normal)' }}
         >
-          升级订阅
+          {t('cta')}
         </Link>
       </div>
     </div>

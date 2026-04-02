@@ -5,6 +5,7 @@
 import { useState, useTransition } from 'react';
 import type { AlertRow } from '@/lib/backend-client';
 import { AlertCard } from './alert-card';
+import { useTranslations } from 'next-intl';
 
 interface LoadMoreAlertsProps {
   initialCursor: string | null;
@@ -15,6 +16,7 @@ export function LoadMoreAlerts({
   initialCursor,
   initialHasMore,
 }: LoadMoreAlertsProps) {
+  const t = useTranslations('alerts');
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -68,7 +70,7 @@ export function LoadMoreAlerts({
       {/* 错误提示 */}
       {error && (
         <div className="glass-card mt-4 border-[var(--smr-accent-red)]/30 px-4 py-2.5 text-center text-sm text-[var(--smr-accent-red)]">
-          加载失败，请重试
+          {t('loadFailed')}
         </div>
       )}
 
@@ -80,7 +82,7 @@ export function LoadMoreAlerts({
           className="glass-card mt-4 w-full cursor-pointer py-2.5 text-center text-sm text-smr-text-muted transition hover:border-[var(--smr-border-hover)] hover:text-[var(--smr-accent-cyan)] disabled:opacity-50"
           style={{ transition: 'all var(--smr-transition-fast)' }}
         >
-          {isPending ? '加载中...' : error ? '重试' : '加载更多'}
+          {isPending ? t('loadingMore') : error ? t('retry') : t('loadMore')}
         </button>
       )}
     </>

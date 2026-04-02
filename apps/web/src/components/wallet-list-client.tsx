@@ -6,6 +6,7 @@ import type { WalletRow } from '@/lib/backend-client';
 import { WalletCard } from '@/components/wallet-card';
 import { GlassCard } from '@/components/ui/glass-card';
 import { LayoutGrid, List, ArrowUpDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type SortKey = 'score' | 'pnl' | 'winRate';
 type SourceFilter = 'all' | 'pinned' | 'discovered';
@@ -16,6 +17,7 @@ interface WalletListClientProps {
 }
 
 export function WalletListClient({ wallets }: WalletListClientProps) {
+  const t = useTranslations('wallets');
   const [sortBy, setSortBy] = useState<SortKey>('score');
   const [source, setSource] = useState<SourceFilter>('all');
   const [view, setView] = useState<ViewMode>('grid');
@@ -49,15 +51,15 @@ export function WalletListClient({ wallets }: WalletListClientProps) {
             onChange={(e) => setSortBy(e.target.value as SortKey)}
             className="cursor-pointer rounded-md border border-[var(--smr-glass-border)] bg-[var(--smr-bg-elevated)] px-3 py-1.5 text-xs text-smr-text outline-none focus:border-[var(--smr-accent-cyan)]"
           >
-            <option value="score">评分排序</option>
-            <option value="pnl">PNL 排序</option>
-            <option value="winRate">胜率排序</option>
+            <option value="score">{t('sortScore')}</option>
+            <option value="pnl">{t('sortPnl')}</option>
+            <option value="winRate">{t('sortWinRate')}</option>
           </select>
         </div>
 
         {/* 来源筛选 */}
         <div className="flex gap-1">
-          {([['all', '全部'], ['pinned', '人工'], ['discovered', '自动']] as const).map(
+          {([['all', t('filterAll')], ['pinned', t('filterPinned')], ['discovered', t('filterDiscovered')]] as [SourceFilter, string][]).map(
             ([key, label]) => (
               <button
                 key={key}
@@ -99,7 +101,7 @@ export function WalletListClient({ wallets }: WalletListClientProps) {
 
       {/* 结果数 */}
       <div className="mb-4 text-xs text-smr-text-muted">
-        显示 {filtered.length} 个钱包
+        {t('showing', { count: filtered.length })}
       </div>
 
       {/* 钱包列表 */}

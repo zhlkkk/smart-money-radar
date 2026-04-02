@@ -6,6 +6,7 @@
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { Lock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface SubscriptionGuardProps {
 
 export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
   const { user, isLoaded } = useUser();
+  const t = useTranslations('paywall');
 
   if (!isLoaded) {
     return <>{children}</>;
@@ -34,16 +36,16 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--smr-accent-cyan)]/10">
               <Lock size={24} className="text-[var(--smr-accent-cyan)]" />
             </div>
-            <h2 className="text-xl font-bold text-smr-text">需要订阅才能查看</h2>
+            <h2 className="text-xl font-bold text-smr-text">{t('title')}</h2>
             <p className="max-w-sm text-sm text-smr-text-muted">
-              升级到 Pro 计划，解锁实时聪明钱告警、钱包追踪和 AI 分析。
+              {t('description')}
             </p>
             <Link
               href="/pricing"
               className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-6 py-2.5 font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
               style={{ boxShadow: 'var(--smr-glow-cyan)', transition: 'all var(--smr-transition-normal)' }}
             >
-              升级订阅
+              {t('cta')}
             </Link>
           </div>
         </div>

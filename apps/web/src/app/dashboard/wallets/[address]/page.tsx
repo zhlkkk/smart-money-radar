@@ -16,6 +16,7 @@ import {
 } from '@/lib/format';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 interface WalletDetailPageProps {
   params: Promise<{ address: string }>;
@@ -26,6 +27,7 @@ export default async function WalletDetailPage({
 }: WalletDetailPageProps) {
   const { address } = await params;
   const result = await getWalletDetail(address);
+  const t = await getTranslations('wallets');
 
   if (!result) {
     notFound();
@@ -46,7 +48,7 @@ export default async function WalletDetailPage({
         className="mb-6 inline-flex cursor-pointer items-center gap-1 text-sm text-smr-text-muted transition hover:text-smr-text"
       >
         <ArrowLeft size={14} />
-        返回钱包列表
+        {t('backToList')}
       </Link>
 
       {/* 头部 */}
@@ -58,7 +60,7 @@ export default async function WalletDetailPage({
               {wallet.label ?? truncateAddress(wallet.address)}
             </h1>
             <Badge variant={wallet.source === 'pinned' ? 'cyan' : 'green'} size="md">
-              {wallet.source === 'pinned' ? '人工标记' : '自动发现'}
+              {wallet.source === 'pinned' ? t('pinned') : t('discovered')}
             </Badge>
           </div>
           <p className="font-data mt-1 text-sm text-smr-text-muted">{wallet.address}</p>
@@ -73,7 +75,7 @@ export default async function WalletDetailPage({
       {/* 指标卡片 */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <GlassCard className="p-4" hover={false}>
-          <div className="text-xs text-smr-text-muted">综合评分</div>
+          <div className="text-xs text-smr-text-muted">{t('score')}</div>
           <div className="font-data mt-1 text-xl font-bold text-[var(--smr-accent-cyan)]">
             {wallet.compositeScore != null
               ? wallet.compositeScore.toFixed(1)
@@ -81,19 +83,19 @@ export default async function WalletDetailPage({
           </div>
         </GlassCard>
         <GlassCard className="p-4" hover={false}>
-          <div className="text-xs text-smr-text-muted">胜率</div>
+          <div className="text-xs text-smr-text-muted">{t('winRate')}</div>
           <div className="font-data mt-1 text-xl font-bold text-smr-text">
             {formatPercent(wallet.winRate)}
           </div>
         </GlassCard>
         <GlassCard className="p-4" hover={false}>
-          <div className="text-xs text-smr-text-muted">PNL</div>
+          <div className="text-xs text-smr-text-muted">{t('pnl')}</div>
           <div className={`font-data mt-1 text-xl font-bold ${pnlColor}`}>
             {formatPnl(wallet.pnl)}
           </div>
         </GlassCard>
         <GlassCard className="p-4" hover={false}>
-          <div className="text-xs text-smr-text-muted">交易次数</div>
+          <div className="text-xs text-smr-text-muted">{t('trades')}</div>
           <div className="font-data mt-1 text-xl font-bold text-smr-text">
             {wallet.tradeCount != null ? String(wallet.tradeCount) : '-'}
           </div>
@@ -101,11 +103,11 @@ export default async function WalletDetailPage({
       </div>
 
       {/* 关联告警 */}
-      <h2 className="mb-4 text-lg font-medium text-smr-text-secondary">近期告警</h2>
+      <h2 className="mb-4 text-lg font-medium text-smr-text-secondary">{t('recentAlerts')}</h2>
       {recentAlerts.length === 0 ? (
         <EmptyState
-          title="暂无关联告警"
-          description="该钱包尚未触发交易告警"
+          title={t('noAlerts')}
+          description={t('noAlertsDesc')}
         />
       ) : (
         <div className="flex flex-col gap-3">

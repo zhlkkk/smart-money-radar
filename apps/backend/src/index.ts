@@ -157,6 +157,7 @@ if (env.HELIO_WEBHOOK_SHARED_TOKEN && db) {
   registerHelioWebhookRoutes(app, {
     sharedToken: env.HELIO_WEBHOOK_SHARED_TOKEN,
     db,
+    clerkSecretKey: env.CLERK_SECRET_KEY,
   });
   app.log.info('Helio Pay webhook route registered');
 }

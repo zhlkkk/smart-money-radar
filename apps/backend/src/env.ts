@@ -32,6 +32,9 @@ const envSchema = z.object({
   // Helio Pay (Phase 2) — crypto payment via Solana
   HELIO_WEBHOOK_SHARED_TOKEN: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 
+  // Clerk (Phase 2b) — 后端 → Clerk API（更新 publicMetadata）
+  CLERK_SECRET_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+
   // Backend API key (Phase 2b) — for frontend->backend authenticated calls
   BACKEND_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 

@@ -11,6 +11,7 @@ import {
   Wallet,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { StatusPulse } from '@/components/ui/status-pulse';
@@ -33,6 +34,7 @@ export function SidebarNav() {
     { label: t('overview'), href: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: t('alertHistory'), href: '/dashboard/alerts', icon: <Zap size={18} /> },
     { label: t('walletList'), href: '/dashboard/wallets', icon: <Wallet size={18} /> },
+    { label: t('dataMethodology'), href: '/#methodology', icon: <FileText size={18} /> },
   ];
 
   return (

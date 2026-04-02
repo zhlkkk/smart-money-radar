@@ -193,7 +193,8 @@
     "alertHistory": "告警历史",
     "walletList": "钱包列表",
     "collapse": "折叠侧边栏",
-    "expand": "展开侧边栏"
+    "expand": "展开侧边栏",
+    "dataMethodology": "数据说明"
   },
   "wallets": {
     "title": "钱包列表",

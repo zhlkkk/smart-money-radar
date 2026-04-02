@@ -193,7 +193,8 @@
     "alertHistory": "Alert History",
     "walletList": "Wallet List",
     "collapse": "Collapse sidebar",
-    "expand": "Expand sidebar"
+    "expand": "Expand sidebar",
+    "dataMethodology": "Data Sources"
   },
   "wallets": {
     "title": "Wallet List",

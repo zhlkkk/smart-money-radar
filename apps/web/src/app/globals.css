@@ -69,8 +69,8 @@
   --color-smr-glass-bg: var(--smr-glass-bg);
   --color-smr-glass-border: var(--smr-glass-border);
 
-  --font-heading: var(--font-space-grotesk);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-heading: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 /* ─── 全局基础样式 ─── */
@@ -78,12 +78,12 @@
 body {
   background: var(--smr-bg-primary);
   color: var(--smr-text-primary);
-  font-family: var(--font-heading), system-ui, sans-serif;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
 }
 
 /* 数据/数字强制等宽 + tabular-nums */
 .font-data {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
 

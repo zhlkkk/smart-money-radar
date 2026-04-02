@@ -11,6 +11,8 @@
   "dependencies": {
     "@clerk/nextjs": "^6",
     "@clerk/themes": "^2",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/space-grotesk": "^5.2.10",
     "@radar/db": "workspace:*",
     "@radar/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",

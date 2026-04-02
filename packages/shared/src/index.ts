@@ -13,6 +13,10 @@ export type {
   WalletStateRef,
   AlertData,
   WalletCandidate,
+  RiskLevel,
+  RiskAssessment,
+  ConfidenceLevel,
+  ConfidenceResult,
 } from './types/domain';
 
 export type { PaginatedResponse } from './types/api';

@@ -10,6 +10,7 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { ScoreRing } from '@/components/ui/score-ring';
 import { MiniPieChart } from '@/components/ui/mini-pie-chart';
 import { Badge } from '@/components/ui/badge';
+import { useTranslations } from 'next-intl';
 
 interface WalletCardProps {
   wallet: WalletRow;
@@ -17,6 +18,8 @@ interface WalletCardProps {
 }
 
 export function WalletCard({ wallet, view = 'grid' }: WalletCardProps) {
+  const t = useTranslations('wallets');
+
   const pnlColor =
     wallet.pnl == null
       ? 'text-smr-text-muted'
@@ -25,7 +28,7 @@ export function WalletCard({ wallet, view = 'grid' }: WalletCardProps) {
         : 'text-[var(--smr-accent-red)]';
 
   const sourceVariant = wallet.source === 'pinned' ? 'cyan' : 'green';
-  const sourceLabel = wallet.source === 'pinned' ? '人工标记' : '自动发现';
+  const sourceLabel = wallet.source === 'pinned' ? t('pinned') : t('discovered');
 
   if (view === 'list') {
     return (
@@ -47,15 +50,15 @@ export function WalletCard({ wallet, view = 'grid' }: WalletCardProps) {
           </div>
           <div className="flex items-center gap-6 text-right">
             <div>
-              <div className="text-[10px] text-smr-text-muted">胜率</div>
+              <div className="text-[10px] text-smr-text-muted">{t('winRate')}</div>
               <div className="font-data text-sm text-smr-text">{formatPercent(wallet.winRate)}</div>
             </div>
             <div>
-              <div className="text-[10px] text-smr-text-muted">PNL</div>
+              <div className="text-[10px] text-smr-text-muted">{t('pnl')}</div>
               <div className={`font-data text-sm font-medium ${pnlColor}`}>{formatPnl(wallet.pnl)}</div>
             </div>
             <div>
-              <div className="text-[10px] text-smr-text-muted">交易</div>
+              <div className="text-[10px] text-smr-text-muted">{t('trades')}</div>
               <div className="font-data text-sm text-smr-text">{wallet.tradeCount ?? '-'}</div>
             </div>
           </div>
@@ -86,7 +89,7 @@ export function WalletCard({ wallet, view = 'grid' }: WalletCardProps) {
         <div className="mb-4 flex items-center justify-around">
           <div className="flex flex-col items-center">
             <ScoreRing score={wallet.compositeScore} size={52} />
-            <span className="mt-1 text-[10px] text-smr-text-muted">评分</span>
+            <span className="mt-1 text-[10px] text-smr-text-muted">{t('score')}</span>
           </div>
           <div className="flex flex-col items-center">
             <MiniPieChart
@@ -94,22 +97,22 @@ export function WalletCard({ wallet, view = 'grid' }: WalletCardProps) {
               size={48}
               color="var(--smr-accent-green)"
             />
-            <span className="mt-1 text-[10px] text-smr-text-muted">胜率</span>
+            <span className="mt-1 text-[10px] text-smr-text-muted">{t('winRate')}</span>
           </div>
         </div>
 
         {/* PNL + 交易次数 */}
         <div className="grid grid-cols-2 gap-3 border-t border-[var(--smr-glass-border)] pt-3">
           <div>
-            <div className="text-[10px] text-smr-text-muted">PNL</div>
+            <div className="text-[10px] text-smr-text-muted">{t('pnl')}</div>
             <div className={`font-data text-sm font-medium ${pnlColor}`}>
               {formatPnl(wallet.pnl)}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-smr-text-muted">交易次数</div>
+            <div className="text-[10px] text-smr-text-muted">{t('trades')}</div>
             <div className="font-data text-sm text-smr-text">
-              {wallet.tradeCount ?? <span className="text-smr-text-muted">等待数据</span>}
+              {wallet.tradeCount ?? <span className="text-smr-text-muted">{t('waitingData')}</span>}
             </div>
           </div>
         </div>

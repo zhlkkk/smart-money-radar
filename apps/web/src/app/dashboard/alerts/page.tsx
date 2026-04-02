@@ -5,33 +5,36 @@ import { AlertCard } from '@/components/alert-card';
 import { LoadMoreAlerts } from '@/components/load-more-alerts';
 import { EmptyState } from '@/components/ui/empty-state';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AlertsPage() {
   const { data: alerts, cursor, hasMore } = await getAlerts(undefined, 20);
+  const t = await getTranslations('alerts');
+  const tCommon = await getTranslations('common');
 
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-smr-text">告警历史</h1>
+        <h1 className="text-2xl font-bold text-smr-text">{t('title')}</h1>
         {alerts.length > 0 && (
           <span className="font-data text-sm text-smr-text-muted">
-            最新 {alerts.length} 条
+            {t('latest', { count: alerts.length })}
           </span>
         )}
       </div>
 
       {alerts.length === 0 ? (
         <EmptyState
-          title="暂无告警记录"
-          description="系统正在监控聪明钱动态，有新交易时会自动推送告警到这里和 Telegram。"
+          title={t('emptyTitle')}
+          description={t('emptyDesc')}
           action={
             <Link
               href="/dashboard"
               className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-5 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
             >
-              返回控制台
+              {tCommon('enterDashboard')}
             </Link>
           }
         />

@@ -549,8 +549,8 @@ export default function HomePage() {
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
           {securityFeatures.map((item, i) => (
-            <AnimateOnScroll key={item.title} animation="fade-up" delay={i * 100}>
-            <GlassCard className="flex items-start gap-4 p-5" hover>
+            <AnimateOnScroll key={item.title} animation="fade-up" delay={i * 100} className="h-full">
+            <GlassCard className="flex h-full items-start gap-4 p-5" hover>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
                 <span className="text-[var(--smr-accent-green)]">{item.icon}</span>
               </div>

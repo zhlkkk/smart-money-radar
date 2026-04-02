@@ -5,6 +5,7 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { GridBackground } from '@/components/ui/grid-background';
 import { Badge } from '@/components/ui/badge';
 import { HelioCheckoutButton } from '@/components/helio-checkout';
+import { getTranslations } from 'next-intl/server';
 
 export const metadata = {
   title: '定价 - Smart Money Radar',
@@ -19,8 +20,9 @@ const featureTranslations: Record<string, string> = {
   'Tracked wallet details and scoring': '追踪钱包详情与评分',
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
   const proPlan = PLANS.pro;
+  const t = await getTranslations();
 
   return (
     <main className="relative flex min-h-screen flex-col items-center px-4 py-16">
@@ -31,14 +33,14 @@ export default function PricingPage() {
         className="relative mb-12 inline-flex cursor-pointer items-center gap-1 text-sm text-smr-text-muted transition hover:text-smr-text"
       >
         <ArrowLeft size={14} />
-        返回首页
+        {t('common.backToHome')}
       </Link>
 
       <h1 className="relative mb-4 text-4xl font-bold tracking-tight text-smr-text">
-        选择你的计划
+        {t('pricing.title')}
       </h1>
       <p className="relative mb-12 max-w-md text-center text-smr-text-secondary">
-        解锁 Solana 聪明钱实时追踪，让 AI 帮你看懂每一笔交易
+        {t('pricing.subtitle')}
       </p>
 
       {/* 套餐卡片 */}
@@ -69,8 +71,8 @@ export default function PricingPage() {
           <div>
             <div className="mb-2 flex items-center gap-2">
               <Wallet size={14} className="text-[var(--smr-accent-cyan)]" />
-              <span className="text-xs font-medium text-smr-text-secondary">加密货币支付</span>
-              <Badge variant="green" size="sm">推荐</Badge>
+              <span className="text-xs font-medium text-smr-text-secondary">{t('pricing.cryptoPay')}</span>
+              <Badge variant="green" size="sm">{t('pricing.recommended')}</Badge>
             </div>
             <HelioCheckoutButton />
           </div>
@@ -79,31 +81,31 @@ export default function PricingPage() {
           <div>
             <div className="mb-2 flex items-center gap-2">
               <CreditCard size={14} className="text-smr-text-muted" />
-              <span className="text-xs font-medium text-smr-text-muted">信用卡支付</span>
+              <span className="text-xs font-medium text-smr-text-muted">{t('pricing.cardPay')}</span>
               <Badge variant="muted" size="sm">
                 <Clock size={10} className="mr-1" />
-                即将开放
+                {t('pricing.comingSoon')}
               </Badge>
             </div>
             <button
               disabled
               className="w-full cursor-not-allowed rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-bg-elevated)] py-3 text-sm text-smr-text-muted opacity-50"
             >
-              信用卡 / PayPal（审核中）
+              {t('pricing.cardDisabled')}
             </button>
           </div>
         </div>
       </GlassCard>
 
       <p className="relative mt-8 max-w-sm text-center text-xs text-smr-text-muted">
-        加密支付由 Helio (MoonPay Commerce) 安全处理。支持 USDC、SOL 等 Solana 链上资产。
+        {t('pricing.helioNote')}
       </p>
 
       {/* 底部链接 */}
       <div className="relative mt-6 flex gap-4 text-xs text-smr-text-muted">
-        <Link href="/terms" className="cursor-pointer transition hover:text-smr-text">服务条款</Link>
-        <Link href="/privacy" className="cursor-pointer transition hover:text-smr-text">隐私政策</Link>
-        <Link href="/refund" className="cursor-pointer transition hover:text-smr-text">退款政策</Link>
+        <Link href="/terms" className="cursor-pointer transition hover:text-smr-text">{t('footer.terms')}</Link>
+        <Link href="/privacy" className="cursor-pointer transition hover:text-smr-text">{t('footer.privacy')}</Link>
+        <Link href="/refund" className="cursor-pointer transition hover:text-smr-text">{t('footer.refund')}</Link>
       </div>
     </main>
   );

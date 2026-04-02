@@ -12,8 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { StatusPulse } from '@/components/ui/status-pulse';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { LocaleToggle } from '@/components/ui/locale-toggle';
 
 interface NavItem {
   label: string;
@@ -21,15 +23,17 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { label: '总览', href: '/dashboard', icon: <LayoutDashboard size={18} /> },
-  { label: '告警历史', href: '/dashboard/alerts', icon: <Zap size={18} /> },
-  { label: '钱包列表', href: '/dashboard/wallets', icon: <Wallet size={18} /> },
-];
-
 export function SidebarNav() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const t = useTranslations('sidebar');
+  const tCommon = useTranslations('common');
+
+  const navItems: NavItem[] = [
+    { label: t('overview'), href: '/dashboard', icon: <LayoutDashboard size={18} /> },
+    { label: t('alertHistory'), href: '/dashboard/alerts', icon: <Zap size={18} /> },
+    { label: t('walletList'), href: '/dashboard/wallets', icon: <Wallet size={18} /> },
+  ];
 
   return (
     <aside
@@ -83,7 +87,7 @@ export function SidebarNav() {
       {/* 系统状态 */}
       <div className="border-t border-[var(--smr-glass-border)] px-3 py-3">
         {!collapsed ? (
-          <StatusPulse status="ok" label="系统正常" />
+          <StatusPulse status="ok" label={tCommon('systemNormal')} />
         ) : (
           <StatusPulse status="ok" />
         )}
@@ -99,11 +103,16 @@ export function SidebarNav() {
           }}
         />
         <div className="flex items-center gap-1">
-          {!collapsed && <ThemeToggle size={14} />}
+          {!collapsed && (
+            <>
+              <LocaleToggle />
+              <ThemeToggle size={14} />
+            </>
+          )}
           <button
             onClick={() => setCollapsed((c) => !c)}
             className="cursor-pointer rounded p-1 text-smr-text-muted transition-colors hover:bg-[var(--smr-bg-hover)] hover:text-smr-text"
-            aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+            aria-label={collapsed ? t('expand') : t('collapse')}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>

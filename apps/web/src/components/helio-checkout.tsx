@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Wallet } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 // 动态加载 Helio widget（仅客户端，避免 SSR 问题）
 const HelioCheckout = dynamic(
@@ -19,6 +20,7 @@ const HELIO_PAYLINK_ID = process.env.NEXT_PUBLIC_HELIO_PAYLINK_ID ?? '';
 export function HelioCheckoutButton() {
   const { user, isSignedIn } = useUser();
   const router = useRouter();
+  const t = useTranslations('pricing');
 
   // 未登录 → 跳转登录
   if (!isSignedIn) {
@@ -29,7 +31,7 @@ export function HelioCheckoutButton() {
         style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
       >
         <Wallet size={16} />
-        登录后使用加密货币支付
+        {t('loginFirst')}
       </button>
     );
   }
@@ -41,7 +43,7 @@ export function HelioCheckoutButton() {
         disabled
         className="w-full cursor-not-allowed rounded-lg bg-[var(--smr-accent-cyan)]/50 py-3 text-sm font-medium text-[var(--smr-bg-primary)] opacity-60"
       >
-        加密支付配置中...
+        {t('configuring')}
       </button>
     );
   }

@@ -8,6 +8,7 @@ import { formatCompact, formatRelativeTime, truncateAddress } from '@/lib/format
 import { GlassCard } from '@/components/ui/glass-card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, AlertTriangle, Brain, ExternalLink } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface AlertCardProps {
   alert: AlertRow;
@@ -20,13 +21,14 @@ function getSeverity(alert: AlertRow): Severity {
   return 'info';
 }
 
-const severityStyles: Record<Severity, { border: string; label: string; variant: 'red' | 'gold' | 'cyan' }> = {
-  high: { border: 'border-l-4 border-l-[var(--smr-accent-red)]', label: '高风险', variant: 'red' },
-  medium: { border: 'border-l-4 border-l-[var(--smr-accent-gold)]', label: '中风险', variant: 'gold' },
-  info: { border: 'border-l-4 border-l-[var(--smr-accent-cyan)]', label: '信息', variant: 'cyan' },
+const severityStyles: Record<Severity, { border: string; labelKey: 'highRisk' | 'mediumRisk' | 'info'; variant: 'red' | 'gold' | 'cyan' }> = {
+  high: { border: 'border-l-4 border-l-[var(--smr-accent-red)]', labelKey: 'highRisk', variant: 'red' },
+  medium: { border: 'border-l-4 border-l-[var(--smr-accent-gold)]', labelKey: 'mediumRisk', variant: 'gold' },
+  info: { border: 'border-l-4 border-l-[var(--smr-accent-cyan)]', labelKey: 'info', variant: 'cyan' },
 };
 
 export function AlertCard({ alert }: AlertCardProps) {
+  const t = useTranslations('alerts');
   const [expanded, setExpanded] = useState(false);
   const severity = getSeverity(alert);
   const style = severityStyles[severity];
@@ -46,7 +48,7 @@ export function AlertCard({ alert }: AlertCardProps) {
             {alert.dexSource && (
               <Badge variant="muted">{alert.dexSource}</Badge>
             )}
-            <Badge variant={style.variant}>{style.label}</Badge>
+            <Badge variant={style.variant}>{t(style.labelKey)}</Badge>
           </div>
           <span className="font-data text-xs text-smr-text-muted">
             {formatRelativeTime(alert.createdAt)}
@@ -90,7 +92,7 @@ export function AlertCard({ alert }: AlertCardProps) {
           <div className="mb-3 flex items-center gap-2 rounded-md bg-[var(--smr-accent-red)]/10 px-3 py-1.5">
             <AlertTriangle size={14} className="text-[var(--smr-accent-red)]" />
             <span className="text-xs text-[var(--smr-accent-red)]">
-              Freeze Authority 存在 — 高风险代币
+              {t('freezeWarning')}
             </span>
           </div>
         )}
@@ -104,7 +106,7 @@ export function AlertCard({ alert }: AlertCardProps) {
           >
             <Brain size={14} className="shrink-0 text-[var(--smr-accent-cyan)]" />
             <span className="flex-1">
-              {expanded ? 'AI 分析详情' : 'AI 分析详情（点击展开）'}
+              {expanded ? t('aiDetail') : t('aiDetailExpand')}
             </span>
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>

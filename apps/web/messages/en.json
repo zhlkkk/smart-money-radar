@@ -194,7 +194,11 @@
     "walletList": "Wallet List",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
-    "dataMethodology": "Data Sources"
+    "dataMethodology": "Data Sources",
+    "planPro": "Pro",
+    "planFree": "Free",
+    "upgrade": "Upgrade",
+    "renewNow": "Renew"
   },
   "wallets": {
     "title": "Wallet List",

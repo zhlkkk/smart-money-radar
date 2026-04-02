@@ -194,7 +194,11 @@
     "walletList": "钱包列表",
     "collapse": "折叠侧边栏",
     "expand": "展开侧边栏",
-    "dataMethodology": "数据说明"
+    "dataMethodology": "数据说明",
+    "planPro": "Pro",
+    "planFree": "Free",
+    "upgrade": "升级",
+    "renewNow": "续费"
   },
   "wallets": {
     "title": "钱包列表",

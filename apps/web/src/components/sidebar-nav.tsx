@@ -12,6 +12,9 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Crown,
+  Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { StatusPulse } from '@/components/ui/status-pulse';
@@ -25,7 +28,13 @@ interface NavItem {
   external?: boolean;
 }
 
-export function SidebarNav() {
+type SubscriptionDisplay = 'active' | 'past_due' | 'canceled' | undefined;
+
+interface SidebarNavProps {
+  subscriptionStatus?: string;
+}
+
+export function SidebarNav({ subscriptionStatus }: SidebarNavProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const t = useTranslations('sidebar');
@@ -87,6 +96,40 @@ export function SidebarNav() {
           );
         })}
       </nav>
+
+      {/* 订阅状态 */}
+      <div className="border-t border-[var(--smr-glass-border)] px-3 py-2.5">
+        {(() => {
+          const status = subscriptionStatus as SubscriptionDisplay;
+          const plan = status === 'active'
+            ? { Icon: Crown, color: 'var(--smr-accent-green)', label: t('planPro'), href: undefined as string | undefined }
+            : status === 'past_due'
+              ? { Icon: AlertTriangle, color: 'var(--smr-accent-gold)', label: t('renewNow'), href: '/pricing' }
+              : { Icon: Sparkles, color: undefined, label: t('planFree'), href: '/pricing', cta: t('upgrade') };
+
+          const content = (
+            <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" title={collapsed ? plan.label : undefined}>
+              <plan.Icon size={16} className={`shrink-0 ${plan.color ? `text-[${plan.color}]` : 'text-smr-text-muted'}`} style={plan.color ? { color: plan.color } : undefined} />
+              {!collapsed && (
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs font-medium ${plan.color ? '' : 'text-smr-text-muted'}`} style={plan.color ? { color: plan.color } : undefined}>
+                    {plan.label}
+                  </span>
+                  {'cta' in plan && plan.cta && (
+                    <span className="text-xs font-medium text-[var(--smr-accent-cyan)]">{plan.cta}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+
+          return plan.href ? (
+            <Link href={plan.href} className="transition-colors hover:bg-[var(--smr-bg-hover)] rounded-lg">
+              {content}
+            </Link>
+          ) : content;
+        })()}
+      </div>
 
       {/* 系统状态 */}
       <div className="border-t border-[var(--smr-glass-border)] px-3 py-3">

@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { StatusPulse } from '@/components/ui/status-pulse';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface NavItem {
   label: string;
@@ -32,7 +33,7 @@ export function SidebarNav() {
 
   return (
     <aside
-      className={`flex h-screen flex-col border-r border-[var(--smr-glass-border)] bg-[var(--smr-bg-card)] transition-[width] ${collapsed ? 'w-16' : 'w-56'}`}
+      className={`flex h-screen flex-col border-r border-[var(--smr-glass-border)] bg-[var(--smr-bg-sidebar)] transition-[width] ${collapsed ? 'w-16' : 'w-56'}`}
       style={{ transition: 'width var(--smr-transition-normal)' }}
     >
       {/* Logo */}
@@ -88,7 +89,7 @@ export function SidebarNav() {
         )}
       </div>
 
-      {/* 折叠按钮 + 用户头像 */}
+      {/* 底部工具栏 */}
       <div className="flex items-center justify-between border-t border-[var(--smr-glass-border)] px-3 py-3">
         <UserButton
           appearance={{
@@ -97,13 +98,16 @@ export function SidebarNav() {
             },
           }}
         />
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className="cursor-pointer rounded p-1 text-smr-text-muted transition-colors hover:bg-[var(--smr-bg-hover)] hover:text-smr-text"
-          aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+        <div className="flex items-center gap-1">
+          {!collapsed && <ThemeToggle size={14} />}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="cursor-pointer rounded p-1 text-smr-text-muted transition-colors hover:bg-[var(--smr-bg-hover)] hover:text-smr-text"
+            aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
       </div>
     </aside>
   );

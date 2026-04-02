@@ -14,46 +14,48 @@ export function registerStripeWebhookRoutes(
   app: FastifyInstance,
   config: StripeWebhookConfig,
 ) {
-  // Stripe sends raw body — must configure Fastify to preserve it
-  app.addContentTypeParser(
-    'application/json',
-    { parseAs: 'buffer' },
-    (_req, body, done) => {
-      done(null, body);
-    },
-  );
+  // 用 Fastify 插件封装，避免 raw body parser 污染全局
+  app.register(async function stripeWebhookPlugin(instance) {
+    // Stripe 需要 raw body 来验证签名
+    instance.addContentTypeParser(
+      'application/json',
+      { parseAs: 'buffer' },
+      (_req, body, done) => {
+        done(null, body);
+      },
+    );
 
-  app.post(
-    '/webhooks/stripe',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const signature = request.headers['stripe-signature'];
-      if (!signature) {
-        return reply.status(400).send({ error: 'Missing stripe-signature header' });
-      }
+    instance.post(
+      '/webhooks/stripe',
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        const signature = request.headers['stripe-signature'];
+        if (!signature) {
+          return reply.status(400).send({ error: 'Missing stripe-signature header' });
+        }
 
-      let event: Stripe.Event;
-      try {
-        event = config.stripe.webhooks.constructEvent(
-          request.body as Buffer,
-          signature as string,
-          config.webhookSecret,
-        );
-      } catch (err) {
-        request.log.error({ err }, 'Stripe webhook signature verification failed');
-        return reply.status(400).send({ error: 'Invalid signature' });
-      }
+        let event: Stripe.Event;
+        try {
+          event = config.stripe.webhooks.constructEvent(
+            request.body as Buffer,
+            signature as string,
+            config.webhookSecret,
+          );
+        } catch (err) {
+          request.log.error({ err }, 'Stripe webhook signature verification failed');
+          return reply.status(400).send({ error: 'Invalid signature' });
+        }
 
-      try {
-        await handleStripeEvent(event, config.db, request.log);
-      } catch (err) {
-        request.log.error({ err, eventType: event.type }, 'Stripe webhook handler failed');
-        // Return 500 so Stripe retries
-        return reply.status(500).send({ error: 'Handler failed' });
-      }
+        try {
+          await handleStripeEvent(event, config.db, request.log);
+        } catch (err) {
+          request.log.error({ err, eventType: event.type }, 'Stripe webhook handler failed');
+          return reply.status(500).send({ error: 'Handler failed' });
+        }
 
-      return reply.status(200).send({ received: true });
-    },
-  );
+        return reply.status(200).send({ received: true });
+      },
+    );
+  });
 }
 
 async function handleStripeEvent(
@@ -88,7 +90,6 @@ async function handleStripeEvent(
       break;
     }
     default:
-      // Ignore unhandled event types
       break;
   }
 }
@@ -101,13 +102,11 @@ async function handleCheckoutCompleted(
   const clerkUserId = session.metadata?.['clerkUserId'];
   if (!clerkUserId || !session.subscription) return;
 
-  // Find user by clerkId
   const user = await db.query.users.findFirst({
     where: eq(users.clerkId, clerkUserId),
   });
 
   if (!user) {
-    // Clerk webhook hasn't created user yet — throw to trigger Stripe retry
     log.error(
       { clerkUserId, sessionId: session.id },
       'Stripe checkout.session.completed: user not found, will retry',
@@ -115,7 +114,6 @@ async function handleCheckoutCompleted(
     throw new Error(`User not found for clerkUserId: ${clerkUserId}`);
   }
 
-  // Update user's stripeCustomerId
   if (session.customer && !user.stripeCustomerId) {
     const customerId =
       typeof session.customer === 'string' ? session.customer : session.customer.id;
@@ -130,7 +128,6 @@ async function handleCheckoutCompleted(
       ? session.subscription
       : session.subscription.id;
 
-  // Upsert subscription (idempotent for Stripe retries)
   await db
     .insert(subscriptions)
     .values({
@@ -139,7 +136,7 @@ async function handleCheckoutCompleted(
       stripePriceId: session.metadata?.['stripePriceId'] ?? 'unknown',
       status: 'active',
       currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // ~30 days
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       cancelAtPeriodEnd: false,
     })
     .onConflictDoNothing({ target: subscriptions.stripeSubscriptionId });

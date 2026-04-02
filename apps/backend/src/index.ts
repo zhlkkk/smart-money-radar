@@ -14,6 +14,9 @@ import { createPoolClient } from '@radar/db';
 import { syncTrackedWallets } from './persistence/wallets.js';
 import { createPipeline } from './pipeline.js';
 import { createDiscovery } from './discovery/orchestrator.js';
+import { registerCheckoutRoutes } from './stripe/checkout.js';
+import { registerStripeWebhookRoutes } from './stripe/webhook.js';
+import Stripe from 'stripe';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
 
@@ -116,6 +119,25 @@ if (db) {
   }
   registerAlertsRoutes(app, { db });
   registerWalletsRoutes(app, { db });
+}
+
+// Stripe routes (Phase 2 — 订阅支付)
+if (env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_ID && db) {
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+
+  registerCheckoutRoutes(app, {
+    stripe,
+    priceId: env.STRIPE_PRICE_ID,
+    appUrl: process.env.APP_URL ?? 'https://smart-money-radar-web.vercel.app',
+  });
+
+  registerStripeWebhookRoutes(app, {
+    stripe,
+    webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+    db,
+  });
+
+  app.log.info('Stripe checkout + webhook routes registered');
 }
 
 // Sentry: capture all Fastify route errors (not just unhandled process errors)

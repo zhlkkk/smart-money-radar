@@ -23,6 +23,8 @@ export interface DexScreenerData {
   volume24h: number | null;
   txns24h: { buys: number; sells: number } | null;
   pairCreatedAt: number | null;
+  priceUsd: number | null;
+  stale?: boolean;
 }
 
 export interface AuthorityData {
@@ -40,6 +42,7 @@ export interface EnrichmentResult {
   pairCreatedAt: number | null;
   mintAuthority: string | null | 'unchecked';
   freezeAuthority: string | null | 'unchecked';
+  priceDeviation?: number;
 }
 
 export type RiskLevel = 'high' | 'medium' | 'low';

@@ -1,0 +1,238 @@
+{
+  "common": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "startTracking": "Start Tracking",
+    "enterDashboard": "Enter Dashboard",
+    "backToHome": "Back to Home",
+    "viewPricing": "View Pricing",
+    "systemNormal": "System Normal",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "capabilities": "Capabilities",
+    "howItWorks": "How It Works",
+    "pricing": "Pricing"
+  },
+  "hero": {
+    "badge": "Live Monitoring · Solana Mainnet",
+    "title1": "On-chain Smart Money",
+    "title2": "Real-time Tracking Engine",
+    "subtitle": "Webhook capture → Multi-source enrichment → AI attribution → Instant alerts. End-to-end < 5s, giving you a 10-minute head start over retail traders.",
+    "cta1": "Sign Up Free",
+    "cta2": "How It Works"
+  },
+  "stats": {
+    "latencyValue": "< 5s",
+    "latencyLabel": "End-to-end Latency",
+    "latencySub": "Webhook → Telegram",
+    "walletsValue": "50+",
+    "walletsLabel": "Tracked Wallets",
+    "walletsSub": "Auto-discovery + Manual",
+    "uptimeValue": "24/7",
+    "uptimeLabel": "Always-on Monitoring",
+    "uptimeSub": "Zero Downtime",
+    "reliabilityValue": "99.9%",
+    "reliabilityLabel": "Message Reliability",
+    "reliabilitySub": "Graceful Degradation"
+  },
+  "capabilities": {
+    "badge": "CORE CAPABILITIES",
+    "title": "Four Core Engines",
+    "subtitle": "End-to-end automation from on-chain data capture to risk protection",
+    "signal": {
+      "title": "On-chain Signal Capture",
+      "subtitle": "On-chain Signal Capture",
+      "description": "Real-time monitoring of Solana on-chain transactions via Helius Enhanced Webhooks, capturing every swap operation from smart money wallets in milliseconds.",
+      "metric1Label": "Latency",
+      "metric1Value": "< 500ms",
+      "metric2Label": "Tx Type",
+      "metric2Value": "DEX Swap"
+    },
+    "ai": {
+      "title": "AI Attribution Engine",
+      "subtitle": "AI Attribution Engine",
+      "description": "Claude AI deep-analyzes each trade's context — token fundamentals, liquidity changes, historical patterns — generating a concise 50-word buy rationale.",
+      "metric1Label": "Model",
+      "metric1Value": "Claude 3.5",
+      "metric2Label": "Output",
+      "metric2Value": "50-word Summary"
+    },
+    "discovery": {
+      "title": "Smart Wallet Discovery",
+      "subtitle": "Smart Wallet Discovery",
+      "description": "Birdeye scoring engine continuously scans active on-chain addresses, evaluating win rate, PNL, and trading frequency to automatically onboard high-scoring wallets.",
+      "metric1Label": "Dimensions",
+      "metric1Value": "5 Metrics",
+      "metric2Label": "Frequency",
+      "metric2Value": "Daily Update"
+    },
+    "shield": {
+      "title": "Rug Pull Protection",
+      "subtitle": "Rug Protection Shield",
+      "description": "Automatically detects Mint Authority and Freeze Authority status, flagging risk levels in alerts to help you avoid high-risk tokens.",
+      "metric1Label": "Checks",
+      "metric1Value": "Mint + Freeze",
+      "metric2Label": "Alerts",
+      "metric2Value": "Real-time"
+    }
+  },
+  "capViz": {
+    "webhookConnected": "Helius Webhook Connected",
+    "aiOutput": "AI Analysis Output",
+    "confidence": "Confidence 85%",
+    "lowRisk": "Low Risk",
+    "addToMonitor": "Monitored",
+    "freezeDetected": "Freeze Authority Detected",
+    "mintAuthority": "Mint Authority",
+    "freezeAuthority": "Freeze Authority",
+    "liquidityLock": "Liquidity Lock",
+    "revoked": "Revoked",
+    "exists": "Exists",
+    "unlocked": "Unlocked"
+  },
+  "workflow": {
+    "badge": "HOW IT WORKS",
+    "title": "From On-chain Event to Your Phone",
+    "subtitle": "Fully automated 4-step pipeline, end-to-end latency < 5 seconds",
+    "step1": { "title": "On-chain Capture", "description": "Helius Webhook receives Solana on-chain smart money transaction events in real-time" },
+    "step2": { "title": "Multi-source Enrichment", "description": "DexScreener liquidity + Solana RPC authority checks, completed within 2 seconds" },
+    "step3": { "title": "AI Analysis", "description": "Claude AI generates buy rationale attribution with risk assessment" },
+    "step4": { "title": "Instant Push", "description": "Telegram + Web Dashboard dual-channel alerts, latency < 5 seconds" }
+  },
+  "security": {
+    "badge": "SECURITY",
+    "title": "Security Is the Baseline, Not a Selling Point",
+    "e2e": { "title": "End-to-end Encryption", "description": "All data transmitted through TLS encrypted channels" },
+    "readonly": { "title": "Read-only Tracking", "description": "Only monitors public on-chain transactions, never touches your assets" },
+    "noKeys": { "title": "No Private Keys", "description": "Zero private key submission required, zero asset risk" }
+  },
+  "cta": {
+    "title": "Start Your Information Edge",
+    "subtitle": "Pro plan $10/mo · Supports USDC / SOL · Cancel anytime",
+    "trust1": "USDC / SOL on-chain payments",
+    "trust2": "Powered by Helio",
+    "trust3": "Cancel anytime"
+  },
+  "footer": {
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "refund": "Refund",
+    "copyright": "© 2026 Smart Money Radar · Built on Solana"
+  },
+  "demoAlert": {
+    "badge": "Live Alert",
+    "action": "Buy",
+    "liquidity": "Liquidity",
+    "fdv": "FDV",
+    "risk": "Risk",
+    "low": "Low",
+    "medium": "Medium"
+  },
+  "demoChart": {
+    "title": "Tracked Wallet Activity",
+    "vol": "24h Vol",
+    "holders": "Holders",
+    "smartMoneyPct": "Smart Money %"
+  },
+  "demoWallet": {
+    "title": "Wallet Scores",
+    "winRate": "Win Rate"
+  },
+  "dashboard": {
+    "title": "Dashboard Overview",
+    "activeWallets": "Active Wallets",
+    "alertStatus": "Alert Status",
+    "systemStatus": "System Status",
+    "running": "Running",
+    "allClear": "All Clear",
+    "newAlerts": "new alerts",
+    "noNewAlerts": "No new alerts",
+    "pending": "Pending review",
+    "quickNav": "Quick Navigation",
+    "alertHistory": "Alert History",
+    "alertHistoryDesc": "View all smart money transaction alerts with AI-powered analysis summaries",
+    "walletList": "Wallet List",
+    "walletListDesc": "Browse tracked smart money addresses, view scores and PNL data",
+    "recentAlerts": "Recent Alerts",
+    "viewAll": "View All →",
+    "unknown": "Unknown",
+    "checkoutSuccess": "Subscription successful! Welcome to Smart Money Radar Pro."
+  },
+  "sidebar": {
+    "overview": "Overview",
+    "alertHistory": "Alert History",
+    "walletList": "Wallet List",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "wallets": {
+    "title": "Wallet List",
+    "activeCount": "{count} active wallets",
+    "emptyTitle": "No tracked wallets",
+    "emptyDesc": "The system will automatically discover and track high-scoring smart money addresses.",
+    "sortScore": "Sort by Score",
+    "sortPnl": "Sort by PNL",
+    "sortWinRate": "Sort by Win Rate",
+    "filterAll": "All",
+    "filterPinned": "Manual",
+    "filterDiscovered": "Auto",
+    "showing": "Showing {count} wallets",
+    "score": "Score",
+    "winRate": "Win Rate",
+    "pnl": "PNL",
+    "trades": "Trades",
+    "pinned": "Manual",
+    "discovered": "Auto-discovered",
+    "waitingData": "Awaiting data",
+    "backToList": "Back to wallet list",
+    "recentAlerts": "Recent Alerts",
+    "noAlerts": "No associated alerts",
+    "noAlertsDesc": "This wallet has not triggered any transaction alerts yet"
+  },
+  "alerts": {
+    "title": "Alert History",
+    "latest": "Latest {count}",
+    "emptyTitle": "No alert records",
+    "emptyDesc": "The system is monitoring smart money activity. New transaction alerts will appear here and on Telegram.",
+    "loadMore": "Load More",
+    "loadingMore": "Loading...",
+    "retry": "Retry",
+    "loadFailed": "Failed to load, please retry",
+    "aiDetail": "AI Analysis Details",
+    "aiDetailExpand": "AI Analysis Details (click to expand)",
+    "highRisk": "High Risk",
+    "mediumRisk": "Medium Risk",
+    "info": "Info",
+    "freezeWarning": "Freeze Authority Exists — High Risk Token"
+  },
+  "pricing": {
+    "title": "Choose Your Plan",
+    "subtitle": "Unlock Solana smart money real-time tracking. Let AI help you understand every trade.",
+    "cryptoPay": "Crypto Payment",
+    "recommended": "Recommended",
+    "cardPay": "Card Payment",
+    "comingSoon": "Coming Soon",
+    "cardDisabled": "Credit Card / PayPal (Under Review)",
+    "helioNote": "Crypto payments securely processed by Helio (MoonPay Commerce). Supports USDC, SOL and other Solana assets.",
+    "loginFirst": "Sign in to pay with crypto",
+    "configuring": "Crypto payment configuring..."
+  },
+  "paywall": {
+    "title": "Subscription Required",
+    "description": "Upgrade to Pro plan to unlock real-time smart money alerts, wallet tracking, and AI analysis.",
+    "cta": "Upgrade"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: April 2, 2026"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: April 2, 2026"
+  },
+  "refund": {
+    "title": "Refund Policy",
+    "lastUpdated": "Last updated: April 2, 2026"
+  }
+}

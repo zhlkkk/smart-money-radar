@@ -36,7 +36,7 @@ export function AlertCard({ alert, defaultExpanded = true }: AlertCardProps) {
 
   return (
     <GlassCard
-      className={`${style.border} overflow-hidden p-0`}
+      className={`${style.border} overflow-hidden p-0 transition-all hover:scale-[1.01] hover:shadow-[var(--smr-shadow-card-hover)]`}
       hover
     >
       <div className="p-4">

@@ -211,7 +211,7 @@ export default function HomePage() {
             <a href="#capabilities" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>{tNav('capabilities')}</a>
             <a href="#workflow" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>{tNav('howItWorks')}</a>
             <Link href="/pricing" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>{tNav('pricing')}</Link>
-            <LocaleToggle />
+            <LocaleToggle dropDirection="down" />
             <ThemeToggle size={16} />
             <SignedOut>
               <Link href="/sign-in" className="cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text" style={{ transition: 'color var(--smr-transition-fast)' }}>{tCommon('signIn')}</Link>

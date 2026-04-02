@@ -23,9 +23,11 @@ const locales: LocaleOption[] = [
 
 interface LocaleToggleProps {
   className?: string;
+  /** 下拉菜单弹出方向，默认 up（适合侧边栏底部），down 适合顶部导航栏 */
+  dropDirection?: 'up' | 'down';
 }
 
-export function LocaleToggle({ className = '' }: LocaleToggleProps) {
+export function LocaleToggle({ className = '', dropDirection = 'up' }: LocaleToggleProps) {
   const locale = useLocale();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -70,7 +72,7 @@ export function LocaleToggle({ className = '' }: LocaleToggleProps) {
 
       {open && (
         <div
-          className="absolute bottom-full left-0 z-[100] mb-1 min-w-[160px] overflow-hidden rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-bg-card)] shadow-lg"
+          className={`absolute ${dropDirection === 'down' ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 z-[100] min-w-[160px] overflow-hidden rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-bg-card)] shadow-lg`}
           style={{
             backdropFilter: 'blur(12px)',
             animation: 'fade-in 150ms ease-out',

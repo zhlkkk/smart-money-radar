@@ -2,7 +2,7 @@
 // Glassmorphism 统计卡片 + Bento Grid 导航 + 最近告警预览
 
 import Link from 'next/link';
-import { Zap, Wallet, TrendingUp, Activity, ArrowRight } from 'lucide-react';
+import { Zap, Wallet, Activity } from 'lucide-react';
 import { getAlerts, getWallets } from '@/lib/backend-client';
 import { GlassCard } from '@/components/ui/glass-card';
 import { StatusPulse } from '@/components/ui/status-pulse';
@@ -54,41 +54,45 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {/* ─── 统计卡片 ─── */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* 活跃钱包 — 青色主调 */}
-        <GlassCard className="relative overflow-hidden p-5" hover={false}>
-          <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[var(--smr-accent-cyan)]/5 blur-2xl" />
-          <div className="relative">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs text-smr-text-muted">{t('activeWallets')}</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-cyan)]/10">
-                <Wallet size={16} className="text-[var(--smr-accent-cyan)]" />
+        {/* 活跃钱包 — 青色主调，可点击 */}
+        <Link href="/dashboard/wallets">
+          <GlassCard className="group relative overflow-hidden p-5">
+            <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[var(--smr-accent-cyan)]/5 blur-2xl" />
+            <div className="relative">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs text-smr-text-muted">{t('activeWallets')}</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-cyan)]/10">
+                  <Wallet size={16} className="text-[var(--smr-accent-cyan)]" />
+                </div>
               </div>
+              <div className="font-data text-2xl font-bold text-[var(--smr-accent-cyan)]">
+                {walletCount}
+              </div>
+              <DashboardCharts type="sparkline" data={walletTrendData} color="cyan" />
             </div>
-            <div className="font-data text-2xl font-bold text-[var(--smr-accent-cyan)]">
-              {walletCount}
-            </div>
-            <DashboardCharts type="sparkline" data={walletTrendData} color="cyan" />
-          </div>
-        </GlassCard>
+          </GlassCard>
+        </Link>
 
-        {/* 告警状态 — 金色/绿色（根据状态变化） */}
-        <GlassCard className="relative overflow-hidden p-5" hover={false}>
-          <div className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl ${hasAlerts ? 'bg-[var(--smr-accent-gold)]/5' : 'bg-[var(--smr-accent-green)]/5'}`} />
-          <div className="relative">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs text-smr-text-muted">{t('alertStatus')}</span>
-              <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${hasAlerts ? 'bg-[var(--smr-accent-gold)]/10' : 'bg-[var(--smr-accent-green)]/10'}`}>
-                <Zap size={16} className={hasAlerts ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'} />
+        {/* 告警状态 — 金色/绿色，可点击 */}
+        <Link href="/dashboard/alerts">
+          <GlassCard className="group relative overflow-hidden p-5">
+            <div className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl ${hasAlerts ? 'bg-[var(--smr-accent-gold)]/5' : 'bg-[var(--smr-accent-green)]/5'}`} />
+            <div className="relative">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs text-smr-text-muted">{t('alertStatus')}</span>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${hasAlerts ? 'bg-[var(--smr-accent-gold)]/10' : 'bg-[var(--smr-accent-green)]/10'}`}>
+                  <Zap size={16} className={hasAlerts ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'} />
+                </div>
+              </div>
+              <div className={`font-data text-2xl font-bold ${hasAlerts ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'}`}>
+                {hasAlerts ? `${alerts.length} ${t('newAlerts')}` : t('allClear')}
+              </div>
+              <div className="mt-2">
+                <StatusPulse status={hasAlerts ? 'warning' : 'ok'} label={hasAlerts ? t('pending') : t('noNewAlerts')} />
               </div>
             </div>
-            <div className={`font-data text-2xl font-bold ${hasAlerts ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'}`}>
-              {hasAlerts ? `${alerts.length} ${t('newAlerts')}` : t('allClear')}
-            </div>
-            <div className="mt-2">
-              <StatusPulse status={hasAlerts ? 'warning' : 'ok'} label={hasAlerts ? t('pending') : t('noNewAlerts')} />
-            </div>
-          </div>
-        </GlassCard>
+          </GlassCard>
+        </Link>
 
         {/* 系统状态 — 绿色主调 */}
         <GlassCard className="relative overflow-hidden p-5" hover={false}>
@@ -121,56 +125,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </GlassCard>
       </div>
 
-      {/* ─── Bento Grid 快速导航 ─── */}
-      <h2 className="mb-4 text-lg font-medium text-smr-text-secondary">{t('quickNav')}</h2>
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* 告警历史 — 金色渐变 */}
-        <Link href="/dashboard/alerts" className="h-full">
-          <GlassCard className="group relative h-full cursor-pointer overflow-hidden p-5">
-            <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-[var(--smr-accent-gold)]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
-            <div className="relative">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--smr-accent-gold)]/10">
-                    <Zap size={20} className="text-[var(--smr-accent-gold)]" />
-                  </div>
-                  <span className="font-medium text-smr-text transition group-hover:text-[var(--smr-accent-gold)]" style={{ transition: 'color var(--smr-transition-fast)' }}>
-                    {t('alertHistory')}
-                  </span>
-                </div>
-                <ArrowRight size={16} className="text-smr-text-muted transition-transform group-hover:translate-x-1 group-hover:text-[var(--smr-accent-gold)]" />
-              </div>
-              <p className="text-sm text-smr-text-muted">
-                {t('alertHistoryDesc')}
-              </p>
-            </div>
-          </GlassCard>
-        </Link>
-
-        {/* 钱包列表 — 绿色渐变 */}
-        <Link href="/dashboard/wallets" className="h-full">
-          <GlassCard className="group relative h-full cursor-pointer overflow-hidden p-5">
-            <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-[var(--smr-accent-green)]/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
-            <div className="relative">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--smr-accent-green)]/10">
-                    <Wallet size={20} className="text-[var(--smr-accent-green)]" />
-                  </div>
-                  <span className="font-medium text-smr-text transition group-hover:text-[var(--smr-accent-green)]" style={{ transition: 'color var(--smr-transition-fast)' }}>
-                    {t('walletList')}
-                  </span>
-                </div>
-                <ArrowRight size={16} className="text-smr-text-muted transition-transform group-hover:translate-x-1 group-hover:text-[var(--smr-accent-green)]" />
-              </div>
-              <p className="text-sm text-smr-text-muted">
-                {t('walletListDesc')}
-              </p>
-            </div>
-          </GlassCard>
-        </Link>
-      </div>
-
       {/* ─── 最近告警预览 ─── */}
       {alerts.length > 0 && (
         <>
@@ -185,20 +139,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
           <div className="flex flex-col gap-2">
             {alerts.slice(0, 3).map((alert) => (
-              <GlassCard key={alert.id} className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-[var(--smr-accent-gold)]" />
-                  <span className="text-sm font-medium text-smr-text">
-                    {alert.walletLabel ?? truncateAddress(alert.walletAddress)}
+              <Link key={alert.id} href="/dashboard/alerts">
+                <GlassCard className="group flex cursor-pointer items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-[var(--smr-accent-gold)]" />
+                    <span className="text-sm font-medium text-smr-text transition group-hover:text-[var(--smr-accent-cyan)]">
+                      {alert.walletLabel ?? truncateAddress(alert.walletAddress)}
+                    </span>
+                    <span className="font-data text-sm font-bold text-[var(--smr-accent-cyan)]">
+                      {alert.tokenSymbol ?? t('unknown')}
+                    </span>
+                  </div>
+                  <span className="font-data text-xs text-smr-text-muted">
+                    {formatRelativeTime(alert.createdAt)}
                   </span>
-                  <span className="font-data text-sm font-bold text-[var(--smr-accent-cyan)]">
-                    {alert.tokenSymbol ?? t('unknown')}
-                  </span>
-                </div>
-                <span className="font-data text-xs text-smr-text-muted">
-                  {formatRelativeTime(alert.createdAt)}
-                </span>
-              </GlassCard>
+                </GlassCard>
+              </Link>
             ))}
           </div>
         </>

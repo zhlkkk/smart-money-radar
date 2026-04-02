@@ -55,13 +55,17 @@ const walletStateRef: WalletStateRef = { current: createWalletState(pinnedWallet
 // Discovery state path (discovery created after db init below)
 const discoveryStatePath = resolve(import.meta.dirname, '../config/discovered-wallets.json');
 
-// Pipeline (uses walletStateRef which may now include discovered wallets)
+// Database (must init before pipeline so alerts get persisted)
+const db = env.DATABASE_POOL_URL ? createPoolClient(env.DATABASE_POOL_URL) : null;
+
+// Pipeline (uses walletStateRef + db for alert persistence)
 const pipeline = createPipeline({
   walletStateRef,
   rpc,
   llmConfig,
   botToken: env.TELEGRAM_BOT_TOKEN,
   channelId: env.TELEGRAM_CHANNEL_ID,
+  db,
 });
 
 // Fastify server
@@ -78,9 +82,6 @@ registerWebhookRoutes(app, {
   authToken: env.HELIUS_AUTH_TOKEN,
   processTransaction: pipeline.processTransaction,
 });
-
-// Database (optional — Phase 2 features)
-const db = env.DATABASE_POOL_URL ? createPoolClient(env.DATABASE_POOL_URL) : null;
 
 // Sync pinned wallets to database on startup
 if (db) {

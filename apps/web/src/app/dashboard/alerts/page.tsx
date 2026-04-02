@@ -1,4 +1,4 @@
-// 告警历史页 — 时间线布局 + 筛选工具栏
+// 告警历史页 — 统一时间线布局（实时 + 历史）
 
 import { getAlerts } from '@/lib/backend-client';
 import { AlertCard } from '@/components/alert-card';
@@ -26,48 +26,49 @@ export default async function AlertsPage() {
         )}
       </div>
 
-      {/* 实时告警流 */}
-      <RealtimeAlerts className="mb-6" />
-
       {alerts.length === 0 ? (
-        <EmptyState
-          title={t('emptyTitle')}
-          description={t('emptyDesc')}
-          action={
-            <Link
-              href="/dashboard"
-              className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-5 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
-            >
-              {tCommon('enterDashboard')}
-            </Link>
-          }
-        />
-      ) : (
         <>
-          {/* 时间线布局 */}
-          <div className="relative">
-            {/* 时间线竖线 */}
-            <div
-              aria-hidden
-              className="absolute bottom-0 left-3 top-0 w-px bg-gradient-to-b from-[var(--smr-accent-cyan)]/30 via-[var(--smr-glass-border)] to-transparent"
-            />
-
-            <div className="flex flex-col gap-4 pl-8">
-              {alerts.map((alert) => (
-                <div key={alert.id} className="relative">
-                  {/* 时间线节点圆点 */}
-                  <div className="absolute -left-8 top-5 flex items-center justify-center">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[var(--smr-accent-cyan)] shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
-                  </div>
-                  <AlertCard alert={alert} />
-                </div>
-              ))}
-
-              {/* 客户端加载更多 */}
-              <LoadMoreAlerts initialCursor={cursor} initialHasMore={hasMore} />
-            </div>
-          </div>
+          <RealtimeAlerts className="mb-6" />
+          <EmptyState
+            title={t('emptyTitle')}
+            description={t('emptyDesc')}
+            action={
+              <Link
+                href="/dashboard"
+                className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-5 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
+              >
+                {tCommon('enterDashboard')}
+              </Link>
+            }
+          />
         </>
+      ) : (
+        <div className="relative pl-6">
+          {/* 时间线竖线 — 居中于圆点 */}
+          <div
+            aria-hidden
+            className="absolute bottom-0 left-[7px] top-0 w-px bg-gradient-to-b from-[var(--smr-accent-cyan)]/30 via-[var(--smr-glass-border)] to-transparent"
+          />
+
+          {/* 实时告警（也在时间线内） */}
+          <RealtimeAlerts className="mb-4" timeline />
+
+          {/* 历史告警 */}
+          <div className="flex flex-col gap-4">
+            {alerts.map((alert) => (
+              <div key={alert.id} className="relative">
+                {/* 时间线圆点 */}
+                <div className="absolute -left-6 top-5 flex h-[15px] w-[15px] items-center justify-center">
+                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--smr-accent-cyan)] shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
+                </div>
+                <AlertCard alert={alert} />
+              </div>
+            ))}
+
+            {/* 加载更多 */}
+            <LoadMoreAlerts initialCursor={cursor} initialHasMore={hasMore} />
+          </div>
+        </div>
       )}
     </div>
   );

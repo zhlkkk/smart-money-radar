@@ -60,7 +60,7 @@ export function LoadMoreAlerts({
       {/* 动态加载的告警 */}
       {alerts.map((alert) => (
         <div key={alert.id} className="relative">
-          <div className="absolute -left-8 top-5 flex items-center justify-center">
+          <div className="absolute -left-6 top-5 flex h-[15px] w-[15px] items-center justify-center">
             <div className="h-2.5 w-2.5 rounded-full bg-[var(--smr-accent-cyan)] shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
           </div>
           <AlertCard alert={alert} />

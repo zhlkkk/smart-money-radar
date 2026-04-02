@@ -204,7 +204,13 @@
     "highRisk": "High Risk",
     "mediumRisk": "Medium Risk",
     "info": "Info",
-    "freezeWarning": "Freeze Authority Exists — High Risk Token"
+    "freezeWarning": "Freeze Authority Exists — High Risk Token",
+    "live": "LIVE",
+    "paused": "PAUSED",
+    "alertCount": "{count} alerts",
+    "pause": "Pause",
+    "resume": "Resume",
+    "resumeWithCount": "Resume ({count} new)"
   },
   "pricing": {
     "title": "Choose Your Plan",

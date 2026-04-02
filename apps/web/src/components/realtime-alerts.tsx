@@ -3,6 +3,7 @@
 // SSE 实时告警 — 暂停/继续 + 入场动画
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Pause, Play } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { AlertRow } from '@/lib/backend-client';
 import { AlertCard } from '@/components/alert-card';
 
@@ -10,9 +11,11 @@ const SSE_PATH = '/api/alerts/stream';
 
 interface RealtimeAlertsProps {
   className?: string;
+  timeline?: boolean;
 }
 
-export function RealtimeAlerts({ className = '' }: RealtimeAlertsProps) {
+export function RealtimeAlerts({ className = '', timeline = false }: RealtimeAlertsProps) {
+  const t = useTranslations('alerts');
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [connected, setConnected] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -75,10 +78,10 @@ export function RealtimeAlerts({ className = '' }: RealtimeAlertsProps) {
             style={{ animation: !paused && connected ? 'pulse-glow 2s ease-in-out infinite' : 'none' }}
           />
           <span className={`text-xs font-medium ${paused ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'}`}>
-            {paused ? 'PAUSED' : 'LIVE'}
+            {paused ? t('paused') : t('live')}
           </span>
           <span className="text-xs text-smr-text-muted">
-            {alerts.length} alerts
+            {t('alertCount', { count: alerts.length })}
           </span>
         </div>
 
@@ -95,12 +98,12 @@ export function RealtimeAlerts({ className = '' }: RealtimeAlertsProps) {
           {paused ? (
             <>
               <Play size={12} />
-              Resume{pendingCount > 0 && ` (${pendingCount} new)`}
+              {pendingCount > 0 ? t('resumeWithCount', { count: pendingCount }) : t('resume')}
             </>
           ) : (
             <>
               <Pause size={12} />
-              Pause
+              {t('pause')}
             </>
           )}
         </button>
@@ -111,10 +114,16 @@ export function RealtimeAlerts({ className = '' }: RealtimeAlertsProps) {
         {alerts.map((alert, i) => (
           <div
             key={alert.id ?? alert.signature}
+            className="relative"
             style={{
               animation: i === 0 && !paused ? 'alert-slide-in 400ms ease-out' : 'none',
             }}
           >
+            {timeline && (
+              <div className="absolute -left-6 top-5 flex h-[15px] w-[15px] items-center justify-center">
+                <div className="h-2.5 w-2.5 rounded-full bg-[var(--smr-accent-green)] shadow-[0_0_8px_rgba(6,214,160,0.4)]" />
+              </div>
+            )}
             <AlertCard alert={alert} defaultExpanded />
           </div>
         ))}

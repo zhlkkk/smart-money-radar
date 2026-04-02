@@ -204,7 +204,13 @@
     "highRisk": "高风险",
     "mediumRisk": "中风险",
     "info": "信息",
-    "freezeWarning": "Freeze Authority 存在 — 高风险代币"
+    "freezeWarning": "Freeze Authority 存在 — 高风险代币",
+    "live": "实时",
+    "paused": "已暂停",
+    "alertCount": "{count} 条告警",
+    "pause": "暂停",
+    "resume": "继续",
+    "resumeWithCount": "继续 ({count} 条新)"
   },
   "pricing": {
     "title": "选择你的计划",

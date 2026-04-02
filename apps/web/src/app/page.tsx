@@ -271,13 +271,13 @@ export default function HomePage() {
         {/* 实时数据面板 — 三列 */}
         <div className="relative mt-16 grid gap-4 md:grid-cols-3">
           {/* 模拟告警轮播 */}
-          <AnimateOnScroll animation="fade-up" delay={0}>
-            <LiveAlertFeed />
+          <AnimateOnScroll animation="fade-up" delay={0} className="h-full">
+            <LiveAlertFeed className="h-full" />
           </AnimateOnScroll>
 
           {/* 价格走势面板 */}
-          <AnimateOnScroll animation="fade-up" delay={150}>
-          <GlassCard className="p-4">
+          <AnimateOnScroll animation="fade-up" delay={150} className="h-full">
+          <GlassCard className="h-full p-4">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-smr-text-secondary">追踪钱包动态</span>
               <Badge variant="green" size="sm">+23.5%</Badge>
@@ -303,8 +303,8 @@ export default function HomePage() {
           </AnimateOnScroll>
 
           {/* 钱包评分面板 */}
-          <AnimateOnScroll animation="fade-up" delay={300}>
-          <GlassCard className="p-4">
+          <AnimateOnScroll animation="fade-up" delay={300} className="h-full">
+          <GlassCard className="h-full p-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-medium text-smr-text-secondary">钱包评分</span>
               <Badge variant="gold" size="sm">TOP 10</Badge>

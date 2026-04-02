@@ -47,7 +47,7 @@ const mockAlerts: MockAlert[] = [
   },
 ];
 
-export function LiveAlertFeed() {
+export function LiveAlertFeed({ className = '' }: { className?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -69,7 +69,7 @@ export function LiveAlertFeed() {
   const alert = mockAlerts[currentIndex];
 
   return (
-    <GlassCard className="overflow-hidden p-4" glow="cyan">
+    <GlassCard className={`overflow-hidden p-4 ${className}`} glow="cyan">
       <div
         style={{
           animation: !isAnimating ? 'alert-slide-in 400ms ease-out' : 'none',

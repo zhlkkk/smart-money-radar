@@ -21,6 +21,8 @@ export interface AlertRow {
   freezeAuthority: string | null;
   aiSummary: string | null;
   telegramSent: boolean;
+  confidenceScore: number | null;
+  confidenceLevel: 'high' | 'medium' | 'low' | null;
   createdAt: string;
 }
 

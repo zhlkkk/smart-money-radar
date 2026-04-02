@@ -210,7 +210,10 @@
     "alertCount": "{count} 条告警",
     "pause": "暂停",
     "resume": "继续",
-    "resumeWithCount": "继续 ({count} 条新)"
+    "resumeWithCount": "继续 ({count} 条新)",
+    "confidenceHigh": "信号强度: 高",
+    "confidenceMedium": "信号强度: 中",
+    "confidenceLow": "信号强度: 低"
   },
   "pricing": {
     "title": "选择你的计划",

@@ -50,6 +50,16 @@ export function AlertCard({ alert, defaultExpanded = true }: AlertCardProps) {
               <Badge variant="muted">{alert.dexSource}</Badge>
             )}
             <Badge variant={style.variant}>{t(style.labelKey)}</Badge>
+            {alert.confidenceLevel && (
+              <Badge variant={
+                alert.confidenceLevel === 'high' ? 'green' :
+                alert.confidenceLevel === 'medium' ? 'gold' : 'red'
+              }>
+                {alert.confidenceLevel === 'high' ? t('confidenceHigh') :
+                 alert.confidenceLevel === 'medium' ? t('confidenceMedium') :
+                 t('confidenceLow')}
+              </Badge>
+            )}
           </div>
           <span className="font-data text-xs text-smr-text-muted">
             {formatRelativeTime(alert.createdAt)}

@@ -210,7 +210,10 @@
     "alertCount": "{count} alerts",
     "pause": "Pause",
     "resume": "Resume",
-    "resumeWithCount": "Resume ({count} new)"
+    "resumeWithCount": "Resume ({count} new)",
+    "confidenceHigh": "Signal: High",
+    "confidenceMedium": "Signal: Medium",
+    "confidenceLow": "Signal: Low"
   },
   "pricing": {
     "title": "Choose Your Plan",

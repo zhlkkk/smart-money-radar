@@ -102,10 +102,6 @@ export async function kickChatMember(
   userId: number,
   botToken: string,
 ): Promise<void> {
-  try {
-    await callTelegramApi('banChatMember', { chat_id: chatId, user_id: userId }, botToken);
-    await callTelegramApi('unbanChatMember', { chat_id: chatId, user_id: userId, only_if_banned: true }, botToken);
-  } catch (err) {
-    logger.warn('kickChatMember failed', { chatId, userId, error: String(err) });
-  }
+  await callTelegramApi('banChatMember', { chat_id: chatId, user_id: userId }, botToken);
+  await callTelegramApi('unbanChatMember', { chat_id: chatId, user_id: userId, only_if_banned: true }, botToken);
 }

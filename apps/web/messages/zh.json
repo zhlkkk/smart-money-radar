@@ -273,5 +273,24 @@
   "refund": {
     "title": "退款政策",
     "lastUpdated": "最后更新：2026 年 4 月 2 日"
+  },
+  "telegram": {
+    "title": "Telegram 告警频道",
+    "notBound": "绑定 Telegram 接收实时告警",
+    "bindStep1": "1. 点击下方按钮生成验证码",
+    "bindStep2": "2. 打开 Telegram，向 Bot 发送验证码",
+    "bindStep3": "3. 绑定成功后点击邀请链接加入频道",
+    "generateCode": "生成验证码",
+    "regenerateCode": "重新生成",
+    "codeCopied": "已复制",
+    "copyCode": "复制验证码",
+    "sendToBot": "发送给 Bot:",
+    "joinChannel": "加入告警频道",
+    "bound": "Telegram 已绑定",
+    "boundUser": "已绑定: @{username}",
+    "notSubscribed": "请先订阅 Pro 计划",
+    "channelJoined": "已加入告警频道",
+    "codeExpiry": "验证码 {minutes} 分钟内有效",
+    "error": "生成验证码失败，请重试"
   }
 }

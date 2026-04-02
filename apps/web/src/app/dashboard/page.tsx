@@ -46,9 +46,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </GlassCard>
       )}
 
-      {/* Telegram 绑定引导 */}
-      <TelegramBind />
-
       {/* 标题 */}
       <h1 className="mb-8 text-2xl font-bold text-smr-text">{t('title')}</h1>
 
@@ -159,6 +156,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         </>
       )}
+
+      {/* Telegram 绑定引导（低优先级，放底部） */}
+      <div className="mt-8">
+        <TelegramBind />
+      </div>
     </div>
   );
 }

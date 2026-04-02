@@ -253,3 +253,18 @@ body {
   outline: 2px solid var(--smr-accent-cyan);
   outline-offset: 2px;
 }
+
+/* ─── Helio Checkout Widget 样式覆盖 ─── */
+
+/* 修复 Helio 弹窗内部滚动条：增加容器高度，隐藏多余滚动条 */
+div[class*="helio"] iframe,
+div[data-helio] iframe {
+  min-height: 640px !important;
+}
+
+/* Helio modal 内容区去除多余滚动 */
+div[class*="helio"] > div,
+div[class*="ReactModal__Content"] {
+  overflow: visible !important;
+  max-height: none !important;
+}

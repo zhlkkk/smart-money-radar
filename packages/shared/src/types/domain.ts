@@ -72,6 +72,7 @@ export interface AlertData {
   enrichment: EnrichmentResult;
   riskAssessment: RiskAssessment;
   aiSummary: string;
+  confidence: ConfidenceResult;
 }
 
 export interface WalletCandidate {
@@ -80,4 +81,12 @@ export interface WalletCandidate {
   winRate: number;
   tradeCount: number;
   lastActiveTimestamp: number;
+}
+
+export type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+export interface ConfidenceResult {
+  score: number;           // 0-100
+  level: ConfidenceLevel;  // high ≥ 80, medium ≥ 45, low < 45
+  label: string;           // "🟢 信号强度: 高" 等
 }

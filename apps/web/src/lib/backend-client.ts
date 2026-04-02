@@ -5,6 +5,8 @@ import 'server-only';
 
 // ─── 类型定义 ───
 
+type ConfidenceLevel = 'high' | 'medium' | 'low';
+
 export interface AlertRow {
   id: string;
   signature: string;
@@ -22,7 +24,7 @@ export interface AlertRow {
   aiSummary: string | null;
   telegramSent: boolean;
   confidenceScore: number | null;
-  confidenceLevel: 'high' | 'medium' | 'low' | null;
+  confidenceLevel: ConfidenceLevel | null;
   createdAt: string;
 }
 

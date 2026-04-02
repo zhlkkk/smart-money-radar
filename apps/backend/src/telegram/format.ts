@@ -44,7 +44,7 @@ export function formatAlert(data: AlertData): string {
 
   const lines: string[] = [
     `🐋 <b>${label}</b> (${category}) bought <code>${tokenDisplay}</code>  ${riskAssessment.label}`,
-    `📊 <b>${confidence.label}</b>`,
+    `📊 <b>${escapeHtml(confidence.label)}</b>`,
     '',
     `💰 Liq: <b>${liq}</b> | FDV: <b>${fdv}</b> | MC: <b>${mc}</b>`,
     `📈 Vol 24h: <b>${vol}</b> | Txns: ${txns}`,

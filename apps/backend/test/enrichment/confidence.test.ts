@@ -81,6 +81,57 @@ describe('computeConfidence', () => {
     expect(top.score - notTop.score).toBe(20);
   });
 
+  it('returns high at exact threshold (score = 80)', () => {
+    // authority safe (+30) + DexScreener complete (+25) + liquidity > $50K (+25) = 80, no top wallet
+    const result = computeConfidence(healthyEnrichment, false);
+    expect(result.score).toBe(80);
+    expect(result.level).toBe('high');
+  });
+
+  it('returns medium at exact threshold (score = 45)', () => {
+    // authority safe (+30) + DexScreener incomplete (+0) + liquidity null (+0) + top wallet (+20) = 50
+    // Need: 45 exactly → authority safe (+30) + DexScreener incomplete + no liquidity + no top = 30 → low
+    // Actually: authority safe (+30) + no DexScreener + no liquidity + top wallet (+20) = 50 → medium
+    const result = computeConfidence(
+      { ...healthyEnrichment, liquidity: null, fdv: null },
+      true,
+    );
+    expect(result.score).toBe(50);
+    expect(result.level).toBe('medium');
+  });
+
+  it('returns low at score 30 (just below medium threshold)', () => {
+    // authority safe (+30) only
+    const result = computeConfidence(
+      { ...healthyEnrichment, liquidity: null, fdv: null },
+      false,
+    );
+    expect(result.score).toBe(30);
+    expect(result.level).toBe('low');
+  });
+
+  it('does not grant +30 for mixed authority (mint null + freeze unchecked)', () => {
+    const mixed = computeConfidence(
+      { ...healthyEnrichment, mintAuthority: null, freezeAuthority: 'unchecked' },
+      true,
+    );
+    const bothSafe = computeConfidence(healthyEnrichment, true);
+    expect(bothSafe.score - mixed.score).toBe(30);
+    expect(mixed.level).toBe('medium');
+  });
+
+  it('does not grant +25 for liquidity exactly $50K (boundary)', () => {
+    const atBoundary = computeConfidence(
+      { ...healthyEnrichment, liquidity: 50_000 },
+      true,
+    );
+    const aboveBoundary = computeConfidence(
+      { ...healthyEnrichment, liquidity: 50_001 },
+      true,
+    );
+    expect(aboveBoundary.score - atBoundary.score).toBe(25);
+  });
+
   it('returns correct label for each level', () => {
     const high = computeConfidence(healthyEnrichment, true);
     expect(high.label).toBe('🟢 信号强度: 高');

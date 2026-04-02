@@ -2,6 +2,7 @@
 // 单进程内使用，不持久化，适合 Railway 单实例部署
 
 import { EventEmitter } from 'node:events';
+import type { ConfidenceLevel } from './types.js';
 
 export interface AlertEvent {
   id: string;
@@ -19,7 +20,7 @@ export interface AlertEvent {
   aiSummary: string;
   createdAt: string;
   confidenceScore: number;
-  confidenceLevel: 'high' | 'medium' | 'low';
+  confidenceLevel: ConfidenceLevel;
 }
 
 class AlertBus extends EventEmitter {

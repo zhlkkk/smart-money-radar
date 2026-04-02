@@ -7,7 +7,7 @@ export interface PersistAlertInput {
   enrichment: EnrichmentResult;
   wallet: SmartMoneyWallet;
   aiSummary: string;
-  confidence?: ConfidenceResult;
+  confidence: ConfidenceResult;
 }
 
 /**

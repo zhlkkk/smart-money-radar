@@ -588,6 +588,11 @@ export default function HomePage() {
             <Radar size={16} className="text-[var(--smr-accent-cyan)]" />
             <span className="text-sm font-medium text-smr-text-muted">Smart Money Radar</span>
           </div>
+          <div className="flex items-center gap-4 text-xs text-smr-text-muted">
+            <Link href="/terms" className="cursor-pointer transition hover:text-smr-text">Terms</Link>
+            <Link href="/privacy" className="cursor-pointer transition hover:text-smr-text">Privacy</Link>
+            <Link href="/refund" className="cursor-pointer transition hover:text-smr-text">Refund</Link>
+          </div>
           <div className="font-data text-xs text-smr-text-muted">
             © 2026 Smart Money Radar · Built on Solana
           </div>

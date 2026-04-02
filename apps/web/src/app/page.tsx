@@ -37,6 +37,7 @@ import { TypingText } from '@/components/ui/typing-text';
 import { ParticleField } from '@/components/ui/particle-field';
 import { LiveAlertFeed } from '@/components/ui/live-alert-feed';
 import { GlowCursor } from '@/components/ui/glow-cursor';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 // ─── 模拟数据 ───
 const demoPrice = [20, 25, 22, 30, 28, 35, 32, 42, 38, 45, 50, 48, 55, 52, 60, 58, 65, 70, 68, 75];
@@ -179,6 +180,7 @@ export default function HomePage() {
             <a href="#capabilities" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>核心能力</a>
             <a href="#workflow" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>工作原理</a>
             <Link href="/pricing" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>定价</Link>
+            <ThemeToggle size={16} />
             <SignedOut>
               <Link href="/sign-in" className="cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text" style={{ transition: 'color var(--smr-transition-fast)' }}>登录</Link>
               <Link

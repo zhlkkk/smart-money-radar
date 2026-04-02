@@ -12,7 +12,7 @@ interface GlowCursorProps {
 
 export function GlowCursor({
   className = '',
-  color = 'rgba(0, 240, 255, 0.06)',
+  color = 'rgba(var(--smr-particle-color), 0.06)',
   size = 400,
 }: GlowCursorProps) {
   const ref = useRef<HTMLDivElement>(null);

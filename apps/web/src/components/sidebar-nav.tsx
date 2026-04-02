@@ -41,7 +41,7 @@ export function SidebarNav() {
         <Link href="/dashboard" className="flex items-center gap-2">
           <span
             className="text-lg font-bold text-[var(--smr-accent-cyan)]"
-            style={{ textShadow: '0 0 20px rgba(0, 240, 255, 0.3)' }}
+            style={{ textShadow: 'var(--smr-text-glow)' }}
           >
             SMR
           </span>

@@ -63,12 +63,13 @@ export function ParticleField({ count = 30, className = '' }: ParticleFieldProps
     function draw() {
       ctx!.clearRect(0, 0, width, height);
 
+      const rgb = getComputedStyle(canvas!).getPropertyValue('--smr-particle-color').trim() || '0, 240, 255';
+
       // 绘制粒子
       for (const p of particles) {
         p.x += p.vx;
         p.y += p.vy;
 
-        // 边界环绕
         if (p.x < 0) p.x = width;
         if (p.x > width) p.x = 0;
         if (p.y < 0) p.y = height;
@@ -76,7 +77,7 @@ export function ParticleField({ count = 30, className = '' }: ParticleFieldProps
 
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(0, 240, 255, ${p.opacity})`;
+        ctx!.fillStyle = `rgba(${rgb}, ${p.opacity})`;
         ctx!.fill();
       }
 
@@ -90,7 +91,7 @@ export function ParticleField({ count = 30, className = '' }: ParticleFieldProps
             ctx!.beginPath();
             ctx!.moveTo(particles[i].x, particles[i].y);
             ctx!.lineTo(particles[j].x, particles[j].y);
-            ctx!.strokeStyle = `rgba(0, 240, 255, ${0.06 * (1 - dist / 120)})`;
+            ctx!.strokeStyle = `rgba(${rgb}, ${0.06 * (1 - dist / 120)})`;
             ctx!.lineWidth = 0.5;
             ctx!.stroke();
           }

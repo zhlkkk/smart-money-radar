@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { SignedIn, SignedOut } from '@clerk/nextjs';
+import { useTranslations } from 'next-intl';
 import {
   Brain,
   TrendingUp,
@@ -38,58 +39,11 @@ import { ParticleField } from '@/components/ui/particle-field';
 import { LiveAlertFeed } from '@/components/ui/live-alert-feed';
 import { GlowCursor } from '@/components/ui/glow-cursor';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { LocaleToggle } from '@/components/ui/locale-toggle';
 
 // ─── 模拟数据 ───
 const demoPrice = [20, 25, 22, 30, 28, 35, 32, 42, 38, 45, 50, 48, 55, 52, 60, 58, 65, 70, 68, 75];
 const demoVolume = [5, 8, 6, 12, 9, 15, 11, 18, 14, 20, 16, 22, 19, 25, 21, 28, 24, 30, 26, 32];
-
-// ─── 核心能力数据 ───
-const capabilities = [
-  {
-    icon: <Radio size={24} />,
-    title: '链上信号捕获',
-    subtitle: 'On-chain Signal Capture',
-    description: '通过 Helius Enhanced Webhooks 实时监听 Solana 链上交易，毫秒级捕获聪明钱的每一笔 swap 操作。',
-    color: 'cyan' as const,
-    metrics: [
-      { label: '监听延迟', value: '< 500ms' },
-      { label: '交易类型', value: 'DEX Swap' },
-    ],
-  },
-  {
-    icon: <Cpu size={24} />,
-    title: 'AI 归因引擎',
-    subtitle: 'AI Attribution Engine',
-    description: 'Claude AI 深度分析每笔交易的上下文——代币基本面、流动性变化、历史模式，生成 50 字精炼买入理由。',
-    color: 'gold' as const,
-    metrics: [
-      { label: '分析模型', value: 'Claude 3.5' },
-      { label: '输出格式', value: '50 字摘要' },
-    ],
-  },
-  {
-    icon: <Target size={24} />,
-    title: '智能钱包发现',
-    subtitle: 'Smart Wallet Discovery',
-    description: 'Birdeye 评分引擎持续扫描链上活跃地址，多维度评估胜率、PNL、交易频率，自动将高评分钱包纳入监控。',
-    color: 'green' as const,
-    metrics: [
-      { label: '评分维度', value: '5 项指标' },
-      { label: '发现频率', value: '每日更新' },
-    ],
-  },
-  {
-    icon: <ShieldAlert size={24} />,
-    title: 'Rug Pull 防护',
-    subtitle: 'Rug Protection Shield',
-    description: '自动检测代币的 Mint Authority 和 Freeze Authority 状态，在告警中标注风险等级，帮你避开高危代币。',
-    color: 'red' as const,
-    metrics: [
-      { label: '检测项', value: 'Mint + Freeze' },
-      { label: '风险标注', value: '实时告警' },
-    ],
-  },
-];
 
 const colorClasses = {
   cyan: {
@@ -118,46 +72,115 @@ const colorClasses = {
   },
 };
 
-// ─── 工作流步骤 ───
-const workflow = [
-  {
-    step: '01',
-    icon: <Globe size={28} />,
-    title: '链上监听',
-    description: 'Helius Webhook 实时接收 Solana 链上聪明钱交易事件',
-    color: 'cyan' as const,
-  },
-  {
-    step: '02',
-    icon: <Layers size={28} />,
-    title: '多维富集',
-    description: 'DexScreener 流动性 + Solana RPC Authority 检查，2 秒内完成',
-    color: 'gold' as const,
-  },
-  {
-    step: '03',
-    icon: <Brain size={28} />,
-    title: 'AI 分析',
-    description: 'Claude AI 生成买入理由归因，附带风险评级',
-    color: 'green' as const,
-  },
-  {
-    step: '04',
-    icon: <Bell size={28} />,
-    title: '即时推送',
-    description: 'Telegram + Web Dashboard 双通道告警，延迟 < 5 秒',
-    color: 'cyan' as const,
-  },
-];
-
-// ─── 安全特性 ───
-const securityFeatures = [
-  { icon: <Lock size={20} />, title: '端到端加密', description: '所有数据传输均通过 TLS 加密通道' },
-  { icon: <Eye size={20} />, title: '只读追踪', description: '仅监控链上公开交易，不触碰资产' },
-  { icon: <KeyRound size={20} />, title: '无需私钥', description: '全程零私钥提交，零资产风险' },
-];
-
 export default function HomePage() {
+  const t = useTranslations('hero');
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
+  const tStats = useTranslations('stats');
+  const tCap = useTranslations('capabilities');
+  const tCapViz = useTranslations('capViz');
+  const tWorkflow = useTranslations('workflow');
+  const tSecurity = useTranslations('security');
+  const tCta = useTranslations('cta');
+  const tFooter = useTranslations('footer');
+  const tDemoChart = useTranslations('demoChart');
+  const tDemoWallet = useTranslations('demoWallet');
+
+  // ─── 核心能力数据 ───
+  const capabilities = [
+    {
+      icon: <Radio size={24} />,
+      title: tCap('signal.title'),
+      subtitle: tCap('signal.subtitle'),
+      description: tCap('signal.description'),
+      color: 'cyan' as const,
+      metrics: [
+        { label: tCap('signal.metric1Label'), value: tCap('signal.metric1Value') },
+        { label: tCap('signal.metric2Label'), value: tCap('signal.metric2Value') },
+      ],
+    },
+    {
+      icon: <Cpu size={24} />,
+      title: tCap('ai.title'),
+      subtitle: tCap('ai.subtitle'),
+      description: tCap('ai.description'),
+      color: 'gold' as const,
+      metrics: [
+        { label: tCap('ai.metric1Label'), value: tCap('ai.metric1Value') },
+        { label: tCap('ai.metric2Label'), value: tCap('ai.metric2Value') },
+      ],
+    },
+    {
+      icon: <Target size={24} />,
+      title: tCap('discovery.title'),
+      subtitle: tCap('discovery.subtitle'),
+      description: tCap('discovery.description'),
+      color: 'green' as const,
+      metrics: [
+        { label: tCap('discovery.metric1Label'), value: tCap('discovery.metric1Value') },
+        { label: tCap('discovery.metric2Label'), value: tCap('discovery.metric2Value') },
+      ],
+    },
+    {
+      icon: <ShieldAlert size={24} />,
+      title: tCap('shield.title'),
+      subtitle: tCap('shield.subtitle'),
+      description: tCap('shield.description'),
+      color: 'red' as const,
+      metrics: [
+        { label: tCap('shield.metric1Label'), value: tCap('shield.metric1Value') },
+        { label: tCap('shield.metric2Label'), value: tCap('shield.metric2Value') },
+      ],
+    },
+  ];
+
+  // ─── 工作流步骤 ───
+  const workflow = [
+    {
+      step: '01',
+      icon: <Globe size={28} />,
+      title: tWorkflow('step1.title'),
+      description: tWorkflow('step1.description'),
+      color: 'cyan' as const,
+    },
+    {
+      step: '02',
+      icon: <Layers size={28} />,
+      title: tWorkflow('step2.title'),
+      description: tWorkflow('step2.description'),
+      color: 'gold' as const,
+    },
+    {
+      step: '03',
+      icon: <Brain size={28} />,
+      title: tWorkflow('step3.title'),
+      description: tWorkflow('step3.description'),
+      color: 'green' as const,
+    },
+    {
+      step: '04',
+      icon: <Bell size={28} />,
+      title: tWorkflow('step4.title'),
+      description: tWorkflow('step4.description'),
+      color: 'cyan' as const,
+    },
+  ];
+
+  // ─── 安全特性 ───
+  const securityFeatures = [
+    { icon: <Lock size={20} />, title: tSecurity('e2e.title'), description: tSecurity('e2e.description') },
+    { icon: <Eye size={20} />, title: tSecurity('readonly.title'), description: tSecurity('readonly.description') },
+    { icon: <KeyRound size={20} />, title: tSecurity('noKeys.title'), description: tSecurity('noKeys.description') },
+  ];
+
+  // ─── 统计数据 ───
+  const stats = [
+    { value: tStats('latencyValue'), label: tStats('latencyLabel'), sub: tStats('latencySub') },
+    { value: tStats('walletsValue'), label: tStats('walletsLabel'), sub: tStats('walletsSub') },
+    { value: tStats('uptimeValue'), label: tStats('uptimeLabel'), sub: tStats('uptimeSub') },
+    { value: tStats('reliabilityValue'), label: tStats('reliabilityLabel'), sub: tStats('reliabilitySub') },
+  ];
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-smr-bg">
       <GridBackground />
@@ -177,18 +200,19 @@ export default function HomePage() {
             </span>
           </Link>
           <nav className="flex items-center gap-5">
-            <a href="#capabilities" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>核心能力</a>
-            <a href="#workflow" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>工作原理</a>
-            <Link href="/pricing" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>定价</Link>
+            <a href="#capabilities" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>{tNav('capabilities')}</a>
+            <a href="#workflow" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>{tNav('howItWorks')}</a>
+            <Link href="/pricing" className="hidden cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text md:block" style={{ transition: 'color var(--smr-transition-fast)' }}>{tNav('pricing')}</Link>
+            <LocaleToggle />
             <ThemeToggle size={16} />
             <SignedOut>
-              <Link href="/sign-in" className="cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text" style={{ transition: 'color var(--smr-transition-fast)' }}>登录</Link>
+              <Link href="/sign-in" className="cursor-pointer text-sm text-smr-text-secondary transition hover:text-smr-text" style={{ transition: 'color var(--smr-transition-fast)' }}>{tCommon('signIn')}</Link>
               <Link
                 href="/sign-up"
                 className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-4 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
                 style={{ boxShadow: 'var(--smr-glow-cyan)', transition: 'all var(--smr-transition-normal)' }}
               >
-                开始追踪
+                {tCommon('startTracking')}
               </Link>
             </SignedOut>
             <SignedIn>
@@ -197,7 +221,7 @@ export default function HomePage() {
                 className="cursor-pointer rounded-lg bg-[var(--smr-accent-cyan)] px-4 py-2 text-sm font-medium text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
                 style={{ boxShadow: 'var(--smr-glow-cyan)', transition: 'all var(--smr-transition-normal)' }}
               >
-                进入控制台
+                {tCommon('enterDashboard')}
               </Link>
             </SignedIn>
           </nav>
@@ -221,18 +245,18 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-3xl text-center" style={{ animation: 'float-up 800ms ease-out' }}>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--smr-glass-border)] bg-[var(--smr-glass-bg)] px-4 py-1.5 backdrop-blur-sm" style={{ animation: 'scale-in 600ms ease-out 200ms both' }}>
             <StatusPulse status="ok" size="sm" />
-            <span className="font-data text-xs text-smr-text-secondary">实时监控中 · Solana Mainnet</span>
+            <span className="font-data text-xs text-smr-text-secondary">{t('badge')}</span>
           </div>
           <h1 className="mb-6 text-4xl font-bold leading-[1.15] tracking-tight text-smr-text md:text-6xl lg:text-7xl">
-            链上聪明钱
+            {t('title1')}
             <br />
             <span className="text-[var(--smr-accent-cyan)]" style={{ textShadow: 'var(--smr-text-glow)' }}>
-              实时追踪引擎
+              {t('title2')}
             </span>
           </h1>
           <div className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-smr-text-secondary md:text-lg">
             <TypingText
-              text="Webhook 监听 → 多维富集 → AI 归因 → 即时推送。端到端 < 5 秒，让你比散户快 10 分钟收到买入信号。"
+              text={t('subtitle')}
               speed={30}
               delay={800}
             />
@@ -244,7 +268,7 @@ export default function HomePage() {
                 className="group cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[var(--smr-accent-cyan)] px-8 py-3.5 text-base font-semibold text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
                 style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
               >
-                免费注册
+                {t('cta1')}
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <a
@@ -252,7 +276,7 @@ export default function HomePage() {
                 className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-glass-bg)] px-8 py-3.5 text-base text-smr-text-secondary backdrop-blur-sm transition hover:border-[var(--smr-border-hover)] hover:text-smr-text"
                 style={{ transition: 'all var(--smr-transition-normal)' }}
               >
-                了解工作原理
+                {t('cta2')}
               </a>
             </SignedOut>
             <SignedIn>
@@ -261,7 +285,7 @@ export default function HomePage() {
                 className="group cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[var(--smr-accent-cyan)] px-8 py-3.5 text-base font-semibold text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
                 style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
               >
-                进入控制台
+                {tCommon('enterDashboard')}
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </SignedIn>
@@ -279,7 +303,7 @@ export default function HomePage() {
           <AnimateOnScroll animation="fade-up" delay={150} className="h-full">
           <GlassCard className="h-full p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-smr-text-secondary">追踪钱包动态</span>
+              <span className="text-xs font-medium text-smr-text-secondary">{tDemoChart('title')}</span>
               <Badge variant="green" size="sm">+23.5%</Badge>
             </div>
             <div className="mb-1 font-data text-2xl font-bold text-smr-text">$0.00847</div>
@@ -287,15 +311,15 @@ export default function HomePage() {
             <MiniSparkline data={demoPrice} color="var(--smr-accent-green)" width={280} height={80} filled />
             <div className="mt-3 flex justify-between border-t border-[var(--smr-glass-border)] pt-2">
               <div className="text-center">
-                <div className="text-[9px] text-smr-text-muted">24h Vol</div>
+                <div className="text-[9px] text-smr-text-muted">{tDemoChart('vol')}</div>
                 <div className="font-data text-xs font-medium text-smr-text">$12.4M</div>
               </div>
               <div className="text-center">
-                <div className="text-[9px] text-smr-text-muted">持仓钱包</div>
+                <div className="text-[9px] text-smr-text-muted">{tDemoChart('holders')}</div>
                 <div className="font-data text-xs font-medium text-smr-text">1,247</div>
               </div>
               <div className="text-center">
-                <div className="text-[9px] text-smr-text-muted">聪明钱占比</div>
+                <div className="text-[9px] text-smr-text-muted">{tDemoChart('smartMoneyPct')}</div>
                 <div className="font-data text-xs font-medium text-[var(--smr-accent-gold)]">8.3%</div>
               </div>
             </div>
@@ -306,7 +330,7 @@ export default function HomePage() {
           <AnimateOnScroll animation="fade-up" delay={300} className="h-full">
           <GlassCard className="h-full p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-medium text-smr-text-secondary">钱包评分</span>
+              <span className="text-xs font-medium text-smr-text-secondary">{tDemoWallet('title')}</span>
               <Badge variant="gold" size="sm">TOP 10</Badge>
             </div>
             <div className="space-y-3">
@@ -321,7 +345,7 @@ export default function HomePage() {
                     <div className="font-data text-xs font-medium text-smr-text">{w.addr}</div>
                     <div className="flex gap-3">
                       <span className="font-data text-[10px] text-[var(--smr-accent-green)]">{w.pnl}</span>
-                      <span className="font-data text-[10px] text-smr-text-muted">胜率 {w.wins}</span>
+                      <span className="font-data text-[10px] text-smr-text-muted">{tDemoWallet('winRate')} {w.wins}</span>
                     </div>
                   </div>
                 </div>
@@ -337,12 +361,7 @@ export default function HomePage() {
       ═══════════════════════════════════════════ */}
       <section className="border-y border-[var(--smr-glass-border)]" style={{ background: 'linear-gradient(180deg, var(--smr-section-gradient-from) 0%, var(--smr-section-gradient-to) 100%)' }}>
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-10 md:grid-cols-4">
-          {[
-            { value: '< 5s', label: '端到端延迟', sub: 'Webhook → Telegram' },
-            { value: '50+', label: '追踪钱包', sub: '自动发现 + 人工标记' },
-            { value: '24/7', label: '全天候监控', sub: '零停机运行' },
-            { value: '99.9%', label: '消息可靠性', sub: 'Graceful Degradation' },
-          ].map((stat, i) => (
+          {stats.map((stat, i) => (
             <AnimateOnScroll key={stat.label} animation="scale-in" delay={i * 100}>
               <div className="text-center">
                 <AnimatedCounter value={stat.value} className="font-data text-3xl font-bold text-[var(--smr-accent-cyan)] md:text-4xl" />
@@ -359,13 +378,13 @@ export default function HomePage() {
       ═══════════════════════════════════════════ */}
       <section id="capabilities" className="relative mx-auto max-w-6xl px-6 py-20">
         <div className="mb-4 text-center">
-          <Badge variant="cyan" size="md">CORE CAPABILITIES</Badge>
+          <Badge variant="cyan" size="md">{tCap('badge')}</Badge>
         </div>
         <h2 className="mb-4 text-center text-3xl font-bold text-smr-text md:text-4xl">
-          四大核心引擎
+          {tCap('title')}
         </h2>
         <p className="mx-auto mb-16 max-w-lg text-center text-smr-text-secondary">
-          从链上数据捕获到风险防护，全链路自动化处理
+          {tCap('subtitle')}
         </p>
 
         <div className="space-y-12">
@@ -402,7 +421,7 @@ export default function HomePage() {
                         <>
                           <div className="mb-2 flex items-center gap-2">
                             <StatusPulse status="ok" size="md" />
-                            <span className="font-data text-xs text-smr-text-secondary">Helius Webhook 连接中</span>
+                            <span className="font-data text-xs text-smr-text-secondary">{tCapViz('webhookConnected')}</span>
                           </div>
                           <div className="space-y-2">
                             {['Swap: 7nYp → $BONK', 'Swap: Dk8m → $WIF', 'Swap: 3xFa → $JUP'].map((tx) => (
@@ -419,15 +438,15 @@ export default function HomePage() {
                           <div className="mb-3 rounded-md bg-[var(--smr-bg-elevated)] px-3 py-2">
                             <div className="mb-1 flex items-center gap-1">
                               <Brain size={12} className="text-[var(--smr-accent-gold)]" />
-                              <span className="font-data text-[10px] text-[var(--smr-accent-gold)]">AI 分析输出</span>
+                              <span className="font-data text-[10px] text-[var(--smr-accent-gold)]">{tCapViz('aiOutput')}</span>
                             </div>
                             <p className="text-[11px] leading-relaxed text-smr-text-secondary">
                               高流动性 meme 代币，该钱包近期胜率 78%，连续盈利 5 笔，或为短线波段布局。建议关注后续加仓动作。
                             </p>
                           </div>
                           <div className="flex gap-2">
-                            <Badge variant="gold">置信度 85%</Badge>
-                            <Badge variant="green">低风险</Badge>
+                            <Badge variant="gold">{tCapViz('confidence')}</Badge>
+                            <Badge variant="green">{tCapViz('lowRisk')}</Badge>
                           </div>
                         </>
                       )}
@@ -442,7 +461,7 @@ export default function HomePage() {
                             <div key={w.addr} className="flex items-center gap-3">
                               <ScoreRing score={w.score} size={28} strokeWidth={2} />
                               <span className="font-data flex-1 text-xs text-smr-text">{w.addr}</span>
-                              {w.score >= 0.8 && <Badge variant="green">纳入监控</Badge>}
+                              {w.score >= 0.8 && <Badge variant="green">{tCapViz('addToMonitor')}</Badge>}
                             </div>
                           ))}
                         </div>
@@ -451,13 +470,13 @@ export default function HomePage() {
                         <>
                           <div className="mb-3 flex items-center gap-2 rounded-md bg-[var(--smr-accent-red)]/10 px-3 py-2">
                             <ShieldAlert size={14} className="text-[var(--smr-accent-red)]" />
-                            <span className="text-[11px] text-[var(--smr-accent-red)]">Freeze Authority 检测到</span>
+                            <span className="text-[11px] text-[var(--smr-accent-red)]">{tCapViz('freezeDetected')}</span>
                           </div>
                           <div className="space-y-1.5">
                             {[
-                              { label: 'Mint Authority', status: '已放弃', safe: true },
-                              { label: 'Freeze Authority', status: '存在', safe: false },
-                              { label: '流动性锁定', status: '未锁定', safe: false },
+                              { label: tCapViz('mintAuthority'), status: tCapViz('revoked'), safe: true },
+                              { label: tCapViz('freezeAuthority'), status: tCapViz('exists'), safe: false },
+                              { label: tCapViz('liquidityLock'), status: tCapViz('unlocked'), safe: false },
                             ].map((check) => (
                               <div key={check.label} className="flex items-center justify-between rounded bg-[var(--smr-bg-elevated)] px-2 py-1.5">
                                 <span className="text-[11px] text-smr-text-muted">{check.label}</span>
@@ -485,13 +504,13 @@ export default function HomePage() {
       <section id="workflow" className="border-t border-[var(--smr-glass-border)] py-20" style={{ background: 'linear-gradient(180deg, var(--smr-bg-primary) 0%, var(--smr-section-gradient-from) 50%, var(--smr-bg-primary) 100%)' }}>
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-4 text-center">
-            <Badge variant="gold" size="md">HOW IT WORKS</Badge>
+            <Badge variant="gold" size="md">{tWorkflow('badge')}</Badge>
           </div>
           <h2 className="mb-4 text-center text-3xl font-bold text-smr-text md:text-4xl">
-            从链上事件到你的手机
+            {tWorkflow('title')}
           </h2>
           <p className="mx-auto mb-16 max-w-md text-center text-smr-text-secondary">
-            全自动四步管道，端到端延迟 &lt; 5 秒
+            {tWorkflow('subtitle')}
           </p>
 
           <div className="relative grid gap-6 md:grid-cols-4">
@@ -523,10 +542,10 @@ export default function HomePage() {
       ═══════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="mb-4 text-center">
-          <Badge variant="green" size="md">SECURITY</Badge>
+          <Badge variant="green" size="md">{tSecurity('badge')}</Badge>
         </div>
         <h2 className="mb-12 text-center text-3xl font-bold text-smr-text">
-          安全是底线，不是卖点
+          {tSecurity('title')}
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
           {securityFeatures.map((item, i) => (
@@ -556,10 +575,10 @@ export default function HomePage() {
           <div aria-hidden className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-[var(--smr-accent-gold)]/5 blur-2xl" />
           <div className="relative">
             <h2 className="mb-3 text-3xl font-bold text-smr-text">
-              开始你的信息优势
+              {tCta('title')}
             </h2>
             <p className="mb-8 text-smr-text-secondary">
-              Pro 计划 $10/月 · 支持 USDC / SOL 支付 · 随时取消
+              {tCta('subtitle')}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
@@ -567,14 +586,14 @@ export default function HomePage() {
                 className="group cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[var(--smr-accent-cyan)] px-8 py-3.5 text-base font-semibold text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
                 style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
               >
-                查看定价
+                {tCommon('viewPricing')}
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
             <div className="mt-6 flex items-center justify-center gap-6 text-xs text-smr-text-muted">
-              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> USDC / SOL 链上支付</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> Helio 安全处理</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> 随时取消</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> {tCta('trust1')}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> {tCta('trust2')}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> {tCta('trust3')}</span>
             </div>
           </div>
         </GlassCard>
@@ -589,12 +608,12 @@ export default function HomePage() {
             <span className="text-sm font-medium text-smr-text-muted">Smart Money Radar</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-smr-text-muted">
-            <Link href="/terms" className="cursor-pointer transition hover:text-smr-text">Terms</Link>
-            <Link href="/privacy" className="cursor-pointer transition hover:text-smr-text">Privacy</Link>
-            <Link href="/refund" className="cursor-pointer transition hover:text-smr-text">Refund</Link>
+            <Link href="/terms" className="cursor-pointer transition hover:text-smr-text">{tFooter('terms')}</Link>
+            <Link href="/privacy" className="cursor-pointer transition hover:text-smr-text">{tFooter('privacy')}</Link>
+            <Link href="/refund" className="cursor-pointer transition hover:text-smr-text">{tFooter('refund')}</Link>
           </div>
           <div className="font-data text-xs text-smr-text-muted">
-            © 2026 Smart Money Radar · Built on Solana
+            {tFooter('copyright')}
           </div>
         </div>
       </footer>

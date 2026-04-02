@@ -1,0 +1,238 @@
+{
+  "common": {
+    "signIn": "登录",
+    "signUp": "注册",
+    "startTracking": "开始追踪",
+    "enterDashboard": "进入控制台",
+    "backToHome": "返回首页",
+    "viewPricing": "查看定价",
+    "systemNormal": "系统正常",
+    "loading": "加载中..."
+  },
+  "nav": {
+    "capabilities": "核心能力",
+    "howItWorks": "工作原理",
+    "pricing": "定价"
+  },
+  "hero": {
+    "badge": "实时监控中 · Solana Mainnet",
+    "title1": "链上聪明钱",
+    "title2": "实时追踪引擎",
+    "subtitle": "Webhook 监听 → 多维富集 → AI 归因 → 即时推送。端到端 < 5 秒，让你比散户快 10 分钟收到买入信号。",
+    "cta1": "免费注册",
+    "cta2": "了解工作原理"
+  },
+  "stats": {
+    "latencyValue": "< 5s",
+    "latencyLabel": "端到端延迟",
+    "latencySub": "Webhook → Telegram",
+    "walletsValue": "50+",
+    "walletsLabel": "追踪钱包",
+    "walletsSub": "自动发现 + 人工标记",
+    "uptimeValue": "24/7",
+    "uptimeLabel": "全天候监控",
+    "uptimeSub": "零停机运行",
+    "reliabilityValue": "99.9%",
+    "reliabilityLabel": "消息可靠性",
+    "reliabilitySub": "Graceful Degradation"
+  },
+  "capabilities": {
+    "badge": "CORE CAPABILITIES",
+    "title": "四大核心引擎",
+    "subtitle": "从链上数据捕获到风险防护，全链路自动化处理",
+    "signal": {
+      "title": "链上信号捕获",
+      "subtitle": "On-chain Signal Capture",
+      "description": "通过 Helius Enhanced Webhooks 实时监听 Solana 链上交易，毫秒级捕获聪明钱的每一笔 swap 操作。",
+      "metric1Label": "监听延迟",
+      "metric1Value": "< 500ms",
+      "metric2Label": "交易类型",
+      "metric2Value": "DEX Swap"
+    },
+    "ai": {
+      "title": "AI 归因引擎",
+      "subtitle": "AI Attribution Engine",
+      "description": "Claude AI 深度分析每笔交易的上下文——代币基本面、流动性变化、历史模式，生成 50 字精炼买入理由。",
+      "metric1Label": "分析模型",
+      "metric1Value": "Claude 3.5",
+      "metric2Label": "输出格式",
+      "metric2Value": "50 字摘要"
+    },
+    "discovery": {
+      "title": "智能钱包发现",
+      "subtitle": "Smart Wallet Discovery",
+      "description": "Birdeye 评分引擎持续扫描链上活跃地址，多维度评估胜率、PNL、交易频率，自动将高评分钱包纳入监控。",
+      "metric1Label": "评分维度",
+      "metric1Value": "5 项指标",
+      "metric2Label": "发现频率",
+      "metric2Value": "每日更新"
+    },
+    "shield": {
+      "title": "Rug Pull 防护",
+      "subtitle": "Rug Protection Shield",
+      "description": "自动检测代币的 Mint Authority 和 Freeze Authority 状态，在告警中标注风险等级，帮你避开高危代币。",
+      "metric1Label": "检测项",
+      "metric1Value": "Mint + Freeze",
+      "metric2Label": "风险标注",
+      "metric2Value": "实时告警"
+    }
+  },
+  "capViz": {
+    "webhookConnected": "Helius Webhook 连接中",
+    "aiOutput": "AI 分析输出",
+    "confidence": "置信度 85%",
+    "lowRisk": "低风险",
+    "addToMonitor": "纳入监控",
+    "freezeDetected": "Freeze Authority 检测到",
+    "mintAuthority": "Mint Authority",
+    "freezeAuthority": "Freeze Authority",
+    "liquidityLock": "流动性锁定",
+    "revoked": "已放弃",
+    "exists": "存在",
+    "unlocked": "未锁定"
+  },
+  "workflow": {
+    "badge": "HOW IT WORKS",
+    "title": "从链上事件到你的手机",
+    "subtitle": "全自动四步管道，端到端延迟 < 5 秒",
+    "step1": { "title": "链上监听", "description": "Helius Webhook 实时接收 Solana 链上聪明钱交易事件" },
+    "step2": { "title": "多维富集", "description": "DexScreener 流动性 + Solana RPC Authority 检查，2 秒内完成" },
+    "step3": { "title": "AI 分析", "description": "Claude AI 生成买入理由归因，附带风险评级" },
+    "step4": { "title": "即时推送", "description": "Telegram + Web Dashboard 双通道告警，延迟 < 5 秒" }
+  },
+  "security": {
+    "badge": "SECURITY",
+    "title": "安全是底线，不是卖点",
+    "e2e": { "title": "端到端加密", "description": "所有数据传输均通过 TLS 加密通道" },
+    "readonly": { "title": "只读追踪", "description": "仅监控链上公开交易，不触碰资产" },
+    "noKeys": { "title": "无需私钥", "description": "全程零私钥提交，零资产风险" }
+  },
+  "cta": {
+    "title": "开始你的信息优势",
+    "subtitle": "Pro 计划 $10/月 · 支持 USDC / SOL 支付 · 随时取消",
+    "trust1": "USDC / SOL 链上支付",
+    "trust2": "Helio 安全处理",
+    "trust3": "随时取消"
+  },
+  "footer": {
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "refund": "退款政策",
+    "copyright": "© 2026 Smart Money Radar · Built on Solana"
+  },
+  "demoAlert": {
+    "badge": "实时告警",
+    "action": "买入",
+    "liquidity": "流动性",
+    "fdv": "FDV",
+    "risk": "风险",
+    "low": "低",
+    "medium": "中"
+  },
+  "demoChart": {
+    "title": "追踪钱包动态",
+    "vol": "24h Vol",
+    "holders": "持仓钱包",
+    "smartMoneyPct": "聪明钱占比"
+  },
+  "demoWallet": {
+    "title": "钱包评分",
+    "winRate": "胜率"
+  },
+  "dashboard": {
+    "title": "控制台总览",
+    "activeWallets": "活跃钱包",
+    "alertStatus": "告警状态",
+    "systemStatus": "系统状态",
+    "running": "运行中",
+    "allClear": "一切正常",
+    "newAlerts": "条新告警",
+    "noNewAlerts": "无新告警",
+    "pending": "待查看",
+    "quickNav": "快速导航",
+    "alertHistory": "告警历史",
+    "alertHistoryDesc": "查看所有聪明钱交易告警，包含 AI 智能分析摘要",
+    "walletList": "钱包列表",
+    "walletListDesc": "浏览追踪中的聪明钱地址，查看评分和盈亏数据",
+    "recentAlerts": "最近告警",
+    "viewAll": "查看全部 →",
+    "unknown": "未知",
+    "checkoutSuccess": "订阅成功！欢迎使用 Smart Money Radar Pro。"
+  },
+  "sidebar": {
+    "overview": "总览",
+    "alertHistory": "告警历史",
+    "walletList": "钱包列表",
+    "collapse": "折叠侧边栏",
+    "expand": "展开侧边栏"
+  },
+  "wallets": {
+    "title": "钱包列表",
+    "activeCount": "{count} 个活跃钱包",
+    "emptyTitle": "暂无追踪中的钱包",
+    "emptyDesc": "系统会自动发现并追踪高评分的聪明钱地址，也可以手动添加。",
+    "sortScore": "评分排序",
+    "sortPnl": "PNL 排序",
+    "sortWinRate": "胜率排序",
+    "filterAll": "全部",
+    "filterPinned": "人工",
+    "filterDiscovered": "自动",
+    "showing": "显示 {count} 个钱包",
+    "score": "评分",
+    "winRate": "胜率",
+    "pnl": "PNL",
+    "trades": "交易次数",
+    "pinned": "人工标记",
+    "discovered": "自动发现",
+    "waitingData": "等待数据",
+    "backToList": "返回钱包列表",
+    "recentAlerts": "近期告警",
+    "noAlerts": "暂无关联告警",
+    "noAlertsDesc": "该钱包尚未触发交易告警"
+  },
+  "alerts": {
+    "title": "告警历史",
+    "latest": "最新 {count} 条",
+    "emptyTitle": "暂无告警记录",
+    "emptyDesc": "系统正在监控聪明钱动态，有新交易时会自动推送告警到这里和 Telegram。",
+    "loadMore": "加载更多",
+    "loadingMore": "加载中...",
+    "retry": "重试",
+    "loadFailed": "加载失败，请重试",
+    "aiDetail": "AI 分析详情",
+    "aiDetailExpand": "AI 分析详情（点击展开）",
+    "highRisk": "高风险",
+    "mediumRisk": "中风险",
+    "info": "信息",
+    "freezeWarning": "Freeze Authority 存在 — 高风险代币"
+  },
+  "pricing": {
+    "title": "选择你的计划",
+    "subtitle": "解锁 Solana 聪明钱实时追踪，让 AI 帮你看懂每一笔交易",
+    "cryptoPay": "加密货币支付",
+    "recommended": "推荐",
+    "cardPay": "信用卡支付",
+    "comingSoon": "即将开放",
+    "cardDisabled": "信用卡 / PayPal（审核中）",
+    "helioNote": "加密支付由 Helio (MoonPay Commerce) 安全处理。支持 USDC、SOL 等 Solana 链上资产。",
+    "loginFirst": "登录后使用加密货币支付",
+    "configuring": "加密支付配置中..."
+  },
+  "paywall": {
+    "title": "需要订阅才能查看",
+    "description": "升级到 Pro 计划，解锁实时聪明钱告警、钱包追踪和 AI 分析。",
+    "cta": "升级订阅"
+  },
+  "terms": {
+    "title": "服务条款",
+    "lastUpdated": "最后更新：2026 年 4 月 2 日"
+  },
+  "privacy": {
+    "title": "隐私政策",
+    "lastUpdated": "最后更新：2026 年 4 月 2 日"
+  },
+  "refund": {
+    "title": "退款政策",
+    "lastUpdated": "最后更新：2026 年 4 月 2 日"
+  }
+}

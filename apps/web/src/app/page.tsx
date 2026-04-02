@@ -165,7 +165,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════
           顶部导航栏
       ═══════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 border-b border-[var(--smr-glass-border)] backdrop-blur-xl" style={{ background: 'rgba(10, 14, 26, 0.85)' }}>
+      <header className="sticky top-0 z-50 border-b border-[var(--smr-glass-border)] backdrop-blur-xl" style={{ background: 'var(--smr-nav-bg)' }}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--smr-accent-cyan)]/10">
@@ -214,8 +214,8 @@ export default function HomePage() {
         <GlowCursor />
 
         {/* 多层背景光晕 */}
-        <div aria-hidden className="pointer-events-none absolute -left-40 -top-20 h-[500px] w-[500px] rounded-full opacity-15 blur-[120px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-cyan) 0%, transparent 70%)' }} />
-        <div aria-hidden className="pointer-events-none absolute -right-20 top-20 h-[300px] w-[300px] rounded-full opacity-10 blur-[100px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-gold) 0%, transparent 70%)' }} />
+        <div aria-hidden className="pointer-events-none absolute -left-40 -top-20 h-[500px] w-[500px] rounded-full blur-[120px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-cyan) 0%, transparent 70%)', opacity: 'var(--smr-glow-hero-opacity)' }} />
+        <div aria-hidden className="pointer-events-none absolute -right-20 top-20 h-[300px] w-[300px] rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, var(--smr-accent-gold) 0%, transparent 70%)', opacity: 'var(--smr-glow-hero-opacity)' }} />
 
         {/* 居中文案 */}
         <div className="relative mx-auto max-w-3xl text-center" style={{ animation: 'float-up 800ms ease-out' }}>
@@ -226,7 +226,7 @@ export default function HomePage() {
           <h1 className="mb-6 text-4xl font-bold leading-[1.15] tracking-tight text-smr-text md:text-6xl lg:text-7xl">
             链上聪明钱
             <br />
-            <span className="text-[var(--smr-accent-cyan)]" style={{ textShadow: '0 0 40px rgba(0, 240, 255, 0.2)' }}>
+            <span className="text-[var(--smr-accent-cyan)]" style={{ textShadow: 'var(--smr-text-glow)' }}>
               实时追踪引擎
             </span>
           </h1>
@@ -242,7 +242,7 @@ export default function HomePage() {
               <Link
                 href="/sign-up"
                 className="group cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[var(--smr-accent-cyan)] px-8 py-3.5 text-base font-semibold text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
-                style={{ boxShadow: '0 0 30px rgba(0, 240, 255, 0.25), 0 0 60px rgba(0, 240, 255, 0.1)', transition: 'all var(--smr-transition-normal)' }}
+                style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
               >
                 免费注册
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
@@ -259,7 +259,7 @@ export default function HomePage() {
               <Link
                 href="/dashboard"
                 className="group cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[var(--smr-accent-cyan)] px-8 py-3.5 text-base font-semibold text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
-                style={{ boxShadow: '0 0 30px rgba(0, 240, 255, 0.25), 0 0 60px rgba(0, 240, 255, 0.1)', transition: 'all var(--smr-transition-normal)' }}
+                style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
               >
                 进入控制台
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
@@ -335,7 +335,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════
           关键数据指标
       ═══════════════════════════════════════════ */}
-      <section className="border-y border-[var(--smr-glass-border)]" style={{ background: 'linear-gradient(180deg, rgba(17, 24, 39, 0.4) 0%, rgba(10, 14, 26, 0.8) 100%)' }}>
+      <section className="border-y border-[var(--smr-glass-border)]" style={{ background: 'linear-gradient(180deg, var(--smr-section-gradient-from) 0%, var(--smr-section-gradient-to) 100%)' }}>
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-10 md:grid-cols-4">
           {[
             { value: '< 5s', label: '端到端延迟', sub: 'Webhook → Telegram' },
@@ -482,7 +482,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════
           工作流程 — How it works
       ═══════════════════════════════════════════ */}
-      <section id="workflow" className="border-t border-[var(--smr-glass-border)] py-20" style={{ background: 'linear-gradient(180deg, rgba(10, 14, 26, 1) 0%, rgba(17, 24, 39, 0.3) 50%, rgba(10, 14, 26, 1) 100%)' }}>
+      <section id="workflow" className="border-t border-[var(--smr-glass-border)] py-20" style={{ background: 'linear-gradient(180deg, var(--smr-bg-primary) 0%, var(--smr-section-gradient-from) 50%, var(--smr-bg-primary) 100%)' }}>
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-4 text-center">
             <Badge variant="gold" size="md">HOW IT WORKS</Badge>
@@ -565,7 +565,7 @@ export default function HomePage() {
               <Link
                 href="/pricing"
                 className="group cursor-pointer inline-flex items-center gap-2 rounded-lg bg-[var(--smr-accent-cyan)] px-8 py-3.5 text-base font-semibold text-[var(--smr-bg-primary)] transition hover:bg-[var(--smr-accent-cyan)]/80"
-                style={{ boxShadow: '0 0 30px rgba(0, 240, 255, 0.25)', transition: 'all var(--smr-transition-normal)' }}
+                style={{ boxShadow: 'var(--smr-glow-cyan-strong)', transition: 'all var(--smr-transition-normal)' }}
               >
                 查看定价
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />

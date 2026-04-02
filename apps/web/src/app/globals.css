@@ -42,6 +42,16 @@
   --smr-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   --smr-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.06);
 
+  /* 导航栏/区域背景 */
+  --smr-nav-bg: rgba(248, 250, 252, 0.85);
+  --smr-section-gradient-from: rgba(241, 245, 249, 0.4);
+  --smr-section-gradient-to: rgba(248, 250, 252, 0.8);
+
+  /* 特效颜色（light 模式柔和） */
+  --smr-particle-color: 8, 145, 178;
+  --smr-glow-hero-opacity: 0.08;
+  --smr-text-glow: none;
+
   /* 过渡 */
   --smr-transition-fast: 150ms ease;
   --smr-transition-normal: 200ms ease;
@@ -84,6 +94,14 @@
   --smr-glow-red: 0 0 12px rgba(255, 68, 68, 0.2);
   --smr-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
   --smr-shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  --smr-nav-bg: rgba(6, 10, 20, 0.85);
+  --smr-section-gradient-from: rgba(15, 22, 41, 0.4);
+  --smr-section-gradient-to: rgba(6, 10, 20, 0.8);
+
+  --smr-particle-color: 0, 240, 255;
+  --smr-glow-hero-opacity: 0.15;
+  --smr-text-glow: 0 0 40px rgba(0, 240, 255, 0.2);
 }
 
 /* ─── 注册到 Tailwind v4 主题 ─── */
@@ -107,6 +125,7 @@
 
   --color-smr-glass-bg: var(--smr-glass-bg);
   --color-smr-glass-border: var(--smr-glass-border);
+  --color-smr-nav-bg: var(--smr-nav-bg);
 
   --font-heading: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;

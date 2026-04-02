@@ -72,7 +72,10 @@ function createMockLogger() {
 
 describe('cleanupExpiredMembers', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    // 重新设置 mock（restoreAllMocks 会清除 mock 实现）
+    vi.mocked(bot.kickChatMember).mockResolvedValue(undefined);
+    vi.mocked(bot.sendMessage).mockResolvedValue(undefined);
     // 加速测试：mock setTimeout/延迟
     vi.useFakeTimers();
   });

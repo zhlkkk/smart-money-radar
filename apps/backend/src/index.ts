@@ -22,6 +22,7 @@ import { telegramWebhookPlugin } from './telegram/webhook.js';
 import { handleBindCommand } from './telegram/bind.js';
 import { handleJoinRequest } from './telegram/join-request.js';
 import { generateBindCode } from './telegram/bind-codes.js';
+import { cleanupExpiredMembers } from './telegram/cleanup.js';
 import { telegramBindings } from '@radar/db';
 import { eq } from 'drizzle-orm';
 import { Paddle, Environment } from '@paddle/paddle-node-sdk';
@@ -246,6 +247,20 @@ try {
   // Start wallet discovery after server is accepting webhooks
   if (discovery) {
     discovery.start();
+  }
+
+  // 每小时清理过期订阅的频道成员
+  if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHANNEL_ID && db) {
+    setInterval(async () => {
+      try {
+        const result = await cleanupExpiredMembers(db, env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, app.log);
+        if (result.removed > 0 || result.errors > 0) {
+          app.log.info(result, 'Telegram cleanup completed');
+        }
+      } catch (err) {
+        app.log.error({ err }, 'Telegram cleanup failed');
+      }
+    }, 60 * 60 * 1000); // 1 小时
   }
 } catch (err) {
   app.log.fatal(err, 'Failed to start server');

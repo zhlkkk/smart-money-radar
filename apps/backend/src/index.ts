@@ -18,6 +18,13 @@ import { createDiscovery } from './discovery/orchestrator.js';
 import { registerCheckoutRoutes } from './stripe/checkout.js';
 import { registerPaddleWebhookRoutes } from './stripe/webhook.js';
 import { registerHelioWebhookRoutes } from './helio/webhook.js';
+import { telegramWebhookPlugin } from './telegram/webhook.js';
+import { handleBindCommand } from './telegram/bind.js';
+import { handleJoinRequest } from './telegram/join-request.js';
+import { generateBindCode } from './telegram/bind-codes.js';
+import { cleanupExpiredMembers } from './telegram/cleanup.js';
+import { telegramBindings } from '@radar/db';
+import { eq } from 'drizzle-orm';
 import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
@@ -154,6 +161,59 @@ if (env.HELIO_WEBHOOK_SHARED_TOKEN && db) {
   app.log.info('Helio Pay webhook route registered');
 }
 
+// Telegram Bot Webhook（Phase 3 — 双向交互：命令 + 加入请求）
+if (env.TELEGRAM_WEBHOOK_SECRET && env.TELEGRAM_BOT_TOKEN) {
+  const inviteLink = env.TELEGRAM_INVITE_LINK ?? '';
+  app.register(telegramWebhookPlugin({
+    secretToken: env.TELEGRAM_WEBHOOK_SECRET,
+    onMessage: async (update) => {
+      if (db) {
+        await handleBindCommand(update, db, env.TELEGRAM_BOT_TOKEN, inviteLink);
+      }
+    },
+    onChatJoinRequest: async (update) => {
+      if (db) {
+        await handleJoinRequest(update, db, env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID);
+      }
+    },
+  }));
+  app.log.info('Telegram Bot webhook route registered');
+}
+
+// Telegram 绑定 REST API（Phase 3 — Dashboard 获取验证码 + 查询绑定状态）
+if (db) {
+  app.get('/api/v1/telegram/bind-code', async (request, reply) => {
+    const { clerkUserId } = request.query as { clerkUserId?: string };
+    if (!clerkUserId) {
+      return reply.code(400).send({ error: 'Missing clerkUserId query parameter' });
+    }
+    const code = generateBindCode(clerkUserId);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    return reply.send({ code, expiresAt });
+  });
+
+  app.get('/api/v1/telegram/status', async (request, reply) => {
+    const { clerkUserId } = request.query as { clerkUserId?: string };
+    if (!clerkUserId) {
+      return reply.code(400).send({ error: 'Missing clerkUserId query parameter' });
+    }
+    const rows = await db
+      .select()
+      .from(telegramBindings)
+      .where(eq(telegramBindings.clerkUserId, clerkUserId));
+
+    if (rows.length === 0) {
+      return reply.send({ status: 'not_bound' });
+    }
+    const binding = rows[0]!;
+    // TODO: Unit 4 加入请求审批后可区分 bound_not_subscribed vs bound_and_subscribed
+    return reply.send({
+      status: 'bound_not_subscribed',
+      telegramUsername: binding.telegramUsername ?? undefined,
+    });
+  });
+}
+
 // SSE 实时告警推送（无需鉴权，只读事件流）
 registerAlertsStreamRoute(app);
 
@@ -187,6 +247,20 @@ try {
   // Start wallet discovery after server is accepting webhooks
   if (discovery) {
     discovery.start();
+  }
+
+  // 每小时清理过期订阅的频道成员
+  if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHANNEL_ID && db) {
+    setInterval(async () => {
+      try {
+        const result = await cleanupExpiredMembers(db, env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, app.log);
+        if (result.removed > 0 || result.errors > 0) {
+          app.log.info(result, 'Telegram cleanup completed');
+        }
+      } catch (err) {
+        app.log.error({ err }, 'Telegram cleanup failed');
+      }
+    }, 60 * 60 * 1000); // 1 小时
   }
 } catch (err) {
   app.log.fatal(err, 'Failed to start server');

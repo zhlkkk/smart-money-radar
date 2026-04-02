@@ -8,6 +8,7 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { StatusPulse } from '@/components/ui/status-pulse';
 import { formatRelativeTime, truncateAddress } from '@/lib/format';
 import { DashboardCharts } from '@/components/dashboard-charts';
+import { TelegramBind } from '@/components/telegram-bind';
 import { getTranslations } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </span>
         </GlassCard>
       )}
+
+      {/* Telegram 绑定引导 */}
+      <TelegramBind />
 
       {/* 标题 */}
       <h1 className="mb-8 text-2xl font-bold text-smr-text">{t('title')}</h1>

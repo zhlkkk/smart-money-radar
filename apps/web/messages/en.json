@@ -273,5 +273,24 @@
   "refund": {
     "title": "Refund Policy",
     "lastUpdated": "Last updated: April 2, 2026"
+  },
+  "telegram": {
+    "title": "Telegram Alert Channel",
+    "notBound": "Connect Telegram for real-time alerts",
+    "bindStep1": "1. Click below to generate a verification code",
+    "bindStep2": "2. Open Telegram and send the code to our Bot",
+    "bindStep3": "3. After binding, click the invite link to join",
+    "generateCode": "Generate Code",
+    "regenerateCode": "Regenerate",
+    "codeCopied": "Copied",
+    "copyCode": "Copy Code",
+    "sendToBot": "Send to Bot:",
+    "joinChannel": "Join Alert Channel",
+    "bound": "Telegram Connected",
+    "boundUser": "Connected: @{username}",
+    "notSubscribed": "Subscribe to Pro plan first",
+    "channelJoined": "Joined Alert Channel",
+    "codeExpiry": "Code valid for {minutes} minutes",
+    "error": "Failed to generate code, please retry"
   }
 }

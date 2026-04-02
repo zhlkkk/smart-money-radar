@@ -5,8 +5,8 @@ import { useEffect, useState, useRef } from 'react';
 import type { AlertRow } from '@/lib/backend-client';
 import { AlertCard } from '@/components/alert-card';
 
-const SSE_URL = process.env.NEXT_PUBLIC_BACKEND_SSE_URL
-  ?? (typeof window !== 'undefined' ? '' : '');
+// 通过 Next.js API 代理连接后端 SSE（无需暴露后端地址）
+const SSE_PATH = '/api/alerts/stream';
 
 interface RealtimeAlertsProps {
   className?: string;
@@ -18,9 +18,7 @@ export function RealtimeAlerts({ className = '' }: RealtimeAlertsProps) {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    if (!SSE_URL) return;
-
-    const url = `${SSE_URL}/api/v1/alerts/stream`;
+    const url = SSE_PATH;
     const es = new EventSource(url);
     eventSourceRef.current = es;
 

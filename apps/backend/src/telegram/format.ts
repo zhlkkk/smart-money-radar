@@ -28,7 +28,7 @@ export function truncateMint(mint: string): string {
 }
 
 export function formatAlert(data: AlertData): string {
-  const { wallet, swap, enrichment, riskAssessment, aiSummary } = data;
+  const { wallet, swap, enrichment, riskAssessment, aiSummary, confidence } = data;
   const label = escapeHtml(wallet.label);
   const category = escapeHtml(wallet.category);
   const tokenDisplay = swap.tokenSymbol ? escapeHtml(swap.tokenSymbol) : truncateMint(swap.tokenMint);
@@ -44,14 +44,21 @@ export function formatAlert(data: AlertData): string {
 
   const lines: string[] = [
     `🐋 <b>${label}</b> (${category}) bought <code>${tokenDisplay}</code>  ${riskAssessment.label}`,
+    `📊 <b>${confidence.label}</b>`,
     '',
     `💰 Liq: <b>${liq}</b> | FDV: <b>${fdv}</b> | MC: <b>${mc}</b>`,
-    `📊 Vol 24h: <b>${vol}</b> | Txns: ${txns}`,
+    `📈 Vol 24h: <b>${vol}</b> | Txns: ${txns}`,
     `🔒 Mint: ${mintStatus} | Freeze: ${freezeStatus}`,
   ];
   if (aiSummary) {
     lines.push('', `🤖 <i>${escapeHtml(aiSummary)}</i>`);
   }
-  lines.push('', `📌 <a href="https://birdeye.so/token/${swap.tokenMint}?chain=solana">Birdeye</a> | <a href="https://dexscreener.com/solana/${swap.tokenMint}">DexScreener</a>`);
+  lines.push(
+    '',
+    `🔍 数据源: Helius → DexScreener → Claude`,
+    `📌 <a href="https://birdeye.so/token/${swap.tokenMint}?chain=solana">Birdeye</a> | <a href="https://dexscreener.com/solana/${swap.tokenMint}">DexScreener</a>`,
+    '',
+    `<i>数据来自第三方 API，仅供参考，不构成投资建议</i>`,
+  );
   return lines.join('\n');
 }

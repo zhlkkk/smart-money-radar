@@ -42,6 +42,7 @@ describe('formatAlert', () => {
     },
     riskAssessment: { level: 'low', label: '🟢 低风险', factors: [] },
     aiSummary: '新 meme 叙事',
+    confidence: { score: 100, level: 'high', label: '🟢 信号强度: 高' },
   };
 
   it('renders full alert', () => {
@@ -82,12 +83,36 @@ describe('formatAlert', () => {
       },
       riskAssessment: { level: 'high', label: '🔴 高风险', factors: ['Mint Authority 未撤销', '流动性偏低'] },
       aiSummary: '低流动性meme币，Mint未撤销有增发风险',
+      confidence: { score: 100, level: 'high', label: '🟢 信号强度: 高' },
     };
     const html = formatAlert(alert);
     expect(html).toContain('🔴 高风险');
     expect(html).toContain('Vol 24h');
     expect(html).toContain('Txns: 15 buys / 8 sells');
     expect(html).toContain('$2.3K');
+  });
+
+  it('includes confidence label in output', () => {
+    const html = formatAlert(fullAlert);
+    expect(html).toContain('🟢 信号强度: 高');
+  });
+
+  it('includes data source line', () => {
+    const html = formatAlert(fullAlert);
+    expect(html).toContain('Helius → DexScreener → Claude');
+  });
+
+  it('includes disclaimer', () => {
+    const html = formatAlert(fullAlert);
+    expect(html).toContain('仅供参考');
+  });
+
+  it('shows medium confidence correctly', () => {
+    const html = formatAlert({
+      ...fullAlert,
+      confidence: { score: 55, level: 'medium', label: '🟡 信号强度: 中' },
+    });
+    expect(html).toContain('🟡 信号强度: 中');
   });
 
   it('renders green risk label', () => {
@@ -102,6 +127,7 @@ describe('formatAlert', () => {
       },
       riskAssessment: { level: 'low', label: '🟢 低风险', factors: [] },
       aiSummary: '主流代币，流动性充足',
+      confidence: { score: 100, level: 'high', label: '🟢 信号强度: 高' },
     };
     const html = formatAlert(alert);
     expect(html).toContain('🟢 低风险');

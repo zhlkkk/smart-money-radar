@@ -51,7 +51,7 @@ function buildPrompt(input: AttributionInput): string {
     : 'N/A';
 
   return `用 <50 字中文总结这个 Solana 代币的买入理由和风险提示。
-要求：先说为什么被买入，再说主要风险点。禁止废话。
+要求：先说为什么被买入，再说主要风险点。禁止废话。纯文本输出，禁止使用任何 Markdown 格式（不要用 # * ** ` 等符号）。
 
 代币: ${input.tokenSymbol ?? 'Unknown'} (${input.tokenMint})
 流动性: ${formatValue(input.liquidity)}

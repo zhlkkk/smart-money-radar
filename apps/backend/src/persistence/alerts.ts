@@ -1,12 +1,13 @@
 import { alertsHistory } from '@radar/db';
 import type { PoolDatabase } from '@radar/db';
-import type { ParsedSwap, EnrichmentResult, SmartMoneyWallet } from '@radar/shared';
+import type { ParsedSwap, EnrichmentResult, SmartMoneyWallet, ConfidenceResult } from '@radar/shared';
 
 export interface PersistAlertInput {
   swap: ParsedSwap;
   enrichment: EnrichmentResult;
   wallet: SmartMoneyWallet;
   aiSummary: string;
+  confidence?: ConfidenceResult;
 }
 
 /**

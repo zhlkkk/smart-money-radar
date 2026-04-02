@@ -18,6 +18,8 @@ export interface AlertEvent {
   freezeAuthority: string | null;
   aiSummary: string;
   createdAt: string;
+  confidenceScore: number;
+  confidenceLevel: 'high' | 'medium' | 'low';
 }
 
 class AlertBus extends EventEmitter {

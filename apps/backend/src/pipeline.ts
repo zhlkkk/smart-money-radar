@@ -10,6 +10,7 @@ import { sendAlert } from './telegram/bot.js';
 import { persistAlert } from './persistence/alerts.js';
 import type { EnrichmentResult, RiskAssessment } from './types.js';
 import { alertBus } from './events.js';
+import { computeConfidence } from './enrichment/confidence.js';
 
 // 质量过滤最低阈值
 const MIN_LIQUIDITY = 5_000;       // $5K — 低于此值无法退出仓位
@@ -99,6 +100,9 @@ export function createPipeline(config: PipelineConfig) {
     // 风险评估
     const riskAssessment = assessRisk(enrichment);
 
+    // 置信度评分
+    const confidence = computeConfidence(enrichment, wallet.category === 'discovered');
+
     const aiSummary = await generateAttribution(
       {
         tokenSymbol,
@@ -135,14 +139,16 @@ export function createPipeline(config: PipelineConfig) {
       freezeAuthority: enrichment.freezeAuthority,
       aiSummary,
       createdAt: new Date().toISOString(),
+      confidenceScore: confidence.score,
+      confidenceLevel: confidence.level,
     });
 
-    const html = formatAlert({ wallet, swap, enrichment, riskAssessment, aiSummary });
+    const html = formatAlert({ wallet, swap, enrichment, riskAssessment, aiSummary, confidence });
 
     // DB write and Telegram send run in parallel — DB failure never blocks alerts
     // Wrap persistAlert in an async IIFE to catch synchronous throws
     const dbWrite = config.db
-      ? (async () => persistAlert(config.db!, { swap, enrichment, wallet, aiSummary }))()
+      ? (async () => persistAlert(config.db!, { swap, enrichment, wallet, aiSummary, confidence }))()
       : Promise.resolve(false);
 
     const results = await Promise.allSettled([

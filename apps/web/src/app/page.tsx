@@ -85,6 +85,14 @@ export default function HomePage() {
   const tFooter = useTranslations('footer');
   const tDemoChart = useTranslations('demoChart');
   const tDemoWallet = useTranslations('demoWallet');
+  const tMethod = useTranslations('methodology');
+
+  // ─── 数据方法论颜色映射（Tailwind v4 不支持模板字符串类名）───
+  const methodologyColorMap: Record<string, string> = {
+    cyan: 'border-[var(--smr-accent-cyan)]/30 text-[var(--smr-accent-cyan)]',
+    green: 'border-[var(--smr-accent-green)]/30 text-[var(--smr-accent-green)]',
+    gold: 'border-[var(--smr-accent-gold)]/30 text-[var(--smr-accent-gold)]',
+  };
 
   // ─── 核心能力数据 ───
   const capabilities = [
@@ -561,6 +569,77 @@ export default function HomePage() {
             </GlassCard>
             </AnimateOnScroll>
           ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          数据方法论
+      ═══════════════════════════════════════════ */}
+      <section id="methodology" className="border-t border-[var(--smr-glass-border)] py-20" style={{ background: 'linear-gradient(180deg, var(--smr-bg-primary) 0%, var(--smr-section-gradient-from) 50%, var(--smr-bg-primary) 100%)' }}>
+        <div className="mx-auto max-w-4xl px-6">
+          <AnimateOnScroll animation="fade-in">
+            <div className="mb-12 text-center">
+              <h2 className="mb-3 text-2xl font-bold text-smr-text md:text-3xl">
+                {tMethod('title')}
+              </h2>
+              <p className="text-smr-text-secondary">
+                {tMethod('subtitle')}
+              </p>
+            </div>
+          </AnimateOnScroll>
+
+          <div className="relative space-y-6">
+            {/* 连接线 */}
+            <div className="absolute left-6 top-8 bottom-8 w-px bg-gradient-to-b from-[var(--smr-accent-cyan)]/40 via-[var(--smr-accent-green)]/40 to-[var(--smr-accent-cyan)]/40 md:left-8" />
+
+            {[
+              { icon: <Radio size={20} />, num: 1, color: 'cyan' as const },
+              { icon: <Target size={20} />, num: 2, color: 'green' as const },
+              { icon: <BarChart3 size={20} />, num: 3, color: 'gold' as const },
+              { icon: <ShieldCheck size={20} />, num: 4, color: 'cyan' as const },
+              { icon: <Brain size={20} />, num: 5, color: 'green' as const },
+            ].map(({ icon, num, color }) => (
+              <AnimateOnScroll key={num} animation="fade-in">
+                <div className="relative flex gap-4 pl-2 md:pl-4">
+                  <div className={`z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--smr-bg-card)] ${methodologyColorMap[color]}`}>
+                    {icon}
+                  </div>
+                  <GlassCard className="flex-1 p-4">
+                    <div className="mb-1 flex items-baseline gap-2">
+                      <span className="text-sm font-bold text-smr-text">
+                        {tMethod(`step${num}Title`)}
+                      </span>
+                      <span className="font-data text-xs text-smr-text-muted">
+                        {tMethod(`step${num}Source`)}
+                      </span>
+                    </div>
+                    <p className="mb-1 text-sm text-smr-text-secondary">
+                      {tMethod(`step${num}Desc`)}
+                    </p>
+                    <p className="text-xs text-smr-text-muted italic">
+                      {tMethod(`step${num}What`)}
+                    </p>
+                  </GlassCard>
+                </div>
+              </AnimateOnScroll>
+            ))}
+          </div>
+
+          {/* 局限性说明 */}
+          <AnimateOnScroll animation="fade-in">
+            <GlassCard className="mt-10 p-5">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-smr-text-secondary">
+                <ShieldAlert size={16} className="text-[var(--smr-accent-gold)]" />
+                {tMethod('limitationsTitle')}
+              </h3>
+              <ul className="space-y-1.5 text-xs text-smr-text-muted">
+                <li>· {tMethod('limitation1')}</li>
+                <li>· {tMethod('limitation2')}</li>
+                <li>· {tMethod('limitation3')}</li>
+                <li>· {tMethod('limitation4')}</li>
+              </ul>
+            </GlassCard>
+          </AnimateOnScroll>
         </div>
       </section>
 

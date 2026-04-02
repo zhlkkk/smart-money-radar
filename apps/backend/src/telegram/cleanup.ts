@@ -2,7 +2,7 @@
 
 import type { PoolDatabase } from '@radar/db';
 import { telegramBindings, users, subscriptions } from '@radar/db';
-import { eq, isNull, and, ne } from 'drizzle-orm';
+import { eq, isNull, and, ne, or } from 'drizzle-orm';
 import { kickChatMember, sendMessage } from './bot.js';
 
 /** 延迟指定毫秒 */
@@ -38,7 +38,7 @@ export async function cleanupExpiredMembers(
       and(
         isNull(telegramBindings.unboundAt),
         // 订阅不是 active（包括 NULL，即没有订阅记录）
-        ne(subscriptions.status, 'active'),
+        or(ne(subscriptions.status, 'active'), isNull(subscriptions.status)),
       ),
     );
 

@@ -103,5 +103,12 @@ export async function kickChatMember(
   botToken: string,
 ): Promise<void> {
   await callTelegramApi('banChatMember', { chat_id: chatId, user_id: userId }, botToken);
-  await callTelegramApi('unbanChatMember', { chat_id: chatId, user_id: userId, only_if_banned: true }, botToken);
+  // unban 必须成功，否则用户被永久封禁。失败时重试一次。
+  try {
+    await callTelegramApi('unbanChatMember', { chat_id: chatId, user_id: userId, only_if_banned: true }, botToken);
+  } catch {
+    // 等待 500ms 后重试
+    await new Promise((r) => setTimeout(r, 500));
+    await callTelegramApi('unbanChatMember', { chat_id: chatId, user_id: userId, only_if_banned: true }, botToken);
+  }
 }

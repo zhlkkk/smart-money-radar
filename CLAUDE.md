@@ -16,64 +16,41 @@ Telegram bot that tracks smart money wallet activity on Solana and pushes real-t
 
 ---
 
-## 【自驱模式】Agent Teams 自动化规则（必须遵守）
+## 子代理调度模式
 
-本项目启用 Claude Code Agent Teams 进行**全自动**三角色协作开发。
+本项目使用 Claude 主进程充当 PM，通过 Agent 工具 spawn 子代理执行编码和审查任务。
 
-**核心原则：PM 是调度引擎，不是提问机器。**
+**调度原则：**
+- 主进程（PM 角色）负责需求分析、架构规划、知识沉淀，**不写业务代码**
+- 编码任务 spawn `Execution_Engineer` 子代理（TDD 编码、自我修复）
+- 审查任务 spawn `QA_Reviewer` 子代理（代码审查、质量把关）
+- PM 收到子代理结果后自主决定下一步：通过则继续下一个 Unit，驳回则重新 spawn 修复
+- 整个 Phase 的所有 Unit 应连续执行，不逐个询问用户"要不要继续"
 
-- Project_Facilitator 完成一个 Unit 后**必须自动开始下一个 Unit**，绝不停下来问用户"要不要继续"
-- Execution_Engineer 编码完成后**必须自动提交给 QA_Reviewer**，不问用户
-- QA_Reviewer 审查完成后**必须自动 handoff**（通过→PM，驳回→Coder），不问用户
-- 整个 Phase 的所有 Unit 应该像流水线一样自动流转，直到全部完成才停下来
-
-### 允许停下来的唯一情况
+**允许停下来的唯一情况：**
 1. 所有 Unit 全部完成
 2. 需要用户提供外部信息（API key 等）
-3. Execution_Engineer 连续 3 次修复同一问题失败
-
-### 团队架构
-
-```
-用户需求 → Project_Facilitator (队长)
-                ↓ 步骤 1-3: 发散/锁死/规划
-           Execution_Engineer (码农)
-                ↓ 步骤 4: TDD 编码
-           QA_Reviewer (审查官)
-                ↓ 步骤 5: 代码审查
-           Project_Facilitator (队长)
-                ↓ 步骤 6: 知识复合
-              完成 ✅
-```
-
-### 角色职责速查
-
-| 角色 | 负责步骤 | 核心职责 | 禁区 |
-|------|---------|---------|------|
-| `Project_Facilitator` | 1,2,3,6 | 需求分析、架构规划、知识沉淀 | 不写业务代码 |
-| `Execution_Engineer` | 4 | TDD 编码、自我修复 | 不做架构决策 |
-| `QA_Reviewer` | 5 | 代码审查、质量把关 | 不写新功能代码 |
-
-### 移交路由（严格执行）
-
-```
-Project_Facilitator → Execution_Engineer   (规划完成，开始编码)
-Execution_Engineer  → QA_Reviewer          (编码完成，开始审查)
-Execution_Engineer  → Project_Facilitator  (遇到架构问题求助)
-QA_Reviewer         → Execution_Engineer   (审查驳回，要求修复)
-QA_Reviewer         → Project_Facilitator  (审查通过，执行知识复合)
-```
+3. 同一问题修复失败 3 次
 
 ### 标准 6 步工作流
 
-| 步骤 | 命令 | 核心作用 | 执行人 |
+| 步骤 | 命令 | 核心作用 | 执行者 |
 |------|------|----------|--------|
-| 1. 产品级发散 | `/superpowers:brainstorm` | 澄清需求、用户故事、风险 | PM |
-| 2. 永久锁死知识 | `/ce:compound` | 把 PRD、技术决策写入知识库 | PM |
-| 3. 深度技术规划 | `/ce:plan` | 极深研究，输出详细计划 | PM |
-| 4. 结构化执行 | `/superpowers:execute-plan` | 强制 TDD、分模块实现 | Coder |
-| 5. 自动 Review | `/ce:review` | 多维度审查 + 驳回/通过 | QA |
-| 6. 知识复合 | `/ce:compound` | 提炼模式、坑点、最佳实践 | PM |
+| 1. 产品级发散 | `/superpowers:brainstorm` | 澄清需求、用户故事、风险 | PM（主进程） |
+| 2. 永久锁死知识 | `/ce:compound` | 把 PRD、技术决策写入知识库 | PM（主进程） |
+| 3. 深度技术规划 | `/ce:plan` | 极深研究，输出详细计划 | PM（主进程） |
+| 4. 结构化执行 | `/superpowers:execute-plan` | 强制 TDD、分模块实现 | Execution_Engineer 子代理 |
+| 5. 自动 Review | `/ce:review` | 多维度审查 + 驳回/通过 | QA_Reviewer 子代理 |
+| 6. 知识复合 | `/ce:compound` | 提炼模式、坑点、最佳实践 | PM（主进程） |
+
+---
+
+## MCP 工具使用规则
+
+- **代码检索与编辑**: 优先使用 Serena 的语义工具（find_symbol, get_symbols_overview, find_referencing_symbols），而非 grep 全文件搜索。修改函数体用 replace_symbol_body，插入代码用 insert_before/after_symbol。
+- **第三方库文档**: 使用 Context7 获取 Fastify / Vitest / @solana/kit / Next.js 等最新文档，不依赖训练数据中的旧 API。
+- **复杂决策**: 架构设计、技术选型等需要多步推理的任务使用 Sequential Thinking 进行结构化推理。
+- **符号导航优先**: 理解代码时先用 get_symbols_overview 获取文件概览，再用 find_symbol 定位具体符号，最后才读取函数体——避免一次性读取整个文件浪费 token。
 
 ---
 
@@ -150,17 +127,18 @@ The MVP is deliberately minimal. Core concerns:
 
 ### Phase 3（进行中 🚧）— 产品打磨 + 数据可信度
 
-#### Phase 3a: UI 体验优化
-- 明暗模式切换 + Dashboard 层次感优化（`docs/plans/2026-04-02-001-feat-light-dark-theme-toggle-plan.md`）🚧
-- AI 成本优化（`docs/plans/2026-04-02-002-feat-ai-cost-optimization-plan.md`）
-- 中英文国际化（`docs/plans/2026-04-02-003-feat-i18n-zh-en-plan.md`）
-- SSE 实时告警推送（`docs/plans/2026-04-02-004-feat-sse-realtime-alerts-plan.md`）
+#### Phase 3a（已完成 ✅）— UI 体验优化
+- 明暗模式切换 + Dashboard 层次感优化 ✅
+- AI 成本优化 ✅
+- 中英文国际化 ✅
+- SSE 实时告警推送 ✅
 
-#### Phase 3b: 数据信任层（短期）
-- 告警置信度评分系统（链上验证 + 数据完整度 + 流动性 + 钱包评分 → 高/中/低）
-- Telegram 告警模板改造（置信度标签 + 数据源溯源 + disclaimer）
-- Dashboard 告警卡片置信度展示
-- Landing Page 数据方法论 section
+#### Phase 3b（已完成 ✅）— 数据信任层
+- 告警置信度评分系统（链上验证 + 数据完整度 + 流动性 + 钱包评分 → 高/中/低）✅
+- Telegram 告警模板改造（置信度标签 + 数据源溯源 + disclaimer）✅
+- Dashboard 告警卡片置信度展示 ✅
+- Landing Page 数据方法论 section ✅
+- 侧边栏"数据说明"导航入口 ✅
 - 详见 `docs/superpowers/specs/2026-04-02-data-trust-layer-design.md`
 
 #### Phase 3c: 数据可靠性提升（中期）

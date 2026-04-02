@@ -15,8 +15,7 @@ import { syncTrackedWallets } from './persistence/wallets.js';
 import { createPipeline } from './pipeline.js';
 import { createDiscovery } from './discovery/orchestrator.js';
 import { registerCheckoutRoutes } from './stripe/checkout.js';
-import { registerStripeWebhookRoutes } from './stripe/webhook.js';
-import Stripe from 'stripe';
+import { registerLemonWebhookRoutes } from './stripe/webhook.js';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
 
@@ -121,23 +120,21 @@ if (db) {
   registerWalletsRoutes(app, { db });
 }
 
-// Stripe routes (Phase 2 — 订阅支付)
-if (env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_ID && db) {
-  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-
+// LemonSqueezy routes (Phase 2 — 订阅支付)
+if (env.LEMONSQUEEZY_API_KEY && env.LEMONSQUEEZY_WEBHOOK_SECRET && env.LEMONSQUEEZY_STORE_ID && env.LEMONSQUEEZY_VARIANT_ID && db) {
   registerCheckoutRoutes(app, {
-    stripe,
-    priceId: env.STRIPE_PRICE_ID,
+    apiKey: env.LEMONSQUEEZY_API_KEY,
+    storeId: env.LEMONSQUEEZY_STORE_ID,
+    variantId: env.LEMONSQUEEZY_VARIANT_ID,
     appUrl: process.env.APP_URL ?? 'https://smart-money-radar-web.vercel.app',
   });
 
-  registerStripeWebhookRoutes(app, {
-    stripe,
-    webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+  registerLemonWebhookRoutes(app, {
+    webhookSecret: env.LEMONSQUEEZY_WEBHOOK_SECRET,
     db,
   });
 
-  app.log.info('Stripe checkout + webhook routes registered');
+  app.log.info('LemonSqueezy checkout + webhook routes registered');
 }
 
 // Sentry: capture all Fastify route errors (not just unhandled process errors)

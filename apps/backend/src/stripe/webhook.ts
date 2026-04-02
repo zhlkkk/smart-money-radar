@@ -1,22 +1,66 @@
+// LemonSqueezy Webhook — 订阅生命周期管理
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import Stripe from 'stripe';
+import crypto from 'node:crypto';
 import { subscriptions, users } from '@radar/db';
 import type { PoolDatabase } from '@radar/db';
 import { eq } from 'drizzle-orm';
 
-export interface StripeWebhookConfig {
-  stripe: Stripe;
+export interface LemonWebhookConfig {
   webhookSecret: string;
   db: PoolDatabase;
 }
 
-export function registerStripeWebhookRoutes(
+// ─── 类型定义 ───
+
+type SubscriptionStatus = 'active' | 'on_trial' | 'paused' | 'cancelled' | 'expired';
+
+interface SubscriptionAttributes {
+  store_id: number;
+  customer_id: number;
+  order_id: number;
+  variant_id: number;
+  product_name: string;
+  variant_name: string;
+  user_email: string;
+  status: SubscriptionStatus;
+  cancelled: boolean;
+  renews_at: string;
+  ends_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface WebhookPayload {
+  meta: {
+    event_name: string;
+    test_mode: boolean;
+    custom_data?: Record<string, string>;
+  };
+  data: {
+    type: string;
+    id: string;
+    attributes: SubscriptionAttributes;
+  };
+}
+
+// ─── 签名验证 ───
+
+function verifySignature(rawBody: Buffer, secret: string, signature: string): boolean {
+  const hmac = crypto.createHmac('sha256', secret);
+  const digest = Buffer.from(hmac.update(rawBody).digest('hex'), 'utf8');
+  const sigBuf = Buffer.from(signature, 'utf8');
+  if (digest.length !== sigBuf.length) return false;
+  return crypto.timingSafeEqual(digest, sigBuf);
+}
+
+// ─── 路由注册 ───
+
+export function registerLemonWebhookRoutes(
   app: FastifyInstance,
-  config: StripeWebhookConfig,
+  config: LemonWebhookConfig,
 ) {
   // 用 Fastify 插件封装，避免 raw body parser 污染全局
-  app.register(async function stripeWebhookPlugin(instance) {
-    // Stripe 需要 raw body 来验证签名
+  app.register(async function lemonWebhookPlugin(instance) {
     instance.addContentTypeParser(
       'application/json',
       { parseAs: 'buffer' },
@@ -26,29 +70,26 @@ export function registerStripeWebhookRoutes(
     );
 
     instance.post(
-      '/webhooks/stripe',
+      '/webhooks/lemonsqueezy',
       async (request: FastifyRequest, reply: FastifyReply) => {
-        const signature = request.headers['stripe-signature'];
+        const signature = request.headers['x-signature'] as string | undefined;
         if (!signature) {
-          return reply.status(400).send({ error: 'Missing stripe-signature header' });
+          return reply.status(400).send({ error: 'Missing X-Signature header' });
         }
 
-        let event: Stripe.Event;
-        try {
-          event = config.stripe.webhooks.constructEvent(
-            request.body as Buffer,
-            signature as string,
-            config.webhookSecret,
-          );
-        } catch (err) {
-          request.log.error({ err }, 'Stripe webhook signature verification failed');
+        const rawBody = request.body as Buffer;
+        if (!verifySignature(rawBody, config.webhookSecret, signature)) {
+          request.log.error('LemonSqueezy webhook signature verification failed');
           return reply.status(400).send({ error: 'Invalid signature' });
         }
 
+        const payload = JSON.parse(rawBody.toString()) as WebhookPayload;
+        const eventName = payload.meta.event_name;
+
         try {
-          await handleStripeEvent(event, config.db, request.log);
+          await handleEvent(eventName, payload, config.db, request.log);
         } catch (err) {
-          request.log.error({ err, eventType: event.type }, 'Stripe webhook handler failed');
+          request.log.error({ err, eventName }, 'LemonSqueezy webhook handler failed');
           return reply.status(500).send({ error: 'Handler failed' });
         }
 
@@ -58,143 +99,132 @@ export function registerStripeWebhookRoutes(
   });
 }
 
-async function handleStripeEvent(
-  event: Stripe.Event,
+// ─── 事件处理 ───
+
+async function handleEvent(
+  eventName: string,
+  payload: WebhookPayload,
   db: PoolDatabase,
   log: { error: (obj: unknown, msg: string) => void; info: (obj: unknown, msg: string) => void },
 ) {
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
-      await handleCheckoutCompleted(session, db, log);
+  const attrs = payload.data.attributes;
+  const lsSubscriptionId = payload.data.id;
+  const clerkUserId = payload.meta.custom_data?.['clerk_user_id'];
+
+  switch (eventName) {
+    case 'subscription_created': {
+      if (!clerkUserId) {
+        log.error({ lsSubscriptionId }, 'subscription_created: missing clerk_user_id in custom_data');
+        return;
+      }
+
+      const user = await db.query.users.findFirst({
+        where: eq(users.clerkId, clerkUserId),
+      });
+
+      if (!user) {
+        log.error({ clerkUserId, lsSubscriptionId }, 'subscription_created: user not found, will retry');
+        throw new Error(`User not found for clerkUserId: ${clerkUserId}`);
+      }
+
+      // 更新用户的 LemonSqueezy customer ID
+      await db
+        .update(users)
+        .set({ stripeCustomerId: String(attrs.customer_id) })
+        .where(eq(users.id, user.id));
+
+      await db
+        .insert(subscriptions)
+        .values({
+          userId: user.id,
+          stripeSubscriptionId: lsSubscriptionId,
+          stripePriceId: String(attrs.variant_id),
+          status: mapStatus(attrs.status),
+          currentPeriodStart: new Date(attrs.created_at),
+          currentPeriodEnd: new Date(attrs.renews_at),
+          cancelAtPeriodEnd: attrs.cancelled,
+        })
+        .onConflictDoNothing({ target: subscriptions.stripeSubscriptionId });
+
+      log.info({ userId: user.id, lsSubscriptionId }, 'Subscription created');
       break;
     }
-    case 'invoice.paid': {
-      const invoice = event.data.object as Stripe.Invoice;
-      await handleInvoicePaid(invoice, db);
+
+    case 'subscription_updated':
+    case 'subscription_resumed':
+    case 'subscription_unpaused': {
+      await db
+        .update(subscriptions)
+        .set({
+          status: mapStatus(attrs.status),
+          cancelAtPeriodEnd: attrs.cancelled,
+          currentPeriodEnd: new Date(attrs.renews_at),
+        })
+        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
       break;
     }
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice;
-      await handlePaymentFailed(invoice, db);
+
+    case 'subscription_cancelled': {
+      await db
+        .update(subscriptions)
+        .set({
+          status: 'canceled',
+          cancelAtPeriodEnd: true,
+          currentPeriodEnd: attrs.ends_at ? new Date(attrs.ends_at) : undefined,
+        })
+        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
       break;
     }
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionUpdated(subscription, db);
+
+    case 'subscription_expired': {
+      await db
+        .update(subscriptions)
+        .set({ status: 'canceled' })
+        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
       break;
     }
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionDeleted(subscription, db);
+
+    case 'subscription_paused': {
+      await db
+        .update(subscriptions)
+        .set({ status: 'paused' as 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'paused' })
+        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
       break;
     }
+
+    case 'subscription_payment_failed': {
+      await db
+        .update(subscriptions)
+        .set({ status: 'past_due' })
+        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
+      break;
+    }
+
+    case 'subscription_payment_success': {
+      await db
+        .update(subscriptions)
+        .set({
+          status: 'active',
+          currentPeriodEnd: new Date(attrs.renews_at),
+        })
+        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
+      break;
+    }
+
     default:
+      // 忽略其他事件
       break;
   }
 }
 
-async function handleCheckoutCompleted(
-  session: Stripe.Checkout.Session,
-  db: PoolDatabase,
-  log: { error: (obj: unknown, msg: string) => void; info: (obj: unknown, msg: string) => void },
-) {
-  const clerkUserId = session.metadata?.['clerkUserId'];
-  if (!clerkUserId || !session.subscription) return;
-
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkId, clerkUserId),
-  });
-
-  if (!user) {
-    log.error(
-      { clerkUserId, sessionId: session.id },
-      'Stripe checkout.session.completed: user not found, will retry',
-    );
-    throw new Error(`User not found for clerkUserId: ${clerkUserId}`);
+// LemonSqueezy status → DB status 映射
+function mapStatus(lsStatus: SubscriptionStatus): 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'paused' {
+  switch (lsStatus) {
+    case 'active': return 'active';
+    case 'on_trial': return 'trialing';
+    case 'paused': return 'paused';
+    case 'cancelled': return 'canceled';
+    case 'expired': return 'canceled';
+    default: return 'incomplete';
   }
-
-  if (session.customer && !user.stripeCustomerId) {
-    const customerId =
-      typeof session.customer === 'string' ? session.customer : session.customer.id;
-    await db
-      .update(users)
-      .set({ stripeCustomerId: customerId })
-      .where(eq(users.id, user.id));
-  }
-
-  const subscriptionId =
-    typeof session.subscription === 'string'
-      ? session.subscription
-      : session.subscription.id;
-
-  await db
-    .insert(subscriptions)
-    .values({
-      userId: user.id,
-      stripeSubscriptionId: subscriptionId,
-      stripePriceId: session.metadata?.['stripePriceId'] ?? 'unknown',
-      status: 'active',
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      cancelAtPeriodEnd: false,
-    })
-    .onConflictDoNothing({ target: subscriptions.stripeSubscriptionId });
-
-  log.info({ userId: user.id, subscriptionId }, 'Subscription created from checkout');
-}
-
-async function handleInvoicePaid(invoice: Stripe.Invoice, db: PoolDatabase) {
-  const subscriptionId =
-    typeof invoice.subscription === 'string'
-      ? invoice.subscription
-      : invoice.subscription?.id;
-  if (!subscriptionId) return;
-
-  await db
-    .update(subscriptions)
-    .set({
-      status: 'active',
-      currentPeriodEnd: invoice.lines.data[0]?.period?.end
-        ? new Date(invoice.lines.data[0].period.end * 1000)
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    })
-    .where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
-}
-
-async function handlePaymentFailed(invoice: Stripe.Invoice, db: PoolDatabase) {
-  const subscriptionId =
-    typeof invoice.subscription === 'string'
-      ? invoice.subscription
-      : invoice.subscription?.id;
-  if (!subscriptionId) return;
-
-  await db
-    .update(subscriptions)
-    .set({ status: 'past_due' })
-    .where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
-}
-
-async function handleSubscriptionUpdated(
-  subscription: Stripe.Subscription,
-  db: PoolDatabase,
-) {
-  await db
-    .update(subscriptions)
-    .set({
-      status: subscription.status as 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'paused',
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    })
-    .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
-}
-
-async function handleSubscriptionDeleted(
-  subscription: Stripe.Subscription,
-  db: PoolDatabase,
-) {
-  await db
-    .update(subscriptions)
-    .set({ status: 'canceled' })
-    .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
 }

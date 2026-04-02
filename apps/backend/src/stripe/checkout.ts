@@ -1,9 +1,11 @@
+// LemonSqueezy Checkout — 创建订阅结账会话
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type Stripe from 'stripe';
+import { createCheckout, lemonSqueezySetup } from '@lemonsqueezy/lemonsqueezy.js';
 
 export interface CheckoutConfig {
-  stripe: Stripe;
-  priceId: string;
+  apiKey: string;
+  storeId: string;
+  variantId: string;
   appUrl: string;
 }
 
@@ -11,6 +13,8 @@ export function registerCheckoutRoutes(
   app: FastifyInstance,
   config: CheckoutConfig,
 ) {
+  lemonSqueezySetup({ apiKey: config.apiKey });
+
   app.post(
     '/api/v1/checkout',
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -20,20 +24,33 @@ export function registerCheckoutRoutes(
         return reply.status(400).send({ error: 'clerkUserId and email are required' });
       }
 
-      const session = await config.stripe.checkout.sessions.create({
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        customer_email: body.email,
-        line_items: [{ price: config.priceId, quantity: 1 }],
-        success_url: `${config.appUrl}/dashboard?checkout=success`,
-        cancel_url: `${config.appUrl}/pricing`,
-        metadata: {
-          clerkUserId: body.clerkUserId,
-          stripePriceId: config.priceId,
-        },
-      });
+      try {
+        const checkout = await createCheckout(
+          config.storeId,
+          config.variantId,
+          {
+            checkoutData: {
+              email: body.email,
+              custom: {
+                clerk_user_id: body.clerkUserId,
+              },
+            },
+            productOptions: {
+              redirectUrl: `${config.appUrl}/dashboard?checkout=success`,
+            },
+          },
+        );
 
-      return reply.send({ url: session.url });
+        const url = checkout.data?.data.attributes.url;
+        if (!url) {
+          return reply.status(500).send({ error: 'Failed to create checkout URL' });
+        }
+
+        return reply.send({ url });
+      } catch (err) {
+        request.log.error({ err }, 'LemonSqueezy checkout creation failed');
+        return reply.status(500).send({ error: 'Checkout creation failed' });
+      }
     },
   );
 }

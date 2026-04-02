@@ -70,7 +70,7 @@ export function LocaleToggle({ className = '' }: LocaleToggleProps) {
 
       {open && (
         <div
-          className="absolute bottom-full right-0 z-50 mb-1 min-w-[160px] overflow-hidden rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-bg-card)] shadow-lg"
+          className="absolute bottom-full left-0 z-[100] mb-1 min-w-[160px] overflow-hidden rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-bg-card)] shadow-lg"
           style={{
             backdropFilter: 'blur(12px)',
             animation: 'fade-in 150ms ease-out',

@@ -18,6 +18,7 @@ import { createDiscovery } from './discovery/orchestrator.js';
 import { registerCheckoutRoutes } from './stripe/checkout.js';
 import { registerPaddleWebhookRoutes } from './stripe/webhook.js';
 import { registerHelioWebhookRoutes } from './helio/webhook.js';
+import { telegramWebhookPlugin } from './telegram/webhook.js';
 import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
@@ -152,6 +153,16 @@ if (env.HELIO_WEBHOOK_SHARED_TOKEN && db) {
     db,
   });
   app.log.info('Helio Pay webhook route registered');
+}
+
+// Telegram Bot Webhook（Phase 3 — 双向交互：命令 + 加入请求）
+if (env.TELEGRAM_WEBHOOK_SECRET && env.TELEGRAM_BOT_TOKEN) {
+  app.register(telegramWebhookPlugin({
+    secretToken: env.TELEGRAM_WEBHOOK_SECRET,
+    onMessage: async () => {}, // Unit 3 填充
+    onChatJoinRequest: async () => {}, // Unit 4 填充
+  }));
+  app.log.info('Telegram Bot webhook route registered');
 }
 
 // SSE 实时告警推送（无需鉴权，只读事件流）

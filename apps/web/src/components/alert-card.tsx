@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl';
 
 interface AlertCardProps {
   alert: AlertRow;
+  defaultExpanded?: boolean;
 }
 
 type Severity = 'high' | 'medium' | 'info';
@@ -27,9 +28,9 @@ const severityStyles: Record<Severity, { border: string; labelKey: 'highRisk' | 
   info: { border: 'border-l-4 border-l-[var(--smr-accent-cyan)]', labelKey: 'info', variant: 'cyan' },
 };
 
-export function AlertCard({ alert }: AlertCardProps) {
+export function AlertCard({ alert, defaultExpanded = true }: AlertCardProps) {
   const t = useTranslations('alerts');
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const severity = getSeverity(alert);
   const style = severityStyles[severity];
 

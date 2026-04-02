@@ -559,7 +559,7 @@ export default function HomePage() {
               开始你的信息优势
             </h2>
             <p className="mb-8 text-smr-text-secondary">
-              Pro 计划 $100/月 · 全部功能 · 随时取消
+              Pro 计划 $10/月 · 全部功能 · 随时取消
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link

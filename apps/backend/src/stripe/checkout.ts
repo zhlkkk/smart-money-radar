@@ -1,11 +1,10 @@
-// LemonSqueezy Checkout — 创建订阅结账会话
+// Paddle Billing Checkout — 创建订阅交易
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { createCheckout, lemonSqueezySetup } from '@lemonsqueezy/lemonsqueezy.js';
+import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 
 export interface CheckoutConfig {
-  apiKey: string;
-  storeId: string;
-  variantId: string;
+  paddle: Paddle;
+  priceId: string;
   appUrl: string;
 }
 
@@ -13,8 +12,6 @@ export function registerCheckoutRoutes(
   app: FastifyInstance,
   config: CheckoutConfig,
 ) {
-  lemonSqueezySetup({ apiKey: config.apiKey });
-
   app.post(
     '/api/v1/checkout',
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -25,30 +22,21 @@ export function registerCheckoutRoutes(
       }
 
       try {
-        const checkout = await createCheckout(
-          config.storeId,
-          config.variantId,
-          {
-            checkoutData: {
-              email: body.email,
-              custom: {
-                clerk_user_id: body.clerkUserId,
-              },
-            },
-            productOptions: {
-              redirectUrl: `${config.appUrl}/dashboard?checkout=success`,
-            },
+        const transaction = await config.paddle.transactions.create({
+          items: [{ priceId: config.priceId, quantity: 1 }],
+          customData: {
+            clerkUserId: body.clerkUserId,
           },
-        );
+        });
 
-        const url = checkout.data?.data.attributes.url;
+        const url = transaction.checkoutUrl;
         if (!url) {
           return reply.status(500).send({ error: 'Failed to create checkout URL' });
         }
 
         return reply.send({ url });
       } catch (err) {
-        request.log.error({ err }, 'LemonSqueezy checkout creation failed');
+        request.log.error({ err }, 'Paddle checkout creation failed');
         return reply.status(500).send({ error: 'Checkout creation failed' });
       }
     },

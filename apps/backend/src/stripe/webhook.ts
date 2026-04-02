@@ -1,66 +1,22 @@
-// LemonSqueezy Webhook — 订阅生命周期管理
+// Paddle Billing Webhook — 订阅生命周期管理
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import crypto from 'node:crypto';
+import { Paddle, EventName } from '@paddle/paddle-node-sdk';
 import { subscriptions, users } from '@radar/db';
 import type { PoolDatabase } from '@radar/db';
 import { eq } from 'drizzle-orm';
 
-export interface LemonWebhookConfig {
+export interface PaddleWebhookConfig {
+  paddle: Paddle;
   webhookSecret: string;
   db: PoolDatabase;
 }
 
-// ─── 类型定义 ───
-
-type SubscriptionStatus = 'active' | 'on_trial' | 'paused' | 'cancelled' | 'expired';
-
-interface SubscriptionAttributes {
-  store_id: number;
-  customer_id: number;
-  order_id: number;
-  variant_id: number;
-  product_name: string;
-  variant_name: string;
-  user_email: string;
-  status: SubscriptionStatus;
-  cancelled: boolean;
-  renews_at: string;
-  ends_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface WebhookPayload {
-  meta: {
-    event_name: string;
-    test_mode: boolean;
-    custom_data?: Record<string, string>;
-  };
-  data: {
-    type: string;
-    id: string;
-    attributes: SubscriptionAttributes;
-  };
-}
-
-// ─── 签名验证 ───
-
-function verifySignature(rawBody: Buffer, secret: string, signature: string): boolean {
-  const hmac = crypto.createHmac('sha256', secret);
-  const digest = Buffer.from(hmac.update(rawBody).digest('hex'), 'utf8');
-  const sigBuf = Buffer.from(signature, 'utf8');
-  if (digest.length !== sigBuf.length) return false;
-  return crypto.timingSafeEqual(digest, sigBuf);
-}
-
-// ─── 路由注册 ───
-
-export function registerLemonWebhookRoutes(
+export function registerPaddleWebhookRoutes(
   app: FastifyInstance,
-  config: LemonWebhookConfig,
+  config: PaddleWebhookConfig,
 ) {
   // 用 Fastify 插件封装，避免 raw body parser 污染全局
-  app.register(async function lemonWebhookPlugin(instance) {
+  app.register(async function paddleWebhookPlugin(instance) {
     instance.addContentTypeParser(
       'application/json',
       { parseAs: 'buffer' },
@@ -70,26 +26,31 @@ export function registerLemonWebhookRoutes(
     );
 
     instance.post(
-      '/webhooks/lemonsqueezy',
+      '/webhooks/paddle',
       async (request: FastifyRequest, reply: FastifyReply) => {
-        const signature = request.headers['x-signature'] as string | undefined;
+        const signature = request.headers['paddle-signature'] as string | undefined;
         if (!signature) {
-          return reply.status(400).send({ error: 'Missing X-Signature header' });
+          return reply.status(400).send({ error: 'Missing Paddle-Signature header' });
         }
 
-        const rawBody = request.body as Buffer;
-        if (!verifySignature(rawBody, config.webhookSecret, signature)) {
-          request.log.error('LemonSqueezy webhook signature verification failed');
-          return reply.status(400).send({ error: 'Invalid signature' });
-        }
+        const rawBody = (request.body as Buffer).toString('utf8');
 
-        const payload = JSON.parse(rawBody.toString()) as WebhookPayload;
-        const eventName = payload.meta.event_name;
+        let event;
+        try {
+          event = config.paddle.webhooks.unmarshal(
+            rawBody,
+            config.webhookSecret,
+            signature,
+          );
+        } catch (err) {
+          request.log.error({ err }, 'Paddle webhook signature verification failed');
+          return reply.status(401).send({ error: 'Invalid signature' });
+        }
 
         try {
-          await handleEvent(eventName, payload, config.db, request.log);
+          await handleEvent(event, config.db, request.log);
         } catch (err) {
-          request.log.error({ err, eventName }, 'LemonSqueezy webhook handler failed');
+          request.log.error({ err, eventType: event.eventType }, 'Paddle webhook handler failed');
           return reply.status(500).send({ error: 'Handler failed' });
         }
 
@@ -101,20 +62,22 @@ export function registerLemonWebhookRoutes(
 
 // ─── 事件处理 ───
 
-async function handleEvent(
-  eventName: string,
-  payload: WebhookPayload,
-  db: PoolDatabase,
-  log: { error: (obj: unknown, msg: string) => void; info: (obj: unknown, msg: string) => void },
-) {
-  const attrs = payload.data.attributes;
-  const lsSubscriptionId = payload.data.id;
-  const clerkUserId = payload.meta.custom_data?.['clerk_user_id'];
+type LogFn = { error: (obj: unknown, msg: string) => void; info: (obj: unknown, msg: string) => void };
 
-  switch (eventName) {
-    case 'subscription_created': {
+async function handleEvent(
+  event: { eventType: string; eventId: string; data: Record<string, unknown> },
+  db: PoolDatabase,
+  log: LogFn,
+) {
+  const data = event.data as Record<string, unknown>;
+
+  switch (event.eventType) {
+    case EventName.SubscriptionCreated:
+    case EventName.SubscriptionActivated: {
+      const customData = data.customData as Record<string, string> | undefined;
+      const clerkUserId = customData?.clerkUserId;
       if (!clerkUserId) {
-        log.error({ lsSubscriptionId }, 'subscription_created: missing clerk_user_id in custom_data');
+        log.error({ eventId: event.eventId }, 'subscription event: missing clerkUserId in customData');
         return;
       }
 
@@ -123,108 +86,110 @@ async function handleEvent(
       });
 
       if (!user) {
-        log.error({ clerkUserId, lsSubscriptionId }, 'subscription_created: user not found, will retry');
+        log.error({ clerkUserId }, 'subscription event: user not found, will retry');
         throw new Error(`User not found for clerkUserId: ${clerkUserId}`);
       }
 
-      // 更新用户的 LemonSqueezy customer ID
-      await db
-        .update(users)
-        .set({ stripeCustomerId: String(attrs.customer_id) })
-        .where(eq(users.id, user.id));
+      const subId = data.id as string;
+      const customerId = data.customerId as string | undefined;
+      const status = data.status as string;
+      const currentPeriod = data.currentBillingPeriod as { startsAt: string; endsAt: string } | undefined;
+      const items = data.items as Array<{ price: { id: string } }> | undefined;
 
-      await db
-        .insert(subscriptions)
+      // 更新 customer ID
+      if (customerId && !user.stripeCustomerId) {
+        await db.update(users)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(users.id, user.id));
+      }
+
+      await db.insert(subscriptions)
         .values({
           userId: user.id,
-          stripeSubscriptionId: lsSubscriptionId,
-          stripePriceId: String(attrs.variant_id),
-          status: mapStatus(attrs.status),
-          currentPeriodStart: new Date(attrs.created_at),
-          currentPeriodEnd: new Date(attrs.renews_at),
-          cancelAtPeriodEnd: attrs.cancelled,
+          stripeSubscriptionId: subId,
+          stripePriceId: items?.[0]?.price.id ?? 'unknown',
+          status: mapStatus(status),
+          currentPeriodStart: currentPeriod ? new Date(currentPeriod.startsAt) : new Date(),
+          currentPeriodEnd: currentPeriod ? new Date(currentPeriod.endsAt) : new Date(Date.now() + 30 * 24 * 3600 * 1000),
+          cancelAtPeriodEnd: false,
         })
         .onConflictDoNothing({ target: subscriptions.stripeSubscriptionId });
 
-      log.info({ userId: user.id, lsSubscriptionId }, 'Subscription created');
+      log.info({ userId: user.id, subId }, 'Subscription created/activated');
       break;
     }
 
-    case 'subscription_updated':
-    case 'subscription_resumed':
-    case 'subscription_unpaused': {
-      await db
-        .update(subscriptions)
+    case EventName.SubscriptionUpdated: {
+      const subId = data.id as string;
+      const status = data.status as string;
+      const scheduledChange = data.scheduledChange as { action: string; effectiveAt: string } | null;
+      const currentPeriod = data.currentBillingPeriod as { endsAt: string } | undefined;
+
+      await db.update(subscriptions)
         .set({
-          status: mapStatus(attrs.status),
-          cancelAtPeriodEnd: attrs.cancelled,
-          currentPeriodEnd: new Date(attrs.renews_at),
+          status: mapStatus(status),
+          cancelAtPeriodEnd: scheduledChange?.action === 'cancel',
+          currentPeriodEnd: currentPeriod ? new Date(currentPeriod.endsAt) : undefined,
         })
-        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
+        .where(eq(subscriptions.stripeSubscriptionId, subId));
       break;
     }
 
-    case 'subscription_cancelled': {
-      await db
-        .update(subscriptions)
+    case EventName.SubscriptionCanceled: {
+      const subId = data.id as string;
+      const scheduledChange = data.scheduledChange as { effectiveAt: string } | null;
+
+      await db.update(subscriptions)
         .set({
           status: 'canceled',
           cancelAtPeriodEnd: true,
-          currentPeriodEnd: attrs.ends_at ? new Date(attrs.ends_at) : undefined,
+          currentPeriodEnd: scheduledChange ? new Date(scheduledChange.effectiveAt) : undefined,
         })
-        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
+        .where(eq(subscriptions.stripeSubscriptionId, subId));
       break;
     }
 
-    case 'subscription_expired': {
-      await db
-        .update(subscriptions)
-        .set({ status: 'canceled' })
-        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
-      break;
-    }
-
-    case 'subscription_paused': {
-      await db
-        .update(subscriptions)
+    case EventName.SubscriptionPaused: {
+      const subId = data.id as string;
+      await db.update(subscriptions)
         .set({ status: 'paused' as 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'paused' })
-        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
+        .where(eq(subscriptions.stripeSubscriptionId, subId));
       break;
     }
 
-    case 'subscription_payment_failed': {
-      await db
-        .update(subscriptions)
-        .set({ status: 'past_due' })
-        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
-      break;
-    }
-
-    case 'subscription_payment_success': {
-      await db
-        .update(subscriptions)
+    case EventName.SubscriptionResumed: {
+      const subId = data.id as string;
+      const currentPeriod = data.currentBillingPeriod as { endsAt: string } | undefined;
+      await db.update(subscriptions)
         .set({
           status: 'active',
-          currentPeriodEnd: new Date(attrs.renews_at),
+          cancelAtPeriodEnd: false,
+          currentPeriodEnd: currentPeriod ? new Date(currentPeriod.endsAt) : undefined,
         })
-        .where(eq(subscriptions.stripeSubscriptionId, lsSubscriptionId));
+        .where(eq(subscriptions.stripeSubscriptionId, subId));
+      break;
+    }
+
+    case EventName.SubscriptionPastDue: {
+      const subId = data.id as string;
+      await db.update(subscriptions)
+        .set({ status: 'past_due' })
+        .where(eq(subscriptions.stripeSubscriptionId, subId));
       break;
     }
 
     default:
-      // 忽略其他事件
       break;
   }
 }
 
-// LemonSqueezy status → DB status 映射
-function mapStatus(lsStatus: SubscriptionStatus): 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'paused' {
-  switch (lsStatus) {
+function mapStatus(paddleStatus: string): 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing' | 'paused' {
+  switch (paddleStatus) {
     case 'active': return 'active';
-    case 'on_trial': return 'trialing';
+    case 'trialing': return 'trialing';
     case 'paused': return 'paused';
-    case 'cancelled': return 'canceled';
-    case 'expired': return 'canceled';
+    case 'canceled': return 'canceled';
+    case 'past_due': return 'past_due';
     default: return 'incomplete';
   }
 }

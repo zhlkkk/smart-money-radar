@@ -15,7 +15,8 @@ import { syncTrackedWallets } from './persistence/wallets.js';
 import { createPipeline } from './pipeline.js';
 import { createDiscovery } from './discovery/orchestrator.js';
 import { registerCheckoutRoutes } from './stripe/checkout.js';
-import { registerLemonWebhookRoutes } from './stripe/webhook.js';
+import { registerPaddleWebhookRoutes } from './stripe/webhook.js';
+import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
 
@@ -120,21 +121,25 @@ if (db) {
   registerWalletsRoutes(app, { db });
 }
 
-// LemonSqueezy routes (Phase 2 — 订阅支付)
-if (env.LEMONSQUEEZY_API_KEY && env.LEMONSQUEEZY_WEBHOOK_SECRET && env.LEMONSQUEEZY_STORE_ID && env.LEMONSQUEEZY_VARIANT_ID && db) {
+// Paddle Billing routes (Phase 2 — 订阅支付)
+if (env.PADDLE_API_KEY && env.PADDLE_WEBHOOK_SECRET && env.PADDLE_PRICE_ID && db) {
+  const paddle = new Paddle(env.PADDLE_API_KEY, {
+    environment: env.PADDLE_ENVIRONMENT === 'production' ? Environment.production : Environment.sandbox,
+  });
+
   registerCheckoutRoutes(app, {
-    apiKey: env.LEMONSQUEEZY_API_KEY,
-    storeId: env.LEMONSQUEEZY_STORE_ID,
-    variantId: env.LEMONSQUEEZY_VARIANT_ID,
+    paddle,
+    priceId: env.PADDLE_PRICE_ID,
     appUrl: process.env.APP_URL ?? 'https://smart-money-radar-web.vercel.app',
   });
 
-  registerLemonWebhookRoutes(app, {
-    webhookSecret: env.LEMONSQUEEZY_WEBHOOK_SECRET,
+  registerPaddleWebhookRoutes(app, {
+    paddle,
+    webhookSecret: env.PADDLE_WEBHOOK_SECRET,
     db,
   });
 
-  app.log.info('LemonSqueezy checkout + webhook routes registered');
+  app.log.info('Paddle Billing checkout + webhook routes registered');
 }
 
 // Sentry: capture all Fastify route errors (not just unhandled process errors)

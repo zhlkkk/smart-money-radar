@@ -13,7 +13,7 @@ export const PLANS: Record<string, PlanDefinition> = {
   pro: {
     id: 'pro',
     name: 'Smart Money Pro',
-    priceMonthly: 100,
+    priceMonthly: 10,
     currency: 'usd',
     features: [
       'Real-time smart money alerts via Telegram',

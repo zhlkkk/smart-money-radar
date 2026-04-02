@@ -38,7 +38,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-smr-text">3. 订阅与付款</h2>
             <ul className="ml-4 list-disc space-y-1">
-              <li>本服务采用月度订阅制，费用为 $100/月。</li>
+              <li>本服务采用月度订阅制，费用为 $10/月。</li>
               <li>订阅在每个计费周期开始时自动续费。</li>
               <li>您可以随时取消订阅，取消后将在当前计费周期结束时生效。</li>
               <li>付款通过第三方支付处理商安全处理。</li>

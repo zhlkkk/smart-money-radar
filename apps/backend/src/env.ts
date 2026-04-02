@@ -23,11 +23,11 @@ const envSchema = z.object({
   // Database (Phase 2) — optional so Phase 1 deployments continue working without DB
   DATABASE_POOL_URL: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
 
-  // LemonSqueezy (Phase 2) — optional for Phase 1 compatibility
-  LEMONSQUEEZY_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
-  LEMONSQUEEZY_STORE_ID: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
-  LEMONSQUEEZY_VARIANT_ID: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
-  LEMONSQUEEZY_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+  // Paddle Billing (Phase 2) — optional for Phase 1 compatibility
+  PADDLE_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+  PADDLE_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+  PADDLE_PRICE_ID: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+  PADDLE_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
 
   // Backend API key (Phase 2b) — for frontend->backend authenticated calls
   BACKEND_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),

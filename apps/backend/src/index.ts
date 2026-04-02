@@ -16,6 +16,7 @@ import { createPipeline } from './pipeline.js';
 import { createDiscovery } from './discovery/orchestrator.js';
 import { registerCheckoutRoutes } from './stripe/checkout.js';
 import { registerPaddleWebhookRoutes } from './stripe/webhook.js';
+import { registerHelioWebhookRoutes } from './helio/webhook.js';
 import { Paddle, Environment } from '@paddle/paddle-node-sdk';
 import { createWalletState } from './types.js';
 import type { SmartMoneyWallet, WalletStateRef } from './types.js';
@@ -140,6 +141,15 @@ if (env.PADDLE_API_KEY && env.PADDLE_WEBHOOK_SECRET && env.PADDLE_PRICE_ID && db
   });
 
   app.log.info('Paddle Billing checkout + webhook routes registered');
+}
+
+// Helio Pay webhook (Phase 2 — 加密支付)
+if (env.HELIO_WEBHOOK_SHARED_TOKEN && db) {
+  registerHelioWebhookRoutes(app, {
+    sharedToken: env.HELIO_WEBHOOK_SHARED_TOKEN,
+    db,
+  });
+  app.log.info('Helio Pay webhook route registered');
 }
 
 // Sentry: capture all Fastify route errors (not just unhandled process errors)

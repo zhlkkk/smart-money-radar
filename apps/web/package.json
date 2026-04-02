@@ -13,6 +13,7 @@
     "@clerk/themes": "^2",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/space-grotesk": "^5.2.10",
+    "@heliofi/checkout-react": "^4.0.8",
     "@radar/db": "workspace:*",
     "@radar/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",

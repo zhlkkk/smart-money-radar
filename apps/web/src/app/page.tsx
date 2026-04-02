@@ -559,7 +559,7 @@ export default function HomePage() {
               开始你的信息优势
             </h2>
             <p className="mb-8 text-smr-text-secondary">
-              Pro 计划 $10/月 · 全部功能 · 随时取消
+              Pro 计划 $10/月 · 支持 USDC / SOL 支付 · 随时取消
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
@@ -572,8 +572,8 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="mt-6 flex items-center justify-center gap-6 text-xs text-smr-text-muted">
-              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> 无需信用卡试用</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> Stripe 安全支付</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> USDC / SOL 链上支付</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> Helio 安全处理</span>
               <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[var(--smr-accent-green)]" /> 随时取消</span>
             </div>
           </div>

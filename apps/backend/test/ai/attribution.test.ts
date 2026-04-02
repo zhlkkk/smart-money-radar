@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generateAttribution, type AttributionInput, type LLMConfig } from '../../src/ai/attribution.js';
+import { generateAttribution, clearAttributionCache, type AttributionInput, type LLMConfig } from '../../src/ai/attribution.js';
 
 const llmConfig: LLMConfig = {
   apiKey: 'test-key',
@@ -26,6 +26,7 @@ const input: AttributionInput = {
 
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn());
+  clearAttributionCache();
 });
 
 afterEach(() => {

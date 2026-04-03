@@ -43,6 +43,7 @@ export interface EnrichmentResult {
   mintAuthority: string | null | 'unchecked';
   freezeAuthority: string | null | 'unchecked';
   priceDeviation?: number;
+  stale?: boolean;
 }
 
 export type RiskLevel = 'high' | 'medium' | 'low';

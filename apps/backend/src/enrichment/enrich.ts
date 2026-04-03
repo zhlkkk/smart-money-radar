@@ -28,7 +28,8 @@ export async function enrichToken(
   if (
     dexResult.status === 'fulfilled' &&
     crossResult.status === 'fulfilled' &&
-    crossResult.value.onChainPrice != null
+    crossResult.value.onChainPrice != null &&
+    crossResult.value.onChainPrice > 0
   ) {
     const dexPrice = dexResult.value.priceUsd;
     if (dexPrice != null && dexPrice > 0) {
@@ -48,5 +49,6 @@ export async function enrichToken(
     mintAuthority: authResult.status === 'fulfilled' ? authResult.value.mintAuthority : 'unchecked',
     freezeAuthority: authResult.status === 'fulfilled' ? authResult.value.freezeAuthority : 'unchecked',
     priceDeviation,
+    stale: dexResult.status === 'fulfilled' ? dexResult.value.stale : undefined,
   };
 }

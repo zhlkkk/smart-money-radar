@@ -100,8 +100,11 @@ export function createPipeline(config: PipelineConfig) {
     // 风险评估
     const riskAssessment = assessRisk(enrichment);
 
-    // 置信度评分
-    const confidence = computeConfidence(enrichment, wallet.category === 'discovered');
+    // 置信度评分（含 stale 和价格偏差降分）
+    const confidence = computeConfidence(enrichment, wallet.category === 'discovered', {
+      staleData: enrichment.stale,
+      priceDeviation: enrichment.priceDeviation,
+    });
 
     const aiSummary = await generateAttribution(
       {

@@ -74,7 +74,7 @@ export async function collectWalletTrades(
   await rateLimiter.acquire();
 
   try {
-    const url = `${BIRDEYE_BASE}/wallet/tx_list?wallet=${encodeURIComponent(address)}`;
+    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}`;
     const response = await fetch(url, {
       headers: makeHeaders(apiKey),
       signal: AbortSignal.timeout(TIMEOUT_MS),

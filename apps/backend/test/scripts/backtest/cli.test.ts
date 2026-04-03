@@ -71,31 +71,64 @@ describe('seedFromBirdeye', () => {
     const candidates = makeCandidates(5);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
-    await expect(seedFromBirdeye('test-key')).rejects.toThrow(
-      '钱包候选数量不足（需要至少 10 个，实际 5 个）',
-    );
+    await expect(seedFromBirdeye('test-key')).rejects.toThrow('钱包候选数量不足');
   });
 
   it('0 个候选时抛出错误', async () => {
     vi.mocked(fetchTopWallets).mockResolvedValueOnce([]);
 
-    await expect(seedFromBirdeye('test-key')).rejects.toThrow(
-      '钱包候选数量不足（需要至少 10 个，实际 0 个）',
-    );
+    await expect(seedFromBirdeye('test-key')).rejects.toThrow('钱包候选数量不足');
   });
 
-  it('恰好 10 个候选时正常工作（3 聪明钱 + 3 基线）', async () => {
+  it('10~19 个候选时打印 WARNING 并继续执行（低质量模式）', async () => {
+    const candidates = makeCandidates(15);
+    vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const groups = await seedFromBirdeye('test-key');
+
+    // Should succeed, not throw
+    expect(groups.smartMoney).toHaveLength(4); // floor(15 * 0.3)
+    expect(groups.baseline).toHaveLength(4);
+    // Warning should have been emitted
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('[WARNING]'));
+    stderrSpy.mockRestore();
+  });
+
+  it('恰好 10 个候选时打印 WARNING 并继续（向后兼容低质量模式）', async () => {
     const candidates = makeCandidates(10);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const groups = await seedFromBirdeye('test-key');
 
     // floor(10 * 0.3) = 3
     expect(groups.smartMoney).toHaveLength(3);
     expect(groups.baseline).toHaveLength(3);
+    // WARNING emitted (10 < MIN_CANDIDATES_WARN=20)
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('[WARNING]'));
 
     const overlap = groups.smartMoney.filter((addr) => groups.baseline.includes(addr));
     expect(overlap).toHaveLength(0);
+    stderrSpy.mockRestore();
+  });
+
+  it('恰好 20 个候选时正常工作（无警告）', async () => {
+    const candidates = makeCandidates(20);
+    vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const groups = await seedFromBirdeye('test-key');
+
+    // floor(20 * 0.3) = 6
+    expect(groups.smartMoney).toHaveLength(6);
+    expect(groups.baseline).toHaveLength(6);
+    // No WARNING for >=20 candidates
+    const warnCalls = stderrSpy.mock.calls.filter((c) =>
+      String(c[0]).includes('[WARNING]'),
+    );
+    expect(warnCalls).toHaveLength(0);
+    stderrSpy.mockRestore();
   });
 
   it('按 PnL 降序排列后再分组（乱序输入）', async () => {

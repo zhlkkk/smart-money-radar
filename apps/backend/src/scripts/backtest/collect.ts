@@ -75,6 +75,9 @@ interface BirdeyeTxListResponse {
 }
 
 function normalizeBirdeyeTrade(address: string, item: BirdeyeTxItem): BacktestTrade {
+  if (!item.side) {
+    console.error(`[collect-birdeye] ${address}: swap item missing 'side' field, defaulting to buy`);
+  }
   const type = item.side === 'sell' ? 'sell' : 'buy';
   return {
     address,
@@ -92,7 +95,7 @@ async function collectViaBirdeye(
   address: string,
 ): Promise<BacktestTrade[]> {
   try {
-    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}`;
+    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}&tx_type=swap&limit=50`;
     const response = await fetch(url, {
       headers: { 'X-API-KEY': apiKey, 'x-chain': 'solana', Accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),

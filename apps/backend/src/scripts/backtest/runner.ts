@@ -12,7 +12,7 @@ import { collectAllWallets } from './collect.js';
 import { trackAllTrades } from './track-prices.js';
 import { generateReport } from './analyze.js';
 import { formatMarkdownReport } from './report.js';
-import { seedFromBirdeye } from './cli.js';
+import { seedFromBirdeye, MIN_CANDIDATES_WARN } from './cli.js';
 import type {
   BacktestProgress,
   BacktestRunnerConfig,
@@ -77,9 +77,18 @@ export class BacktestRunner {
   async run(): Promise<BacktestReport> {
     const rateLimiter = createRateLimiter(30);
 
-    // Phase 1: Seed from Birdeye
+    // Phase 1: Seed from Birdeye (limit=50, target >=MIN_CANDIDATES_WARN candidates)
     this.onProgress({ phase: 'seed', percent: 5, message: '从 Birdeye 获取候选钱包并分组...' });
     const groups = await seedFromBirdeye(this.birdeyeApiKey);
+    const totalCandidates = groups.smartMoney.length + groups.baseline.length;
+    if (totalCandidates < MIN_CANDIDATES_WARN * 0.6) {
+      // Both groups together are below warning threshold — note in progress
+      this.onProgress({
+        phase: 'seed',
+        percent: 5,
+        message: `[WARNING] 候选钱包总数偏少（聪明钱 ${groups.smartMoney.length} + 基线 ${groups.baseline.length}），结果统计意义有限`,
+      });
+    }
 
     const smartMoneyCollectDir = join(this.outputDir, 'smart-money');
     const baselineCollectDir = join(this.outputDir, 'baseline');
@@ -175,8 +184,8 @@ export class BacktestRunner {
     const report = generateReport(smartMoneyResults, baselineResults);
 
     const dataSource: BacktestDataSource = {
-      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%`,
-      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%`,
+      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%（共 ${groups.smartMoney.length} 个钱包，limit=50）`,
+      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%（共 ${groups.baseline.length} 个钱包，limit=50）`,
     };
     report.dataSource = dataSource;
 

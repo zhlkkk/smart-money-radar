@@ -81,6 +81,8 @@ export class BacktestRunner {
     this.onProgress({ phase: 'seed', percent: 5, message: '从 Birdeye 获取候选钱包并分组...' });
     const groups = await seedFromBirdeye(this.birdeyeApiKey);
     const totalCandidates = groups.smartMoney.length + groups.baseline.length;
+    // 0.6 factor: floor(N * 0.3) * 2 groups = 0.6 * N wallets total.
+    // MIN_CANDIDATES_WARN=20 → threshold=12. Fires when <20 Birdeye candidates (low-quality mode).
     if (totalCandidates < MIN_CANDIDATES_WARN * 0.6) {
       // Both groups together are below warning threshold — note in progress
       this.onProgress({

@@ -209,7 +209,7 @@ describe('BacktestRunner', () => {
     expect(maxPercent).toBe(100);
   });
 
-  it('attaches Birdeye dataSource metadata to the report', async () => {
+  it('attaches Birdeye dataSource metadata with dynamic wallet counts to the report', async () => {
     const candidates = makeCandidates(20);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
@@ -221,8 +221,34 @@ describe('BacktestRunner', () => {
 
     const report = await runner.run();
 
-    expect(report.dataSource).toBeDefined();
+    // floor(20 * 0.3) = 6 wallets per group
     expect(report.dataSource?.smartMoney).toContain('PnL 前 30%');
+    expect(report.dataSource?.smartMoney).toContain('共 6 个钱包');
     expect(report.dataSource?.baseline).toContain('PnL 后 30%');
+    expect(report.dataSource?.baseline).toContain('共 6 个钱包');
+  });
+
+  it('emits [WARNING] progress event when candidate pool is small (low-quality mode)', async () => {
+    // 15 candidates → floor(15*0.3)=4 per group → total 8 wallets < MIN_CANDIDATES_WARN*0.6=12
+    const candidates = makeCandidates(15);
+    vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const progressMessages: string[] = [];
+    const runner = new BacktestRunner({
+      birdeyeApiKey: 'test-birdeye-key',
+      heliusApiKey: 'test-helius-key',
+      outputDir: '/tmp/test-backtest',
+      onProgress: (event: BacktestProgress) => {
+        progressMessages.push(event.message);
+      },
+    });
+
+    await runner.run();
+
+    const warningEvent = progressMessages.find((m) => m.includes('[WARNING]'));
+    expect(warningEvent).toBeDefined();
+    expect(warningEvent).toContain('候选钱包总数偏少');
+    stderrSpy.mockRestore();
   });
 });

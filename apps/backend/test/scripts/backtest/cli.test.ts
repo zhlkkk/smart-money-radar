@@ -131,6 +131,35 @@ describe('seedFromBirdeye', () => {
     stderrSpy.mockRestore();
   });
 
+  it('恰好 19 个候选时打印 WARNING（WARN 边界下方）', async () => {
+    const candidates = makeCandidates(19);
+    vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const groups = await seedFromBirdeye('test-key');
+
+    // floor(19 * 0.3) = 5 per group
+    expect(groups.smartMoney).toHaveLength(5);
+    expect(groups.baseline).toHaveLength(5);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('[WARNING]'));
+    stderrSpy.mockRestore();
+  });
+
+  it('恰好 21 个候选时正常工作（无警告）', async () => {
+    const candidates = makeCandidates(21);
+    vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const groups = await seedFromBirdeye('test-key');
+
+    // floor(21 * 0.3) = 6 per group
+    expect(groups.smartMoney).toHaveLength(6);
+    expect(groups.baseline).toHaveLength(6);
+    const warnCalls = stderrSpy.mock.calls.filter((c) => String(c[0]).includes('[WARNING]'));
+    expect(warnCalls).toHaveLength(0);
+    stderrSpy.mockRestore();
+  });
+
   it('按 PnL 降序排列后再分组（乱序输入）', async () => {
     // Provide candidates in random order
     const candidates: WalletCandidate[] = [

@@ -65,7 +65,7 @@ interface BirdeyeTxItem {
   blockTime?: number;
   from?: { address?: string; amount?: number };
   to?: { address?: string; amount?: number };
-  side?: string;
+  side?: 'buy' | 'sell';
   tokenAddress?: string;
 }
 
@@ -101,6 +101,16 @@ async function collectViaBirdeye(
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        `Birdeye API authentication failed (HTTP ${response.status}). Check your BIRDEYE_API_KEY.`,
+      );
+    }
+
+    if (response.status === 429) {
+      throw new Error('Birdeye API rate limit exceeded (HTTP 429). Try again later.');
+    }
+
     if (!response.ok) {
       console.error(`[collect-birdeye] ${address}: HTTP ${response.status} ${response.statusText}`);
       return [];
@@ -111,6 +121,13 @@ async function collectViaBirdeye(
 
     return (body.data?.items ?? []).map((item) => normalizeBirdeyeTrade(address, item));
   } catch (error: unknown) {
+    // Re-throw auth and rate limit errors to terminate the overall collection
+    if (
+      error instanceof Error &&
+      (error.message.includes('authentication failed') || error.message.includes('rate limit'))
+    ) {
+      throw error;
+    }
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[collect-birdeye] ${address}: ${msg}`);
     return [];

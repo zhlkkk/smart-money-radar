@@ -141,6 +141,28 @@ describe('collectWalletTrades', () => {
     stderrSpy.mockRestore();
   });
 
+  it('Birdeye fallback: 401 auth error throws authentication failed', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(heliusResponse([]))
+      .mockResolvedValueOnce(new Response('Unauthorized', { status: 401 }));
+    const limiter = mockRateLimiter();
+
+    await expect(collectWalletTrades(API_KEY, 'WalletE', limiter, 'birdeye-test-key')).rejects.toThrow(
+      'authentication failed',
+    );
+  });
+
+  it('Birdeye fallback: 429 rate limit throws', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(heliusResponse([]))
+      .mockResolvedValueOnce(new Response('Rate limited', { status: 429 }));
+    const limiter = mockRateLimiter();
+
+    await expect(collectWalletTrades(API_KEY, 'WalletF', limiter, 'birdeye-test-key')).rejects.toThrow(
+      'rate limit',
+    );
+  });
+
   it('skips non-SWAP transactions', async () => {
     const txns = [
       { signature: 'sig-transfer', timestamp: 100, type: 'TRANSFER', tokenTransfers: [{ mint: 'M1', tokenAmount: 10, toUserAccount: 'WalletA' }] },

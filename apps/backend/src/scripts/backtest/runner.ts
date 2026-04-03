@@ -186,8 +186,8 @@ export class BacktestRunner {
     const report = generateReport(smartMoneyResults, baselineResults);
 
     const dataSource: BacktestDataSource = {
-      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%（共 ${groups.smartMoney.length} 个钱包，limit=50）`,
-      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%（共 ${groups.baseline.length} 个钱包，limit=50）`,
+      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%（共 ${groups.smartMoney.length} 个钱包）`,
+      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%（共 ${groups.baseline.length} 个钱包）`,
     };
     report.dataSource = dataSource;
 

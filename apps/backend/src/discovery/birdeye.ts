@@ -93,7 +93,7 @@ function normalizeTraderItem(item: BirdeyeTraderItem): WalletCandidate | null {
  */
 export async function fetchTopWallets(apiKey: string): Promise<WalletCandidate[]> {
   try {
-    const response = await fetch(`${BIRDEYE_BASE}/trader/gainers-losers?limit=50`, {
+    const response = await fetch(`${BIRDEYE_BASE}/trader/gainers-losers?limit=10`, {
       headers: makeHeaders(apiKey),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

@@ -16,7 +16,7 @@ describe('fetchTopWallets', () => {
     vi.restoreAllMocks();
   });
 
-  it('requests limit=50 in the URL', async () => {
+  it('requests limit=10 in the URL (Starter plan max)', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       birdeyeResponse({ success: true, data: { items: [] } }),
     );
@@ -24,7 +24,7 @@ describe('fetchTopWallets', () => {
     await fetchTopWallets(API_KEY);
 
     const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
-    expect(calledUrl).toContain('limit=50');
+    expect(calledUrl).toContain('limit=10');
   });
 
   it('returns normalized WalletCandidate array', async () => {

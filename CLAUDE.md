@@ -122,10 +122,13 @@ The MVP is deliberately minimal. Core concerns:
 - 侧边栏"数据说明"导航入口 ✅
 - 详见 `docs/superpowers/specs/2026-04-02-data-trust-layer-design.md`
 
-#### Phase 3c: 数据可靠性提升（中期）
-- P0: Birdeye 聪明钱评分回测验证（离线脚本，验证真实预测力）
-- P1: DexScreener 本地缓存 + Webhook HMAC 签名
-- P2: 链上价格交叉校验 + 置信度权重自动调优
+#### Phase 3c（已完成 ✅）— 数据可靠性提升
+- Birdeye 聪明钱评分回测验证管线（采集 → 价格追踪 → 统计分析 → Markdown 报告，支持断点续跑）✅
+- DexScreener LRU+TTL 本地缓存（30s/2000 条）+ stale-while-revalidate 降级 ✅
+- Raydium V3 链上价格交叉校验（并行集成到 enrichment 管线，偏差 >5% 标记）✅
+- 置信度降分规则（stale 数据 -10 分、价格偏差 >5% -10 分）✅
+- 回测 CLI 脚本（`pnpm --filter backend backtest`）✅
+- 详见 `docs/plans/2026-04-02-008-feat-data-reliability-phase3c-plan.md`
 
 ## Performance Targets
 

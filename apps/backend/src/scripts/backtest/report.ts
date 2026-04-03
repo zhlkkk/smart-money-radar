@@ -1,4 +1,4 @@
-import type { BacktestReport, BacktestStats } from './types.js';
+import type { BacktestReport, BacktestDataSource, BacktestStats } from './types.js';
 
 /**
  * 格式化百分比数值，保留 2 位小数。
@@ -46,6 +46,28 @@ export function formatMarkdownReport(report: BacktestReport): string {
   lines.push('');
   lines.push(`> 生成时间: ${report.generatedAt}`);
   lines.push('');
+
+  // 数据来源说明
+  if (report.dataSource) {
+    lines.push('## 数据来源');
+    lines.push('');
+    lines.push(`- **聪明钱组**: ${report.dataSource.smartMoney}`);
+    lines.push(`- **基线对照组**: ${report.dataSource.baseline}`);
+    lines.push('');
+    lines.push(
+      '> ⚠️ 基线组取自 Birdeye 排行榜底部钱包，并非真正的随机钱包。' +
+        '对比结果反映的是排行榜内部差异，而非聪明钱 vs 市场平均水平。',
+    );
+    lines.push('');
+  }
+
+  // 无基线对照标注
+  if (report.baselineStats.totalTrades === 0) {
+    lines.push(
+      '> ⚠️ **无基线对照** — 基线组无交易数据，pass/fail 结论仅供参考。',
+    );
+    lines.push('');
+  }
 
   // 指标对比表
   lines.push('## 指标对比');

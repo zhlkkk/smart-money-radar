@@ -22,7 +22,7 @@ import { collectAllWallets } from './collect.js';
 import { trackAllTrades } from './track-prices.js';
 import { generateReport } from './analyze.js';
 import { formatMarkdownReport } from './report.js';
-import type { BacktestTrade, BacktestGroups, CollectionProgress, PriceTrackResult, WalletTradeData } from './types.js';
+import type { BacktestTrade, BacktestDataSource, BacktestGroups, CollectionProgress, PriceTrackResult, WalletTradeData } from './types.js';
 
 /** 进度日志输出到 stderr，不干扰 stdout 报告输出 */
 function log(message: string): void {
@@ -340,6 +340,16 @@ async function main(): Promise<void> {
   // 6. 生成报告
   log('生成回测报告...');
   const report = generateReport(smartMoneyResults, baselineResults);
+
+  // Attach data source metadata when in seed mode
+  if (useSeedMode) {
+    const dataSource: BacktestDataSource = {
+      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%`,
+      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%`,
+    };
+    report.dataSource = dataSource;
+  }
+
   const markdown = formatMarkdownReport(report);
 
   // 7. 写入报告文件

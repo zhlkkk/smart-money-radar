@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeStats, generateReport } from '../../../src/scripts/backtest/analyze.js';
-import type { PriceTrackResult } from '../../../src/scripts/backtest/types.js';
+import { formatMarkdownReport } from '../../../src/scripts/backtest/report.js';
+import type { PriceTrackResult, BacktestReport } from '../../../src/scripts/backtest/types.js';
 
 /** 辅助函数：快速创建 PriceTrackResult */
 function makePriceResult(
@@ -181,6 +182,46 @@ describe('generateReport', () => {
     expect(report.passed).toBe(false);
   });
 
+  it('基线组为空（fallback 场景）→ passed 仅看绝对胜率', () => {
+    // Smart money: 3/4 = 0.75 > 0.55, baseline: empty → winRate = 0
+    // Diff = 0.75 - 0 = 0.75 > 0.10 → passed = true
+    const smartMoney: PriceTrackResult[] = [
+      makePriceResult({ tradeSignature: 's1', h24: 10 }),
+      makePriceResult({ tradeSignature: 's2', h24: 20 }),
+      makePriceResult({ tradeSignature: 's3', h24: 30 }),
+      makePriceResult({ tradeSignature: 's4', h24: -5 }),
+    ];
+
+    const report = generateReport(smartMoney, []);
+
+    expect(report.passed).toBe(true);
+    expect(report.baselineStats.totalTrades).toBe(0);
+    expect(report.baselineStats.winRate24h).toBe(0);
+  });
+
+  it('聪明钱 winRate=50% 基线 winRate=48% → passed=false（不足 55%）', () => {
+    // Smart money: 2/4 = 0.50, not > 0.55 → failed regardless of diff
+    const smartMoney: PriceTrackResult[] = [
+      makePriceResult({ tradeSignature: 's1', h24: 10 }),
+      makePriceResult({ tradeSignature: 's2', h24: 20 }),
+      makePriceResult({ tradeSignature: 's3', h24: -10 }),
+      makePriceResult({ tradeSignature: 's4', h24: -5 }),
+    ];
+
+    const baseline: PriceTrackResult[] = [
+      makePriceResult({ tradeSignature: 'b1', h24: 10 }),
+      makePriceResult({ tradeSignature: 'b2', h24: 20 }),
+      makePriceResult({ tradeSignature: 'b3', h24: -10 }),
+      makePriceResult({ tradeSignature: 'b4', h24: -5 }),
+      makePriceResult({ tradeSignature: 'b5', h24: -15 }),
+    ];
+
+    const report = generateReport(smartMoney, baseline);
+
+    expect(report.passed).toBe(false);
+    expect(report.smartMoneyStats.winRate24h).toBe(0.5);
+  });
+
   it('聪明钱胜率高但差值不够 → passed = false', () => {
     // 聪明钱: 3/4 = 0.75, 基线: 3/4 = 0.75, 差值 = 0 < 0.10
     const smartMoney: PriceTrackResult[] = [
@@ -200,5 +241,83 @@ describe('generateReport', () => {
     const report = generateReport(smartMoney, baseline);
 
     expect(report.passed).toBe(false);
+  });
+});
+
+describe('formatMarkdownReport', () => {
+  function makeReport(overrides: Partial<BacktestReport> = {}): BacktestReport {
+    return {
+      smartMoneyStats: {
+        totalTrades: 10,
+        winRate24h: 0.7,
+        avgReturn24h: 15,
+        maxDrawdown: -30,
+        profitConcentration: 0.5,
+        noDataRatio: 0.1,
+      },
+      baselineStats: {
+        totalTrades: 10,
+        winRate24h: 0.4,
+        avgReturn24h: -5,
+        maxDrawdown: -80,
+        profitConcentration: 0.3,
+        noDataRatio: 0.2,
+      },
+      passed: true,
+      dataReliable: true,
+      generatedAt: '2026-04-03T00:00:00.000Z',
+      ...overrides,
+    };
+  }
+
+  it('包含 dataSource 时显示数据来源和局限性警告', () => {
+    const report = makeReport({
+      dataSource: {
+        smartMoney: 'Birdeye top 30%',
+        baseline: 'Birdeye bottom 30%',
+      },
+    });
+
+    const md = formatMarkdownReport(report);
+
+    expect(md).toContain('## 数据来源');
+    expect(md).toContain('Birdeye top 30%');
+    expect(md).toContain('Birdeye bottom 30%');
+    expect(md).toContain('并非真正的随机钱包');
+  });
+
+  it('无 dataSource 时不显示数据来源段落', () => {
+    const report = makeReport();
+
+    const md = formatMarkdownReport(report);
+
+    expect(md).not.toContain('## 数据来源');
+    expect(md).not.toContain('并非真正的随机钱包');
+  });
+
+  it('基线组无交易时显示无基线标注', () => {
+    const report = makeReport({
+      baselineStats: {
+        totalTrades: 0,
+        winRate24h: 0,
+        avgReturn24h: 0,
+        maxDrawdown: 0,
+        profitConcentration: 0,
+        noDataRatio: 0,
+      },
+    });
+
+    const md = formatMarkdownReport(report);
+
+    expect(md).toContain('无基线对照');
+    expect(md).toContain('仅供参考');
+  });
+
+  it('基线组有交易时不显示无基线标注', () => {
+    const report = makeReport();
+
+    const md = formatMarkdownReport(report);
+
+    expect(md).not.toContain('无基线对照');
   });
 });

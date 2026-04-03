@@ -83,6 +83,14 @@ export interface BacktestGroups {
   baseline: string[];
 }
 
+/** 数据来源说明 */
+export interface BacktestDataSource {
+  /** 聪明钱组来源描述 */
+  smartMoney: string;
+  /** 基线组来源描述 */
+  baseline: string;
+}
+
 /** 完整回测报告 */
 export interface BacktestReport {
   /** 聪明钱组统计 */
@@ -95,4 +103,6 @@ export interface BacktestReport {
   dataReliable: boolean;
   /** 报告生成时间（ISO 8601） */
   generatedAt: string;
+  /** 数据来源说明（可选，种子模式下填充） */
+  dataSource?: BacktestDataSource;
 }

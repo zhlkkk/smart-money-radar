@@ -96,7 +96,7 @@ export function registerAdminBacktestRoutes(
         currentRun.status = 'error';
         currentRun.error = msg;
         currentRun.completedAt = new Date().toISOString();
-        backtestBus.emit('error', { runId, error: msg });
+        backtestBus.emit('backtest-error', { runId, error: msg });
       }
       app.log.error(`Backtest ${runId} failed: ${msg}`);
     });
@@ -170,12 +170,12 @@ export function registerAdminBacktestRoutes(
       }
 
       function onError(data: { runId: string; error: string }) {
-        reply.raw.write(`event: error\ndata: ${JSON.stringify(data)}\n\n`);
+        reply.raw.write(`event: backtest-error\ndata: ${JSON.stringify(data)}\n\n`);
       }
 
       backtestBus.on('progress', onProgress);
       backtestBus.on('complete', onComplete);
-      backtestBus.on('error', onError);
+      backtestBus.on('backtest-error', onError);
 
       const heartbeat = setInterval(() => {
         reply.raw.write(': heartbeat\n\n');
@@ -184,7 +184,7 @@ export function registerAdminBacktestRoutes(
       request.raw.on('close', () => {
         backtestBus.off('progress', onProgress);
         backtestBus.off('complete', onComplete);
-        backtestBus.off('error', onError);
+        backtestBus.off('backtest-error', onError);
         clearInterval(heartbeat);
       });
 

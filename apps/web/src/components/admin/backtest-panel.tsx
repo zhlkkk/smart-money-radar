@@ -50,11 +50,9 @@ export function BacktestPanel() {
       es.close();
     });
 
-    es.addEventListener('error', (event) => {
-      if (event instanceof MessageEvent) {
-        const data = JSON.parse(event.data) as { error: string };
-        setError(data.error);
-      }
+    es.addEventListener('backtest-error', (event) => {
+      const data = JSON.parse((event as MessageEvent).data) as { error: string };
+      setError(data.error);
       setStatus('error');
       es.close();
     });

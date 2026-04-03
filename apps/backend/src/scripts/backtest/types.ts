@@ -91,6 +91,26 @@ export interface BacktestDataSource {
   baseline: string;
 }
 
+/** 回测运行进度事件 */
+export interface BacktestProgress {
+  /** 当前阶段 */
+  phase: 'seed' | 'collect-smart' | 'collect-baseline' | 'track-smart' | 'track-baseline' | 'analyze';
+  /** 完成百分比 0-100 */
+  percent: number;
+  /** 人类可读的进度消息 */
+  message: string;
+}
+
+/** BacktestRunner 配置 */
+export interface BacktestRunnerConfig {
+  /** Birdeye API 密钥 */
+  apiKey: string;
+  /** 输出目录 */
+  outputDir: string;
+  /** 进度回调 */
+  onProgress?: (event: BacktestProgress) => void;
+}
+
 /** 完整回测报告 */
 export interface BacktestReport {
   /** 聪明钱组统计 */

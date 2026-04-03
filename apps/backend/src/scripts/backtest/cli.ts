@@ -22,7 +22,8 @@ import { collectAllWallets } from './collect.js';
 import { trackAllTrades } from './track-prices.js';
 import { generateReport } from './analyze.js';
 import { formatMarkdownReport } from './report.js';
-import type { BacktestTrade, BacktestDataSource, BacktestGroups, CollectionProgress, PriceTrackResult, WalletTradeData } from './types.js';
+import { BacktestRunner } from './runner.js';
+import type { BacktestTrade, BacktestGroups, CollectionProgress, WalletTradeData } from './types.js';
 
 /** 进度日志输出到 stderr，不干扰 stdout 报告输出 */
 function log(message: string): void {
@@ -227,128 +228,73 @@ async function main(): Promise<void> {
   // 创建限流器（30 req/min，Birdeye 免费层限制）
   const rateLimiter = createRateLimiter(30);
 
-  // Results will be populated by either seed mode or config file mode
-  let smartMoneyResults: PriceTrackResult[];
-  let baselineResults: PriceTrackResult[];
-
   // Determine whether to use Birdeye seed mode
   const useSeedMode = cliArgs.seedFromBirdeye || addresses.length === 0;
 
   if (useSeedMode) {
-    // --- Birdeye seed mode: auto-fetch + split into two groups ---
+    // --- Birdeye seed mode: delegate to BacktestRunner ---
     if (addresses.length === 0) {
       log('钱包配置为空，自动切换到 Birdeye 种子模式');
     } else {
       log('--seed-from-birdeye 已指定，使用 Birdeye 种子模式');
     }
 
-    const groups = await seedFromBirdeye(apiKey);
+    const runner = new BacktestRunner({
+      apiKey,
+      outputDir,
+      onProgress: (event) => log(`[${event.phase}] ${event.percent}% — ${event.message}`),
+    });
 
-    const smartMoneyCollectDir = join(outputDir, 'smart-money');
-    const baselineCollectDir = join(outputDir, 'baseline');
+    const report = await runner.run();
+    const markdown = formatMarkdownReport(report);
 
-    // 2. 采集阶段 — smart money group
-    if (!cliArgs.skipCollect) {
-      log(`开始采集聪明钱组交易数据（${groups.smartMoney.length} 个钱包）...`);
-      const smProgress = await collectAllWallets(apiKey, groups.smartMoney, {
-        outputDir: smartMoneyCollectDir,
-        rateLimiter,
-        onProgress: (p: CollectionProgress) => {
-          const total = p.completed + p.failed + p.skipped;
-          log(`  聪明钱组进度: ${total}/${p.totalWallets} (成功=${p.completed} 失败=${p.failed} 跳过=${p.skipped})`);
-        },
-      });
-      log(`聪明钱组采集完成: 成功=${smProgress.completed} 失败=${smProgress.failed} 跳过=${smProgress.skipped}`);
-
-      log(`开始采集基线组交易数据（${groups.baseline.length} 个钱包）...`);
-      const blProgress = await collectAllWallets(apiKey, groups.baseline, {
-        outputDir: baselineCollectDir,
-        rateLimiter,
-        onProgress: (p: CollectionProgress) => {
-          const total = p.completed + p.failed + p.skipped;
-          log(`  基线组进度: ${total}/${p.totalWallets} (成功=${p.completed} 失败=${p.failed} 跳过=${p.skipped})`);
-        },
-      });
-      log(`基线组采集完成: 成功=${blProgress.completed} 失败=${blProgress.failed} 跳过=${blProgress.skipped}`);
-    } else {
-      log('跳过采集阶段（--skip-collect）');
-    }
-
-    // 3. 读取已采集数据
-    log('读取聪明钱组已采集数据...');
-    const smartMoneyBuyTrades = await loadBuyTrades(smartMoneyCollectDir);
-    log(`聪明钱组共 ${smartMoneyBuyTrades.length} 笔买入交易`);
-
-    log('读取基线组已采集数据...');
-    const baselineBuyTrades = await loadBuyTrades(baselineCollectDir);
-    log(`基线组共 ${baselineBuyTrades.length} 笔买入交易`);
-
-    if (smartMoneyBuyTrades.length === 0) {
-      console.error('错误: 聪明钱组没有找到任何买入交易数据');
-      process.exit(1);
-    }
-
-    // 4. 追踪价格
-    log('开始追踪聪明钱组交易价格表现...');
-    smartMoneyResults = await trackAllTrades(smartMoneyBuyTrades, apiKey, rateLimiter);
-    log(`聪明钱组价格追踪完成: ${smartMoneyResults.length} 笔交易`);
-
-    log('开始追踪基线组交易价格表现...');
-    baselineResults = await trackAllTrades(baselineBuyTrades, apiKey, rateLimiter);
-    log(`基线组价格追踪完成: ${baselineResults.length} 笔交易`);
-  } else {
-    // --- Config file mode: backward compatible ---
-    const collectDir = join(outputDir, 'wallets');
-    log(`使用配置文件模式: ${addresses.length} 个钱包地址`);
-
-    // 2. 采集阶段
-    if (!cliArgs.skipCollect) {
-      log('开始采集钱包交易数据...');
-      const progress = await collectAllWallets(apiKey, addresses, {
-        outputDir: collectDir,
-        rateLimiter,
-        onProgress: (p: CollectionProgress) => {
-          const total = p.completed + p.failed + p.skipped;
-          log(`  进度: ${total}/${p.totalWallets} (成功=${p.completed} 失败=${p.failed} 跳过=${p.skipped})`);
-        },
-      });
-      log(`采集完成: 成功=${progress.completed} 失败=${progress.failed} 跳过=${progress.skipped}`);
-    } else {
-      log('跳过采集阶段（--skip-collect）');
-    }
-
-    // 3. 读取已采集数据，提取买入交易
-    log('读取已采集数据...');
-    const buyTrades = await loadBuyTrades(collectDir);
-    log(`共 ${buyTrades.length} 笔买入交易`);
-
-    if (buyTrades.length === 0) {
-      console.error('错误: 没有找到任何买入交易数据');
-      console.error('请先运行采集阶段（不带 --skip-collect）');
-      process.exit(1);
-    }
-
-    // 4. 追踪价格
-    log('开始追踪交易价格表现...');
-    smartMoneyResults = await trackAllTrades(buyTrades, apiKey, rateLimiter);
-    log(`价格追踪完成: ${smartMoneyResults.length} 笔交易`);
-
-    // 5. 基线对照组 — config mode uses empty baseline (backward compatible)
-    baselineResults = await trackAllTrades([], apiKey, rateLimiter);
+    // Output to stdout (report file already written by runner)
+    console.log(markdown);
+    return;
   }
+
+  // --- Config file mode: backward compatible ---
+  const collectDir = join(outputDir, 'wallets');
+  log(`使用配置文件模式: ${addresses.length} 个钱包地址`);
+
+  // 2. 采集阶段
+  if (!cliArgs.skipCollect) {
+    log('开始采集钱包交易数据...');
+    const progress = await collectAllWallets(apiKey, addresses, {
+      outputDir: collectDir,
+      rateLimiter,
+      onProgress: (p: CollectionProgress) => {
+        const total = p.completed + p.failed + p.skipped;
+        log(`  进度: ${total}/${p.totalWallets} (成功=${p.completed} 失败=${p.failed} 跳过=${p.skipped})`);
+      },
+    });
+    log(`采集完成: 成功=${progress.completed} 失败=${progress.failed} 跳过=${progress.skipped}`);
+  } else {
+    log('跳过采集阶段（--skip-collect）');
+  }
+
+  // 3. 读取已采集数据，提取买入交易
+  log('读取已采集数据...');
+  const buyTrades = await loadBuyTrades(collectDir);
+  log(`共 ${buyTrades.length} 笔买入交易`);
+
+  if (buyTrades.length === 0) {
+    console.error('错误: 没有找到任何买入交易数据');
+    console.error('请先运行采集阶段（不带 --skip-collect）');
+    process.exit(1);
+  }
+
+  // 4. 追踪价格
+  log('开始追踪交易价格表现...');
+  const smartMoneyResults = await trackAllTrades(buyTrades, apiKey, rateLimiter);
+  log(`价格追踪完成: ${smartMoneyResults.length} 笔交易`);
+
+  // 5. 基线对照组 — config mode uses empty baseline (backward compatible)
+  const baselineResults = await trackAllTrades([], apiKey, rateLimiter);
 
   // 6. 生成报告
   log('生成回测报告...');
   const report = generateReport(smartMoneyResults, baselineResults);
-
-  // Attach data source metadata when in seed mode
-  if (useSeedMode) {
-    const dataSource: BacktestDataSource = {
-      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%`,
-      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%`,
-    };
-    report.dataSource = dataSource;
-  }
 
   const markdown = formatMarkdownReport(report);
 

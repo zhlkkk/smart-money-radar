@@ -72,6 +72,7 @@ export interface PipelineConfig {
   botToken: string;
   channelId: string;
   db?: PoolDatabase | null;
+  birdeyeApiKey?: string;
   logger?: { error: (obj: unknown, msg: string) => void };
 }
 
@@ -89,7 +90,7 @@ export function createPipeline(config: PipelineConfig) {
     const wallet = walletMap.get(swap.buyerAddress);
     if (!wallet) return;
 
-    const enrichment = await enrichToken(swap.tokenMint, config.rpc);
+    const enrichment = await enrichToken(swap.tokenMint, config.rpc, 2000, config.birdeyeApiKey);
 
     // 用 DexScreener 的 tokenSymbol 补充 Helius 解析可能缺失的 symbol
     const tokenSymbol = swap.tokenSymbol ?? enrichment.tokenSymbol ?? null;

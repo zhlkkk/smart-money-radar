@@ -8,6 +8,7 @@ import type {
 } from './types.js';
 
 const HELIUS_BASE = 'https://api-mainnet.helius-rpc.com';
+const BIRDEYE_BASE = 'https://public-api.birdeye.so';
 const TIMEOUT_MS = 15_000;
 
 /** Helius Enhanced Transaction 响应结构（简化） */
@@ -58,8 +59,64 @@ function normalizeHeliusTrade(address: string, tx: HeliusTransaction): BacktestT
   };
 }
 
+/** Birdeye tx_list 响应结构 */
+interface BirdeyeTxItem {
+  txHash?: string;
+  blockTime?: number;
+  from?: { address?: string; amount?: number };
+  to?: { address?: string; amount?: number };
+  side?: string;
+  tokenAddress?: string;
+}
+
+interface BirdeyeTxListResponse {
+  success: boolean;
+  data?: { items?: BirdeyeTxItem[] };
+}
+
+function normalizeBirdeyeTrade(address: string, item: BirdeyeTxItem): BacktestTrade {
+  const type = item.side === 'sell' ? 'sell' : 'buy';
+  return {
+    address,
+    signature: item.txHash ?? '',
+    tokenMint: item.tokenAddress ?? '',
+    type,
+    timestamp: item.blockTime ?? 0,
+    amount: (type === 'buy' ? item.from?.amount : item.to?.amount) ?? 0,
+  };
+}
+
+/** Birdeye wallet/tx_list fallback（Starter 层级以上可用） */
+async function collectViaBirdeye(
+  apiKey: string,
+  address: string,
+): Promise<BacktestTrade[]> {
+  try {
+    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}`;
+    const response = await fetch(url, {
+      headers: { 'X-API-KEY': apiKey, 'x-chain': 'solana', Accept: 'application/json' },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      console.error(`[collect-birdeye] ${address}: HTTP ${response.status} ${response.statusText}`);
+      return [];
+    }
+
+    const body = (await response.json()) as BirdeyeTxListResponse;
+    if (!body.success) return [];
+
+    return (body.data?.items ?? []).map((item) => normalizeBirdeyeTrade(address, item));
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[collect-birdeye] ${address}: ${msg}`);
+    return [];
+  }
+}
+
 /**
- * 采集单个钱包的交易历史（via Helius Enhanced Transactions API）。
+ * 采集单个钱包的交易历史。
+ * 优先使用 Helius Enhanced Transactions API，无 SWAP 数据时 fallback 到 Birdeye。
  * 认证错误(401/403)和限流(429)会抛出终止级错误。
  * 网络超时等非致命错误返回 null。
  */
@@ -67,6 +124,7 @@ export async function collectWalletTrades(
   apiKey: string,
   address: string,
   rateLimiter: RateLimiter,
+  fallbackApiKey?: string,
 ): Promise<WalletTradeData | null> {
   await rateLimiter.acquire();
 
@@ -94,10 +152,16 @@ export async function collectWalletTrades(
 
     const txns = (await response.json()) as HeliusTransaction[];
 
-    const trades: BacktestTrade[] = [];
+    let trades: BacktestTrade[] = [];
     for (const tx of txns) {
       const trade = normalizeHeliusTrade(address, tx);
       if (trade) trades.push(trade);
+    }
+
+    // Fallback to Birdeye if Helius returned no trades
+    if (trades.length === 0 && fallbackApiKey) {
+      console.error(`[collect] ${address}: Helius returned 0 trades, trying Birdeye fallback`);
+      trades = await collectViaBirdeye(fallbackApiKey, address);
     }
 
     return {
@@ -129,6 +193,8 @@ export interface CollectAllOptions {
   rateLimiter: RateLimiter;
   /** 进度回调 */
   onProgress?: (progress: CollectionProgress) => void;
+  /** Birdeye API key for fallback when Helius returns no data */
+  fallbackApiKey?: string;
 }
 
 /**
@@ -141,7 +207,7 @@ export async function collectAllWallets(
   addresses: string[],
   options: CollectAllOptions,
 ): Promise<CollectionProgress> {
-  const { outputDir, rateLimiter, onProgress } = options;
+  const { outputDir, rateLimiter, onProgress, fallbackApiKey } = options;
 
   await mkdir(outputDir, { recursive: true });
 
@@ -172,7 +238,7 @@ export async function collectAllWallets(
       continue;
     }
 
-    const result = await collectWalletTrades(apiKey, address, rateLimiter);
+    const result = await collectWalletTrades(apiKey, address, rateLimiter, fallbackApiKey);
 
     if (result) {
       const filePath = join(outputDir, `${address}.json`);

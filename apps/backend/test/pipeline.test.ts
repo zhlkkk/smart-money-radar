@@ -84,7 +84,7 @@ describe('Pipeline', () => {
     await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
 
     expect(parseSwap).toHaveBeenCalledOnce();
-    expect(enrichToken).toHaveBeenCalledWith('TokenMint123', expect.anything());
+    expect(enrichToken).toHaveBeenCalledWith('TokenMint123', expect.anything(), 2000, undefined);
     expect(generateAttribution).toHaveBeenCalledOnce();
     expect(sendAlert).toHaveBeenCalledWith('<b>formatted</b>', '123:ABC', '-100999');
   });
@@ -159,7 +159,7 @@ describe('Pipeline', () => {
 
     await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
 
-    expect(enrichToken).toHaveBeenCalledWith('MintNew', expect.anything());
+    expect(enrichToken).toHaveBeenCalledWith('MintNew', expect.anything(), 2000, undefined);
     expect(sendAlert).toHaveBeenCalledOnce();
   });
 

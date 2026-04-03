@@ -1,6 +1,7 @@
 import { fetchDexScreenerData } from './dexscreener.js';
 import { checkAuthorities } from './authority-check.js';
 import { crossValidatePrice } from './cross-validate.js';
+import { fetchBirdeyeMetadata } from './birdeye-metadata.js';
 import type { EnrichmentResult } from '../types.js';
 
 export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -16,11 +17,15 @@ export async function enrichToken(
   tokenMint: string,
   rpc: unknown,
   timeoutMs = 2000,
+  birdeyeApiKey?: string,
 ): Promise<EnrichmentResult> {
-  const [dexResult, authResult, crossResult] = await Promise.allSettled([
+  const [dexResult, authResult, crossResult, birdeyeResult] = await Promise.allSettled([
     withTimeout(fetchDexScreenerData(tokenMint), timeoutMs),
     withTimeout(checkAuthorities(rpc, tokenMint), timeoutMs),
     withTimeout(crossValidatePrice(tokenMint), timeoutMs),
+    birdeyeApiKey
+      ? withTimeout(fetchBirdeyeMetadata(tokenMint, birdeyeApiKey), timeoutMs)
+      : Promise.resolve(null),
   ]);
 
   // 如果 DexScreener 和 Raydium 都返回了价格，计算偏差
@@ -38,8 +43,14 @@ export async function enrichToken(
     }
   }
 
+  // tokenSymbol priority: DexScreener > Birdeye > null
+  const dexSymbol = dexResult.status === 'fulfilled' ? dexResult.value.tokenSymbol : null;
+  const birdeyeSymbol = birdeyeResult.status === 'fulfilled' && birdeyeResult.value
+    ? birdeyeResult.value.symbol
+    : null;
+
   return {
-    tokenSymbol: dexResult.status === 'fulfilled' ? dexResult.value.tokenSymbol : null,
+    tokenSymbol: dexSymbol ?? birdeyeSymbol ?? null,
     liquidity: dexResult.status === 'fulfilled' ? dexResult.value.liquidity : null,
     fdv: dexResult.status === 'fulfilled' ? dexResult.value.fdv : null,
     marketCap: dexResult.status === 'fulfilled' ? dexResult.value.marketCap : null,

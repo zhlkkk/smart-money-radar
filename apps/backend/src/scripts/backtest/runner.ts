@@ -93,6 +93,7 @@ export class BacktestRunner {
     const smProgress = await collectAllWallets(this.heliusApiKey, groups.smartMoney, {
       outputDir: smartMoneyCollectDir,
       rateLimiter,
+      fallbackApiKey: this.birdeyeApiKey,
       onProgress: (p: CollectionProgress) => {
         const total = p.completed + p.failed + p.skipped;
         const pct = 10 + Math.round((total / p.totalWallets) * 25);
@@ -118,6 +119,7 @@ export class BacktestRunner {
     const blProgress = await collectAllWallets(this.heliusApiKey, groups.baseline, {
       outputDir: baselineCollectDir,
       rateLimiter,
+      fallbackApiKey: this.birdeyeApiKey,
       onProgress: (p: CollectionProgress) => {
         const total = p.completed + p.failed + p.skipped;
         const pct = 35 + Math.round((total / p.totalWallets) * 25);

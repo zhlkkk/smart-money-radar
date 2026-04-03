@@ -75,6 +75,7 @@ const pipeline = createPipeline({
   botToken: env.TELEGRAM_BOT_TOKEN,
   channelId: env.TELEGRAM_CHANNEL_ID,
   db,
+  birdeyeApiKey: env.BIRDEYE_API_KEY,
 });
 
 // Fastify server

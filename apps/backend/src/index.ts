@@ -139,6 +139,7 @@ if (env.ADMIN_API_KEY && env.BIRDEYE_API_KEY && env.HELIUS_API_KEY) {
     adminKey: env.ADMIN_API_KEY,
     birdeyeApiKey: env.BIRDEYE_API_KEY,
     heliusApiKey: env.HELIUS_API_KEY,
+    discoveryStatePath,
   });
   app.log.info('Admin backtest routes registered');
 }

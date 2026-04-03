@@ -18,6 +18,7 @@ import { readFile, readdir, writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createRateLimiter } from '../../discovery/rate-limiter.js';
 import { fetchTopWallets } from '../../discovery/birdeye.js';
+import { loadDiscoveryState } from '../../discovery/persistence.js';
 import { collectAllWallets } from './collect.js';
 import { trackAllTrades } from './track-prices.js';
 import { generateReport } from './analyze.js';
@@ -108,6 +109,50 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   return args;
+}
+
+/**
+ * 从 discovery 持久化状态（discovered-wallets.json）读取已发现钱包，
+ * 按 compositeScore 降序分组：
+ * - 前 30% → smartMoney（评分最高，正在监控的优质钱包）
+ * - 后 30% → baseline（评分最低，作为组内对照）
+ *
+ * 文件不存在、钱包数 < MIN_CANDIDATES_FAIL 时返回 null，调用方应 fallback 到 Birdeye。
+ */
+export async function seedFromDiscoveryState(statePath: string): Promise<BacktestGroups | null> {
+  const state = loadDiscoveryState(statePath);
+  if (!state || state.discovered.length === 0) {
+    log('未找到 discovery 状态文件或钱包列表为空，将 fallback 到 Birdeye');
+    return null;
+  }
+
+  // Sort descending by compositeScore (defensive — persistence already sorts)
+  const wallets = [...state.discovered].sort((a, b) => b.compositeScore - a.compositeScore);
+
+  if (wallets.length < MIN_CANDIDATES_FAIL) {
+    log(`发现钱包数量不足（${wallets.length} 个 < ${MIN_CANDIDATES_FAIL}），将 fallback 到 Birdeye`);
+    return null;
+  }
+
+  if (wallets.length < MIN_CANDIDATES_WARN) {
+    log(
+      `[WARNING] 发现钱包数量偏少（${wallets.length} 个，建议 ≥${MIN_CANDIDATES_WARN} 个）。` +
+        `回测结果统计显著性低，请参考报告中的样本量警告。`,
+    );
+  }
+
+  const topCount = Math.floor(wallets.length * 0.3);
+  const bottomCount = Math.floor(wallets.length * 0.3);
+
+  const smartMoney = wallets.slice(0, topCount).map((w) => w.address);
+  const baseline = wallets.slice(wallets.length - bottomCount).map((w) => w.address);
+
+  log(
+    `发现钱包分组完成: 共 ${wallets.length} 个, ` +
+      `聪明钱（高分）${smartMoney.length} 个, 基线（低分）${baseline.length} 个`,
+  );
+
+  return { smartMoney, baseline };
 }
 
 /** 从钱包配置文件读取地址列表 */

@@ -12,7 +12,7 @@ import { collectAllWallets } from './collect.js';
 import { trackAllTrades } from './track-prices.js';
 import { generateReport } from './analyze.js';
 import { formatMarkdownReport } from './report.js';
-import { seedFromBirdeye, MIN_CANDIDATES_WARN } from './cli.js';
+import { seedFromBirdeye, seedFromDiscoveryState, MIN_CANDIDATES_WARN } from './cli.js';
 import type {
   BacktestProgress,
   BacktestRunnerConfig,
@@ -66,25 +66,36 @@ export class BacktestRunner {
   private readonly heliusApiKey: string;
   private readonly outputDir: string;
   private readonly onProgress: (event: BacktestProgress) => void;
+  private readonly discoveryStatePath: string | undefined;
 
   constructor(config: BacktestRunnerConfig) {
     this.birdeyeApiKey = config.birdeyeApiKey;
     this.heliusApiKey = config.heliusApiKey;
     this.outputDir = config.outputDir;
     this.onProgress = config.onProgress ?? (() => {});
+    this.discoveryStatePath = config.discoveryStatePath;
   }
 
   async run(): Promise<BacktestReport> {
     const rateLimiter = createRateLimiter(30);
 
-    // Phase 1: Seed from Birdeye (limit=50, target >=MIN_CANDIDATES_WARN candidates)
-    this.onProgress({ phase: 'seed', percent: 5, message: '从 Birdeye 获取候选钱包并分组...' });
-    const groups = await seedFromBirdeye(this.birdeyeApiKey);
+    // Phase 1: Seed wallets — prefer discovery state, fallback to Birdeye
+    this.onProgress({ phase: 'seed', percent: 5, message: '获取候选钱包并分组...' });
+
+    let groups = this.discoveryStatePath
+      ? await seedFromDiscoveryState(this.discoveryStatePath)
+      : null;
+
+    const seedSource = groups ? 'discovery' : 'birdeye';
+    if (!groups) {
+      this.onProgress({ phase: 'seed', percent: 5, message: '从 Birdeye 获取候选钱包并分组...' });
+      groups = await seedFromBirdeye(this.birdeyeApiKey);
+    }
+
     const totalCandidates = groups.smartMoney.length + groups.baseline.length;
     // 0.6 factor: floor(N * 0.3) * 2 groups = 0.6 * N wallets total.
-    // MIN_CANDIDATES_WARN=20 → threshold=12. Fires when <20 Birdeye candidates (low-quality mode).
+    // MIN_CANDIDATES_WARN=20 → threshold=12. Fires when <20 candidates (low-quality mode).
     if (totalCandidates < MIN_CANDIDATES_WARN * 0.6) {
-      // Both groups together are below warning threshold — note in progress
       this.onProgress({
         phase: 'seed',
         percent: 5,
@@ -185,10 +196,16 @@ export class BacktestRunner {
     this.onProgress({ phase: 'analyze', percent: 95, message: '生成回测报告...' });
     const report = generateReport(smartMoneyResults, baselineResults);
 
-    const dataSource: BacktestDataSource = {
-      smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%（共 ${groups.smartMoney.length} 个钱包）`,
-      baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%（共 ${groups.baseline.length} 个钱包）`,
-    };
+    const dataSource: BacktestDataSource =
+      seedSource === 'discovery'
+        ? {
+            smartMoney: `已发现钱包列表 compositeScore 前 30%（共 ${groups.smartMoney.length} 个钱包，来自 discovered-wallets.json）`,
+            baseline: `已发现钱包列表 compositeScore 后 30%（共 ${groups.baseline.length} 个钱包，组内低分对照）`,
+          }
+        : {
+            smartMoney: `Birdeye trader/gainers-losers 排行榜 PnL 前 30%（共 ${groups.smartMoney.length} 个钱包）`,
+            baseline: `Birdeye trader/gainers-losers 排行榜 PnL 后 30%（共 ${groups.baseline.length} 个钱包）`,
+          };
     report.dataSource = dataSource;
 
     const markdown = formatMarkdownReport(report);

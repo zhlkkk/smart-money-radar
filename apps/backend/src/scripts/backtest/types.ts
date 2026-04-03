@@ -103,7 +103,7 @@ export interface BacktestProgress {
 
 /** BacktestRunner 配置 */
 export interface BacktestRunnerConfig {
-  /** Birdeye API 密钥（用于种子钱包获取） */
+  /** Birdeye API 密钥（用于种子钱包获取及价格追踪） */
   birdeyeApiKey: string;
   /** Helius API 密钥（用于交易历史采集） */
   heliusApiKey: string;
@@ -111,6 +111,11 @@ export interface BacktestRunnerConfig {
   outputDir: string;
   /** 进度回调 */
   onProgress?: (event: BacktestProgress) => void;
+  /**
+   * discovery 状态文件路径（discovered-wallets.json）。
+   * 提供时优先从本地已发现钱包分组，文件不存在或钱包数不足时 fallback 到 Birdeye。
+   */
+  discoveryStatePath?: string;
 }
 
 /** 完整回测报告 */

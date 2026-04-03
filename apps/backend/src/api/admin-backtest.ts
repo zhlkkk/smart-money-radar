@@ -33,6 +33,7 @@ export interface AdminBacktestConfig {
   adminKey: string;
   birdeyeApiKey: string;
   heliusApiKey: string;
+  discoveryStatePath: string;
 }
 
 export function registerAdminBacktestRoutes(
@@ -76,6 +77,7 @@ export function registerAdminBacktestRoutes(
       birdeyeApiKey: config.birdeyeApiKey,
       heliusApiKey: config.heliusApiKey,
       outputDir,
+      discoveryStatePath: config.discoveryStatePath,
       onProgress: (event: BacktestProgress) => {
         if (currentRun && currentRun.runId === runId) {
           currentRun.progress = event;

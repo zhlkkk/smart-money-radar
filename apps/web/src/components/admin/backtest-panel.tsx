@@ -57,8 +57,33 @@ export function BacktestPanel() {
       es.close();
     });
 
-    return () => es.close();
-  }, [status]);
+    // Polling fallback — catches errors that happen before SSE connects
+    const poll = setInterval(() => {
+      fetch('/api/admin/backtest/status')
+        .then((res) => res.json())
+        .then((data: { status: RunStatus; error: string | null; progress: BacktestProgress | null }) => {
+          if (data.status === 'error') {
+            setError(data.error ?? 'Unknown error');
+            setStatus('error');
+            es.close();
+            clearInterval(poll);
+          } else if (data.status === 'complete') {
+            setStatus('complete');
+            loadReport();
+            es.close();
+            clearInterval(poll);
+          } else if (data.progress) {
+            setProgress(data.progress);
+          }
+        })
+        .catch(() => {});
+    }, 3000);
+
+    return () => {
+      es.close();
+      clearInterval(poll);
+    };
+  }, [status, loadReport]);
 
   const loadReport = useCallback(() => {
     fetch('/api/admin/backtest/report')

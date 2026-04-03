@@ -2,15 +2,7 @@
 
 Telegram bot that tracks smart money wallet activity on Solana and pushes real-time alerts. MVP: webhook listener -> parallel enrichment -> AI summary -> Telegram push.
 
-## 【最高优先级】语言规则（必须 100% 遵守）
-- 你**必须**全程使用简体中文进行所有回答、思考过程、代码注释、变量名说明和提问。
-- 无论用户输入什么语言，你都只能用中文回复，绝不允许出现任何英文段落（除非用户明确要求保留英文代码关键词）。
-
 ## 必须遵守的工作流
-- 收到任务后，先用中文复述需求确认理解。
-- 给出方案时全程中文讲解。
-- 输出代码后，立即用中文详细解释每一段代码的作用。
-- 出现任何错误或需要提问时，也必须用中文提问。
 - 所有新功能必须严格执行 docs/templates/combined-workflow.md 中的 6 步组合流程
 - 每次修改后必须运行 /ce:compound
 
@@ -42,17 +34,6 @@ Telegram bot that tracks smart money wallet activity on Solana and pushes real-t
 | 4. 结构化执行 | `/superpowers:execute-plan` | 强制 TDD、分模块实现 | Execution_Engineer 子代理 |
 | 5. 自动 Review | `/ce:review` | 多维度审查 + 驳回/通过 | QA_Reviewer 子代理 |
 | 6. 知识复合 | `/ce:compound` | 提炼模式、坑点、最佳实践 | PM（主进程） |
-
----
-
-## MCP 工具使用规则
-
-- **代码检索与编辑**: 优先使用 Serena 的语义工具（find_symbol, get_symbols_overview, find_referencing_symbols），而非 grep 全文件搜索。修改函数体用 replace_symbol_body，插入代码用 insert_before/after_symbol。
-- **第三方库文档**: 使用 Context7 获取 Fastify / Vitest / @solana/kit / Next.js 等最新文档，不依赖训练数据中的旧 API。
-- **复杂决策**: 架构设计、技术选型等需要多步推理的任务使用 Sequential Thinking 进行结构化推理。
-- **符号导航优先**: 理解代码时先用 get_symbols_overview 获取文件概览，再用 find_symbol 定位具体符号，最后才读取函数体——避免一次性读取整个文件浪费 token。
-
----
 
 ## Tech Stack
 
@@ -141,10 +122,13 @@ The MVP is deliberately minimal. Core concerns:
 - 侧边栏"数据说明"导航入口 ✅
 - 详见 `docs/superpowers/specs/2026-04-02-data-trust-layer-design.md`
 
-#### Phase 3c: 数据可靠性提升（中期）
-- P0: Birdeye 聪明钱评分回测验证（离线脚本，验证真实预测力）
-- P1: DexScreener 本地缓存 + Webhook HMAC 签名
-- P2: 链上价格交叉校验 + 置信度权重自动调优
+#### Phase 3c（已完成 ✅）— 数据可靠性提升
+- Birdeye 聪明钱评分回测验证管线（采集 → 价格追踪 → 统计分析 → Markdown 报告，支持断点续跑）✅
+- DexScreener LRU+TTL 本地缓存（30s/2000 条）+ stale-while-revalidate 降级 ✅
+- Raydium V3 链上价格交叉校验（并行集成到 enrichment 管线，偏差 >5% 标记）✅
+- 置信度降分规则（stale 数据 -10 分、价格偏差 >5% -10 分）✅
+- 回测 CLI 脚本（`pnpm --filter backend backtest`）✅
+- 详见 `docs/plans/2026-04-02-008-feat-data-reliability-phase3c-plan.md`
 
 ## Performance Targets
 

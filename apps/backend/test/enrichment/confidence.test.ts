@@ -154,4 +154,80 @@ describe('computeConfidence', () => {
     );
     expect(low.label).toBe('🔴 信号强度: 低');
   });
+
+  // === 新增：置信度权重调优测试 ===
+
+  it('applies stale data penalty when DexScreener data is complete', () => {
+    // 无 stale: 30 + 25 + 25 + 20 = 100
+    const normal = computeConfidence(healthyEnrichment, true);
+    // stale: 30 + 25 - 10 + 25 + 20 = 90
+    const stale = computeConfidence(healthyEnrichment, true, { staleData: true });
+    expect(normal.score).toBe(100);
+    expect(stale.score).toBe(90);
+    expect(normal.score - stale.score).toBe(10);
+  });
+
+  it('applies price deviation penalty when deviation > 5%', () => {
+    // 无偏差: 30 + 25 + 25 + 20 = 100
+    const normal = computeConfidence(healthyEnrichment, true);
+    // 偏差 6%: 100 - 10 = 90
+    const deviated = computeConfidence(healthyEnrichment, true, { priceDeviation: 6 });
+    expect(normal.score).toBe(100);
+    expect(deviated.score).toBe(90);
+  });
+
+  it('returns same result when no options are provided (regression)', () => {
+    const withoutOptions = computeConfidence(healthyEnrichment, true);
+    const withEmptyOptions = computeConfidence(healthyEnrichment, true, {});
+    expect(withoutOptions).toEqual(withEmptyOptions);
+    expect(withoutOptions.score).toBe(100);
+    expect(withoutOptions.level).toBe('high');
+  });
+
+  it('stacks both penalties when staleData and priceDeviation both apply', () => {
+    // 30 + 25 + 25 + 20 - 10 (stale) - 10 (deviation) = 80
+    const result = computeConfidence(healthyEnrichment, true, {
+      staleData: true,
+      priceDeviation: 10,
+    });
+    expect(result.score).toBe(80);
+    expect(result.level).toBe('high');
+  });
+
+  it('does not penalize when priceDeviation is undefined', () => {
+    const result = computeConfidence(healthyEnrichment, true, { priceDeviation: undefined });
+    expect(result.score).toBe(100);
+  });
+
+  it('does not penalize when priceDeviation is exactly 5% (threshold boundary)', () => {
+    const result = computeConfidence(healthyEnrichment, true, { priceDeviation: 5 });
+    expect(result.score).toBe(100);
+  });
+
+  it('does not apply stale penalty when DexScreener data is incomplete', () => {
+    // DexScreener 不完整: 30 + 0 + 25 + 20 = 75，stale 不额外降分
+    const withoutStale = computeConfidence(
+      { ...healthyEnrichment, fdv: null },
+      true,
+    );
+    const withStale = computeConfidence(
+      { ...healthyEnrichment, fdv: null },
+      true,
+      { staleData: true },
+    );
+    expect(withoutStale.score).toBe(75);
+    expect(withStale.score).toBe(75);
+  });
+
+  it('crosses threshold boundary from high to medium after penalties', () => {
+    // 不带 top wallet: 30 + 25 + 25 = 80 → high
+    const beforePenalty = computeConfidence(healthyEnrichment, false);
+    expect(beforePenalty.score).toBe(80);
+    expect(beforePenalty.level).toBe('high');
+
+    // stale 降分: 80 - 10 = 70 → medium
+    const afterPenalty = computeConfidence(healthyEnrichment, false, { staleData: true });
+    expect(afterPenalty.score).toBe(70);
+    expect(afterPenalty.level).toBe('medium');
+  });
 });

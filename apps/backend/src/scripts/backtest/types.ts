@@ -75,6 +75,14 @@ export interface BacktestStats {
   noDataRatio: number;
 }
 
+/** Birdeye 种子钱包分组结果 */
+export interface BacktestGroups {
+  /** 聪明钱组（PnL 排名前 30%）地址 */
+  smartMoney: string[];
+  /** 基线对照组（PnL 排名后 30%）地址 */
+  baseline: string[];
+}
+
 /** 完整回测报告 */
 export interface BacktestReport {
   /** 聪明钱组统计 */

@@ -133,10 +133,11 @@ if (db) {
 }
 
 // Admin backtest management (Phase 3 — 管理员回测控制)
-if (env.ADMIN_API_KEY && env.BIRDEYE_API_KEY) {
+if (env.ADMIN_API_KEY && env.BIRDEYE_API_KEY && env.HELIUS_API_KEY) {
   registerAdminBacktestRoutes(app, {
     adminKey: env.ADMIN_API_KEY,
     birdeyeApiKey: env.BIRDEYE_API_KEY,
+    heliusApiKey: env.HELIUS_API_KEY,
   });
   app.log.info('Admin backtest routes registered');
 }

@@ -33,6 +33,18 @@ export function BacktestPanel() {
       });
   }, []);
 
+  const loadReport = useCallback(() => {
+    fetch('/api/admin/backtest/report')
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data: { markdown: string } | null) => {
+        if (data) setMarkdown(data.markdown);
+      })
+      .catch(() => {});
+  }, []);
+
   // SSE subscription when running
   useEffect(() => {
     if (status !== 'running') return;
@@ -84,18 +96,6 @@ export function BacktestPanel() {
       clearInterval(poll);
     };
   }, [status, loadReport]);
-
-  const loadReport = useCallback(() => {
-    fetch('/api/admin/backtest/report')
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data: { markdown: string } | null) => {
-        if (data) setMarkdown(data.markdown);
-      })
-      .catch(() => {});
-  }, []);
 
   // Load report on mount if complete
   useEffect(() => {

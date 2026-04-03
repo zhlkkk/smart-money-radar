@@ -62,12 +62,14 @@ function todayString(): string {
 }
 
 export class BacktestRunner {
-  private readonly apiKey: string;
+  private readonly birdeyeApiKey: string;
+  private readonly heliusApiKey: string;
   private readonly outputDir: string;
   private readonly onProgress: (event: BacktestProgress) => void;
 
   constructor(config: BacktestRunnerConfig) {
-    this.apiKey = config.apiKey;
+    this.birdeyeApiKey = config.birdeyeApiKey;
+    this.heliusApiKey = config.heliusApiKey;
     this.outputDir = config.outputDir;
     this.onProgress = config.onProgress ?? (() => {});
   }
@@ -77,7 +79,7 @@ export class BacktestRunner {
 
     // Phase 1: Seed from Birdeye
     this.onProgress({ phase: 'seed', percent: 5, message: '从 Birdeye 获取候选钱包并分组...' });
-    const groups = await seedFromBirdeye(this.apiKey);
+    const groups = await seedFromBirdeye(this.birdeyeApiKey);
 
     const smartMoneyCollectDir = join(this.outputDir, 'smart-money');
     const baselineCollectDir = join(this.outputDir, 'baseline');
@@ -88,7 +90,7 @@ export class BacktestRunner {
       percent: 10,
       message: `开始采集聪明钱组交易数据（${groups.smartMoney.length} 个钱包）...`,
     });
-    const smProgress = await collectAllWallets(this.apiKey, groups.smartMoney, {
+    const smProgress = await collectAllWallets(this.heliusApiKey, groups.smartMoney, {
       outputDir: smartMoneyCollectDir,
       rateLimiter,
       onProgress: (p: CollectionProgress) => {
@@ -113,7 +115,7 @@ export class BacktestRunner {
       percent: 35,
       message: `开始采集基线组交易数据（${groups.baseline.length} 个钱包）...`,
     });
-    const blProgress = await collectAllWallets(this.apiKey, groups.baseline, {
+    const blProgress = await collectAllWallets(this.heliusApiKey, groups.baseline, {
       outputDir: baselineCollectDir,
       rateLimiter,
       onProgress: (p: CollectionProgress) => {
@@ -146,7 +148,7 @@ export class BacktestRunner {
       percent: 60,
       message: `开始追踪聪明钱组交易价格表现（${smartMoneyBuyTrades.length} 笔）...`,
     });
-    const smartMoneyResults = await trackAllTrades(smartMoneyBuyTrades, this.apiKey, rateLimiter);
+    const smartMoneyResults = await trackAllTrades(smartMoneyBuyTrades, this.birdeyeApiKey, rateLimiter);
     this.onProgress({
       phase: 'track-smart',
       percent: 75,
@@ -159,7 +161,7 @@ export class BacktestRunner {
       percent: 75,
       message: `开始追踪基线组交易价格表现（${baselineBuyTrades.length} 笔）...`,
     });
-    const baselineResults = await trackAllTrades(baselineBuyTrades, this.apiKey, rateLimiter);
+    const baselineResults = await trackAllTrades(baselineBuyTrades, this.birdeyeApiKey, rateLimiter);
     this.onProgress({
       phase: 'track-baseline',
       percent: 90,

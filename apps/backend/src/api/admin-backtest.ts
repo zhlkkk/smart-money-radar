@@ -32,6 +32,7 @@ backtestBus.setMaxListeners(20);
 export interface AdminBacktestConfig {
   adminKey: string;
   birdeyeApiKey: string;
+  heliusApiKey: string;
 }
 
 export function registerAdminBacktestRoutes(
@@ -72,7 +73,8 @@ export function registerAdminBacktestRoutes(
     // Start backtest async — don't await
     const outputDir = resolve(import.meta.dirname, '../../data/backtest');
     const runner = new BacktestRunner({
-      apiKey: config.birdeyeApiKey,
+      birdeyeApiKey: config.birdeyeApiKey,
+      heliusApiKey: config.heliusApiKey,
       outputDir,
       onProgress: (event: BacktestProgress) => {
         if (currentRun && currentRun.runId === runId) {

@@ -239,8 +239,15 @@ async function main(): Promise<void> {
       log('--seed-from-birdeye 已指定，使用 Birdeye 种子模式');
     }
 
+    const heliusApiKey = process.env.HELIUS_API_KEY;
+    if (!heliusApiKey) {
+      console.error('错误: 缺少环境变量 HELIUS_API_KEY（用于采集钱包交易历史）');
+      process.exit(1);
+    }
+
     const runner = new BacktestRunner({
-      apiKey,
+      birdeyeApiKey: apiKey,
+      heliusApiKey,
       outputDir,
       onProgress: (event) => log(`[${event.phase}] ${event.percent}% — ${event.message}`),
     });

@@ -130,7 +130,8 @@ describe('BacktestRunner', () => {
 
     const phases: string[] = [];
     const runner = new BacktestRunner({
-      apiKey: 'test-key',
+      birdeyeApiKey: 'test-birdeye-key',
+      heliusApiKey: 'test-helius-key',
       outputDir: '/tmp/test-backtest',
       onProgress: (event: BacktestProgress) => {
         // Record unique phase transitions
@@ -157,7 +158,8 @@ describe('BacktestRunner', () => {
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     const runner = new BacktestRunner({
-      apiKey: 'test-key',
+      birdeyeApiKey: 'test-birdeye-key',
+      heliusApiKey: 'test-helius-key',
       outputDir: '/tmp/test-backtest',
     });
 
@@ -178,7 +180,8 @@ describe('BacktestRunner', () => {
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     const runner = new BacktestRunner({
-      apiKey: 'test-key',
+      birdeyeApiKey: 'test-birdeye-key',
+      heliusApiKey: 'test-helius-key',
       outputDir: '/tmp/test-backtest',
     });
 
@@ -193,7 +196,8 @@ describe('BacktestRunner', () => {
 
     let maxPercent = 0;
     const runner = new BacktestRunner({
-      apiKey: 'test-key',
+      birdeyeApiKey: 'test-birdeye-key',
+      heliusApiKey: 'test-helius-key',
       outputDir: '/tmp/test-backtest',
       onProgress: (event: BacktestProgress) => {
         if (event.percent > maxPercent) maxPercent = event.percent;
@@ -210,7 +214,8 @@ describe('BacktestRunner', () => {
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     const runner = new BacktestRunner({
-      apiKey: 'test-key',
+      birdeyeApiKey: 'test-birdeye-key',
+      heliusApiKey: 'test-helius-key',
       outputDir: '/tmp/test-backtest',
     });
 

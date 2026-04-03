@@ -103,8 +103,10 @@ export interface BacktestProgress {
 
 /** BacktestRunner 配置 */
 export interface BacktestRunnerConfig {
-  /** Birdeye API 密钥 */
-  apiKey: string;
+  /** Birdeye API 密钥（用于种子钱包获取） */
+  birdeyeApiKey: string;
+  /** Helius API 密钥（用于交易历史采集） */
+  heliusApiKey: string;
   /** 输出目录 */
   outputDir: string;
   /** 进度回调 */

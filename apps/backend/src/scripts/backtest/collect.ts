@@ -7,62 +7,59 @@ import type {
   CollectionProgress,
 } from './types.js';
 
-const BIRDEYE_BASE = 'https://public-api.birdeye.so';
-const TIMEOUT_MS = 10_000;
+const HELIUS_BASE = 'https://api-mainnet.helius-rpc.com';
+const TIMEOUT_MS = 15_000;
 
-function makeHeaders(apiKey: string): Record<string, string> {
-  return {
-    'X-API-KEY': apiKey,
-    'x-chain': 'solana',
-    Accept: 'application/json',
-  };
+/** Helius Enhanced Transaction 响应结构（简化） */
+interface HeliusTransaction {
+  signature?: string;
+  timestamp?: number;
+  type?: string;
+  /** Token transfers within the transaction */
+  tokenTransfers?: Array<{
+    mint?: string;
+    tokenAmount?: number;
+    fromUserAccount?: string;
+    toUserAccount?: string;
+  }>;
+  /** Native SOL transfers */
+  nativeTransfers?: Array<{
+    amount?: number;
+    fromUserAccount?: string;
+    toUserAccount?: string;
+  }>;
 }
 
-function checkAuthError(status: number): void {
-  if (status === 401 || status === 403) {
-    throw new Error(
-      `Birdeye API authentication failed (HTTP ${status}). Check your BIRDEYE_API_KEY.`,
-    );
-  }
-}
+function normalizeHeliusTrade(address: string, tx: HeliusTransaction): BacktestTrade | null {
+  if (!tx.signature) return null;
 
-function checkRateLimit(status: number): void {
-  if (status === 429) {
-    throw new Error('Birdeye API rate limit exceeded (HTTP 429). Try again later.');
-  }
-}
+  // Look for SWAP type transactions (most relevant for backtest)
+  const isSwap = tx.type === 'SWAP';
+  const isTransfer = tx.type === 'TRANSFER';
 
-/** Birdeye tx_list 单条交易的 API 响应结构 */
-interface BirdeyeTxItem {
-  txHash?: string;
-  blockTime?: number;
-  from?: { address?: string; amount?: number };
-  to?: { address?: string; amount?: number };
-  side?: string;
-  tokenAddress?: string;
-}
+  if (!isSwap && !isTransfer) return null;
 
-interface BirdeyeTxListResponse {
-  success: boolean;
-  data?: {
-    items?: BirdeyeTxItem[];
-  };
-}
+  // Determine buy/sell from token transfers
+  const tokenTransfer = tx.tokenTransfers?.[0];
+  if (!tokenTransfer?.mint) return null;
 
-function normalizeTrade(address: string, item: BirdeyeTxItem): BacktestTrade {
-  const type = item.side === 'sell' ? 'sell' : 'buy';
+  const isBuy = tokenTransfer.toUserAccount === address;
+  const isSell = tokenTransfer.fromUserAccount === address;
+
+  if (!isBuy && !isSell) return null;
+
   return {
     address,
-    signature: item.txHash ?? '',
-    tokenMint: item.tokenAddress ?? '',
-    type,
-    timestamp: item.blockTime ?? 0,
-    amount: (type === 'buy' ? item.from?.amount : item.to?.amount) ?? 0,
+    signature: tx.signature,
+    tokenMint: tokenTransfer.mint,
+    type: isBuy ? 'buy' : 'sell',
+    timestamp: tx.timestamp ?? 0,
+    amount: tokenTransfer.tokenAmount ?? 0,
   };
 }
 
 /**
- * 采集单个钱包的交易历史。
+ * 采集单个钱包的交易历史（via Helius Enhanced Transactions API）。
  * 认证错误(401/403)和限流(429)会抛出终止级错误。
  * 网络超时等非致命错误返回 null。
  */
@@ -74,29 +71,34 @@ export async function collectWalletTrades(
   await rateLimiter.acquire();
 
   try {
-    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}`;
+    const url = `${HELIUS_BASE}/v0/addresses/${encodeURIComponent(address)}/transactions?api-key=${encodeURIComponent(apiKey)}&type=SWAP`;
     const response = await fetch(url, {
-      headers: makeHeaders(apiKey),
+      headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
-    checkAuthError(response.status);
-    checkRateLimit(response.status);
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        `Helius API authentication failed (HTTP ${response.status}). Check your HELIUS_API_KEY.`,
+      );
+    }
+
+    if (response.status === 429) {
+      throw new Error('Helius API rate limit exceeded (HTTP 429). Try again later.');
+    }
 
     if (!response.ok) {
       console.error(`[collect] ${address}: HTTP ${response.status} ${response.statusText}`);
       return null;
     }
 
-    const body = (await response.json()) as BirdeyeTxListResponse;
+    const txns = (await response.json()) as HeliusTransaction[];
 
-    if (!body.success) {
-      console.error(`[collect] ${address}: API returned success=false`);
-      return null;
+    const trades: BacktestTrade[] = [];
+    for (const tx of txns) {
+      const trade = normalizeHeliusTrade(address, tx);
+      if (trade) trades.push(trade);
     }
-
-    const items = body.data?.items ?? [];
-    const trades: BacktestTrade[] = items.map((item) => normalizeTrade(address, item));
 
     return {
       address,
@@ -170,8 +172,6 @@ export async function collectAllWallets(
       continue;
     }
 
-    // collectWalletTrades 内部已处理非致命错误（返回 null）
-    // 认证/限流错误会直接抛出，终止整体流程
     const result = await collectWalletTrades(apiKey, address, rateLimiter);
 
     if (result) {

@@ -65,7 +65,7 @@ interface BirdeyeTxItem {
   blockTime?: number;
   from?: { address?: string; amount?: number };
   to?: { address?: string; amount?: number };
-  side?: string;
+  side?: 'buy' | 'sell';
   tokenAddress?: string;
 }
 
@@ -75,6 +75,9 @@ interface BirdeyeTxListResponse {
 }
 
 function normalizeBirdeyeTrade(address: string, item: BirdeyeTxItem): BacktestTrade {
+  if (!item.side) {
+    console.error(`[collect-birdeye] ${address}: swap item missing 'side' field, defaulting to buy`);
+  }
   const type = item.side === 'sell' ? 'sell' : 'buy';
   return {
     address,
@@ -92,11 +95,21 @@ async function collectViaBirdeye(
   address: string,
 ): Promise<BacktestTrade[]> {
   try {
-    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}`;
+    const url = `${BIRDEYE_BASE}/v1/wallet/tx_list?wallet=${encodeURIComponent(address)}&tx_type=swap&limit=50`;
     const response = await fetch(url, {
       headers: { 'X-API-KEY': apiKey, 'x-chain': 'solana', Accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        `Birdeye API authentication failed (HTTP ${response.status}). Check your BIRDEYE_API_KEY.`,
+      );
+    }
+
+    if (response.status === 429) {
+      throw new Error('Birdeye API rate limit exceeded (HTTP 429). Try again later.');
+    }
 
     if (!response.ok) {
       console.error(`[collect-birdeye] ${address}: HTTP ${response.status} ${response.statusText}`);
@@ -108,6 +121,13 @@ async function collectViaBirdeye(
 
     return (body.data?.items ?? []).map((item) => normalizeBirdeyeTrade(address, item));
   } catch (error: unknown) {
+    // Re-throw auth and rate limit errors to terminate the overall collection
+    if (
+      error instanceof Error &&
+      (error.message.includes('authentication failed') || error.message.includes('rate limit'))
+    ) {
+      throw error;
+    }
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[collect-birdeye] ${address}: ${msg}`);
     return [];

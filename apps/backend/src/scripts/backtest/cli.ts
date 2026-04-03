@@ -136,17 +136,42 @@ async function loadWalletAddresses(filePath: string): Promise<string[]> {
 }
 
 /**
+ * Minimum number of candidates before the backtest is considered unreliable.
+ * Below this threshold the run is aborted entirely.
+ */
+export const MIN_CANDIDATES_FAIL = 10;
+
+/**
+ * Minimum number of candidates for statistically useful results (target ≥20
+ * with limit=50 on the Birdeye API).  Between FAIL and WARN the run continues
+ * with a low-quality warning; at or above WARN it runs normally.
+ */
+export const MIN_CANDIDATES_WARN = 20;
+
+/**
  * 从 Birdeye 获取候选钱包，按 PnL 降序排列后分组：
  * - 前 30% → smartMoney
  * - 后 30% → baseline
+ *
+ * 三段式质量门控：
+ * - < MIN_CANDIDATES_FAIL → throw（数据完全不可用）
+ * - MIN_CANDIDATES_FAIL ~ MIN_CANDIDATES_WARN-1 → 打印 WARNING 并继续（低质量模式）
+ * - >= MIN_CANDIDATES_WARN → 正常运行
  */
 export async function seedFromBirdeye(apiKey: string): Promise<BacktestGroups> {
   log('从 Birdeye 获取候选钱包...');
   const candidates = await fetchTopWallets(apiKey);
 
-  if (candidates.length < 10) {
+  if (candidates.length < MIN_CANDIDATES_FAIL) {
     throw new Error(
-      `钱包候选数量不足（需要至少 10 个，实际 ${candidates.length} 个）`,
+      `钱包候选数量不足（需要至少 ${MIN_CANDIDATES_FAIL} 个，实际 ${candidates.length} 个）`,
+    );
+  }
+
+  if (candidates.length < MIN_CANDIDATES_WARN) {
+    log(
+      `[WARNING] 候选数量偏少（${candidates.length} 个，建议 ≥${MIN_CANDIDATES_WARN} 个）。` +
+        `回测结果统计显著性低，请参考报告中的样本量警告。`,
     );
   }
 

@@ -101,6 +101,68 @@ describe('collectWalletTrades', () => {
     expect(result!.address).toBe('WalletB');
   });
 
+  it('Birdeye fallback: requests tx_type=swap and limit=50 in URL', async () => {
+    const birdeyeItems = [
+      { txHash: 'bsig1', blockTime: 1711843200, side: 'buy', tokenAddress: 'TokenA', from: { amount: 50 } },
+    ];
+    // Helius returns empty, triggering Birdeye fallback
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(heliusResponse([]))
+      .mockResolvedValueOnce(heliusResponse({ success: true, data: { items: birdeyeItems } }));
+    const limiter = mockRateLimiter();
+
+    const result = await collectWalletTrades(API_KEY, 'WalletC', limiter, 'birdeye-test-key');
+
+    expect(result).not.toBeNull();
+    expect(result!.trades).toHaveLength(1);
+
+    // Assert Birdeye fallback URL contains required filter params
+    const birdeyeCallUrl = vi.mocked(fetch).mock.calls[1][0] as string;
+    expect(birdeyeCallUrl).toContain('tx_type=swap');
+    expect(birdeyeCallUrl).toContain('limit=50');
+  });
+
+  it('Birdeye fallback: side=null defaults to buy with stderr warning', async () => {
+    const birdeyeItems = [
+      // No side field — should default to 'buy' and emit a warning
+      { txHash: 'bsig2', blockTime: 1711843200, tokenAddress: 'TokenB', from: { amount: 30 } },
+    ];
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(heliusResponse([]))
+      .mockResolvedValueOnce(heliusResponse({ success: true, data: { items: birdeyeItems } }));
+    const limiter = mockRateLimiter();
+    const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await collectWalletTrades(API_KEY, 'WalletD', limiter, 'birdeye-test-key');
+
+    expect(result).not.toBeNull();
+    expect(result!.trades[0].type).toBe('buy');
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("missing 'side' field"));
+    stderrSpy.mockRestore();
+  });
+
+  it('Birdeye fallback: 401 auth error throws authentication failed', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(heliusResponse([]))
+      .mockResolvedValueOnce(new Response('Unauthorized', { status: 401 }));
+    const limiter = mockRateLimiter();
+
+    await expect(collectWalletTrades(API_KEY, 'WalletE', limiter, 'birdeye-test-key')).rejects.toThrow(
+      'authentication failed',
+    );
+  });
+
+  it('Birdeye fallback: 429 rate limit throws', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(heliusResponse([]))
+      .mockResolvedValueOnce(new Response('Rate limited', { status: 429 }));
+    const limiter = mockRateLimiter();
+
+    await expect(collectWalletTrades(API_KEY, 'WalletF', limiter, 'birdeye-test-key')).rejects.toThrow(
+      'rate limit',
+    );
+  });
+
   it('skips non-SWAP transactions', async () => {
     const txns = [
       { signature: 'sig-transfer', timestamp: 100, type: 'TRANSFER', tokenTransfers: [{ mint: 'M1', tokenAmount: 10, toUserAccount: 'WalletA' }] },

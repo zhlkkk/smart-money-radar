@@ -88,11 +88,12 @@ function normalizeTraderItem(item: BirdeyeTraderItem): WalletCandidate | null {
 
 /**
  * Fetch top-performing wallets from Birdeye's trader/gainers-losers endpoint.
+ * Explicitly requests limit=50 (Starter plan max) to maximise candidate pool.
  * Returns normalized WalletCandidate array, or empty array on non-auth errors.
  */
 export async function fetchTopWallets(apiKey: string): Promise<WalletCandidate[]> {
   try {
-    const response = await fetch(`${BIRDEYE_BASE}/trader/gainers-losers`, {
+    const response = await fetch(`${BIRDEYE_BASE}/trader/gainers-losers?limit=50`, {
       headers: makeHeaders(apiKey),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
@@ -111,6 +112,9 @@ export async function fetchTopWallets(apiKey: string): Promise<WalletCandidate[]
       const candidate = normalizeTraderItem(item);
       if (candidate) candidates.push(candidate);
     }
+
+    // Diagnostic: log actual count to help identify plan vs API-default differences
+    console.error(`[birdeye] fetchTopWallets: received ${candidates.length} candidates`);
 
     return candidates;
   } catch (error: unknown) {

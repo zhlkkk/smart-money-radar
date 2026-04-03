@@ -16,6 +16,17 @@ describe('fetchTopWallets', () => {
     vi.restoreAllMocks();
   });
 
+  it('requests limit=50 in the URL', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      birdeyeResponse({ success: true, data: { items: [] } }),
+    );
+
+    await fetchTopWallets(API_KEY);
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('limit=50');
+  });
+
   it('returns normalized WalletCandidate array', async () => {
     const mockBody = {
       success: true,

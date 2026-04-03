@@ -75,6 +75,42 @@ export interface BacktestStats {
   noDataRatio: number;
 }
 
+/** Birdeye 种子钱包分组结果 */
+export interface BacktestGroups {
+  /** 聪明钱组（PnL 排名前 30%）地址 */
+  smartMoney: string[];
+  /** 基线对照组（PnL 排名后 30%）地址 */
+  baseline: string[];
+}
+
+/** 数据来源说明 */
+export interface BacktestDataSource {
+  /** 聪明钱组来源描述 */
+  smartMoney: string;
+  /** 基线组来源描述 */
+  baseline: string;
+}
+
+/** 回测运行进度事件 */
+export interface BacktestProgress {
+  /** 当前阶段 */
+  phase: 'seed' | 'collect-smart' | 'collect-baseline' | 'track-smart' | 'track-baseline' | 'analyze';
+  /** 完成百分比 0-100 */
+  percent: number;
+  /** 人类可读的进度消息 */
+  message: string;
+}
+
+/** BacktestRunner 配置 */
+export interface BacktestRunnerConfig {
+  /** Birdeye API 密钥 */
+  apiKey: string;
+  /** 输出目录 */
+  outputDir: string;
+  /** 进度回调 */
+  onProgress?: (event: BacktestProgress) => void;
+}
+
 /** 完整回测报告 */
 export interface BacktestReport {
   /** 聪明钱组统计 */
@@ -87,4 +123,6 @@ export interface BacktestReport {
   dataReliable: boolean;
   /** 报告生成时间（ISO 8601） */
   generatedAt: string;
+  /** 数据来源说明（可选，种子模式下填充） */
+  dataSource?: BacktestDataSource;
 }

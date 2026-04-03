@@ -42,6 +42,9 @@ const envSchema = z.object({
   TELEGRAM_WEBHOOK_SECRET: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
   TELEGRAM_INVITE_LINK: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
 
+  // Admin API key (Phase 3 — backtest management)
+  ADMIN_API_KEY: z.string().min(1).optional().or(z.literal('')).transform((v) => v || undefined),
+
   // LLM (OpenAI-compatible API — n1n.ai, OpenRouter, Anthropic, etc.)
   LLM_API_KEY: z.string().min(1),
   LLM_BASE_URL: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),

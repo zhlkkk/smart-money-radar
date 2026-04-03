@@ -11,6 +11,7 @@ import { registerWalletsRoutes } from './api/wallets.js';
 import { registerHealthRoutes } from './api/health.js';
 import { registerAlertsStreamRoute } from './api/alerts-stream.js';
 import { registerApiAuthPlugin } from './api/auth.js';
+import { registerAdminBacktestRoutes } from './api/admin-backtest.js';
 import { createPoolClient } from '@radar/db';
 import { syncTrackedWallets } from './persistence/wallets.js';
 import { createPipeline } from './pipeline.js';
@@ -129,6 +130,15 @@ if (db) {
   }
   registerAlertsRoutes(app, { db });
   registerWalletsRoutes(app, { db });
+}
+
+// Admin backtest management (Phase 3 — 管理员回测控制)
+if (env.ADMIN_API_KEY && env.BIRDEYE_API_KEY) {
+  registerAdminBacktestRoutes(app, {
+    adminKey: env.ADMIN_API_KEY,
+    birdeyeApiKey: env.BIRDEYE_API_KEY,
+  });
+  app.log.info('Admin backtest routes registered');
 }
 
 // Paddle Billing routes (Phase 2 — 订阅支付)

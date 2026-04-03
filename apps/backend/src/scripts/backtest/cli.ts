@@ -17,11 +17,13 @@
 import { readFile, readdir, writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createRateLimiter } from '../../discovery/rate-limiter.js';
+import { fetchTopWallets } from '../../discovery/birdeye.js';
 import { collectAllWallets } from './collect.js';
 import { trackAllTrades } from './track-prices.js';
 import { generateReport } from './analyze.js';
 import { formatMarkdownReport } from './report.js';
-import type { BacktestTrade, CollectionProgress, WalletTradeData } from './types.js';
+import { BacktestRunner } from './runner.js';
+import type { BacktestTrade, BacktestGroups, CollectionProgress, WalletTradeData } from './types.js';
 
 /** 进度日志输出到 stderr，不干扰 stdout 报告输出 */
 function log(message: string): void {
@@ -40,6 +42,7 @@ Birdeye 聪明钱评分回测 CLI
   --wallets-file <path>  钱包地址来源文件（默认 config/smart-money-addresses.json）
   --output-dir <path>    输出目录（默认 data/backtest）
   --skip-collect         跳过采集阶段，直接用已有数据分析
+  --seed-from-birdeye    从 Birdeye 自动获取候选钱包，按 PnL 分组（覆盖钱包文件）
   --help                 显示帮助信息
 
 环境变量:
@@ -52,6 +55,7 @@ interface CliArgs {
   walletsFile: string;
   outputDir: string;
   skipCollect: boolean;
+  seedFromBirdeye: boolean;
   help: boolean;
 }
 
@@ -60,6 +64,7 @@ function parseArgs(argv: string[]): CliArgs {
     walletsFile: 'config/smart-money-addresses.json',
     outputDir: 'data/backtest',
     skipCollect: false,
+    seedFromBirdeye: false,
     help: false,
   };
 
@@ -88,6 +93,9 @@ function parseArgs(argv: string[]): CliArgs {
       }
       case '--skip-collect':
         args.skipCollect = true;
+        break;
+      case '--seed-from-birdeye':
+        args.seedFromBirdeye = true;
         break;
       case '--help':
         args.help = true;
@@ -125,6 +133,35 @@ async function loadWalletAddresses(filePath: string): Promise<string[]> {
   }
 
   throw new Error(`无法解析钱包文件: ${filePath}`);
+}
+
+/**
+ * 从 Birdeye 获取候选钱包，按 PnL 降序排列后分组：
+ * - 前 30% → smartMoney
+ * - 后 30% → baseline
+ */
+export async function seedFromBirdeye(apiKey: string): Promise<BacktestGroups> {
+  log('从 Birdeye 获取候选钱包...');
+  const candidates = await fetchTopWallets(apiKey);
+
+  if (candidates.length < 10) {
+    throw new Error(
+      `钱包候选数量不足（需要至少 10 个，实际 ${candidates.length} 个）`,
+    );
+  }
+
+  // Sort by PnL descending
+  candidates.sort((a, b) => b.pnl - a.pnl);
+
+  const topCount = Math.floor(candidates.length * 0.3);
+  const bottomCount = Math.floor(candidates.length * 0.3);
+
+  const smartMoney = candidates.slice(0, topCount).map((c) => c.address);
+  const baseline = candidates.slice(candidates.length - bottomCount).map((c) => c.address);
+
+  log(`Birdeye 种子分组完成: 候选 ${candidates.length} 个, 聪明钱 ${smartMoney.length} 个, 基线 ${baseline.length} 个`);
+
+  return { smartMoney, baseline };
 }
 
 /** 从已采集的 JSON 文件中提取所有买入交易 */
@@ -180,7 +217,6 @@ async function main(): Promise<void> {
 
   const walletsFile = resolve(cliArgs.walletsFile);
   const outputDir = resolve(cliArgs.outputDir);
-  const collectDir = join(outputDir, 'wallets');
 
   log(`钱包文件: ${walletsFile}`);
   log(`输出目录: ${outputDir}`);
@@ -189,15 +225,37 @@ async function main(): Promise<void> {
   log('读取钱包地址列表...');
   const addresses = await loadWalletAddresses(walletsFile);
 
-  if (addresses.length === 0) {
-    console.error('错误: 钱包地址列表为空');
-    process.exit(1);
-  }
-
-  log(`共 ${addresses.length} 个钱包地址`);
-
   // 创建限流器（30 req/min，Birdeye 免费层限制）
   const rateLimiter = createRateLimiter(30);
+
+  // Determine whether to use Birdeye seed mode
+  const useSeedMode = cliArgs.seedFromBirdeye || addresses.length === 0;
+
+  if (useSeedMode) {
+    // --- Birdeye seed mode: delegate to BacktestRunner ---
+    if (addresses.length === 0) {
+      log('钱包配置为空，自动切换到 Birdeye 种子模式');
+    } else {
+      log('--seed-from-birdeye 已指定，使用 Birdeye 种子模式');
+    }
+
+    const runner = new BacktestRunner({
+      apiKey,
+      outputDir,
+      onProgress: (event) => log(`[${event.phase}] ${event.percent}% — ${event.message}`),
+    });
+
+    const report = await runner.run();
+    const markdown = formatMarkdownReport(report);
+
+    // Output to stdout (report file already written by runner)
+    console.log(markdown);
+    return;
+  }
+
+  // --- Config file mode: backward compatible ---
+  const collectDir = join(outputDir, 'wallets');
+  log(`使用配置文件模式: ${addresses.length} 个钱包地址`);
 
   // 2. 采集阶段
   if (!cliArgs.skipCollect) {
@@ -231,14 +289,13 @@ async function main(): Promise<void> {
   const smartMoneyResults = await trackAllTrades(buyTrades, apiKey, rateLimiter);
   log(`价格追踪完成: ${smartMoneyResults.length} 笔交易`);
 
-  // 5. 基线对照组
-  // TODO: 实际实现时从 Birdeye 获取随机钱包交易作为基线
-  // 目前用空数组占位，报告中基线组数据为零
+  // 5. 基线对照组 — config mode uses empty baseline (backward compatible)
   const baselineResults = await trackAllTrades([], apiKey, rateLimiter);
 
   // 6. 生成报告
   log('生成回测报告...');
   const report = generateReport(smartMoneyResults, baselineResults);
+
   const markdown = formatMarkdownReport(report);
 
   // 7. 写入报告文件
@@ -252,16 +309,24 @@ async function main(): Promise<void> {
   console.log(markdown);
 }
 
-main().catch((error: unknown) => {
-  if (error instanceof Error) {
-    // 认证错误给出明确提示
-    if (error.message.includes('authentication failed')) {
-      console.error('错误: Birdeye API 认证失败，请检查 BIRDEYE_API_KEY 是否正确');
+// Only run main() when executed directly (not when imported for testing)
+const isDirectRun =
+  typeof process !== 'undefined' &&
+  process.argv[1] &&
+  (process.argv[1].endsWith('/cli.ts') || process.argv[1].endsWith('/cli.js'));
+
+if (isDirectRun) {
+  main().catch((error: unknown) => {
+    if (error instanceof Error) {
+      // 认证错误给出明确提示
+      if (error.message.includes('authentication failed')) {
+        console.error('错误: Birdeye API 认证失败，请检查 BIRDEYE_API_KEY 是否正确');
+      } else {
+        console.error(`错误: ${error.message}`);
+      }
     } else {
-      console.error(`错误: ${error.message}`);
+      console.error('发生未知错误', error);
     }
-  } else {
-    console.error('发生未知错误', error);
-  }
-  process.exit(1);
-});
+    process.exit(1);
+  });
+}

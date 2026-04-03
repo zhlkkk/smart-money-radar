@@ -83,11 +83,17 @@ export async function collectWalletTrades(
     checkAuthError(response.status);
     checkRateLimit(response.status);
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`[collect] ${address}: HTTP ${response.status} ${response.statusText}`);
+      return null;
+    }
 
     const body = (await response.json()) as BirdeyeTxListResponse;
 
-    if (!body.success) return null;
+    if (!body.success) {
+      console.error(`[collect] ${address}: API returned success=false`);
+      return null;
+    }
 
     const items = body.data?.items ?? [];
     const trades: BacktestTrade[] = items.map((item) => normalizeTrade(address, item));
@@ -107,6 +113,8 @@ export async function collectWalletTrades(
       throw error;
     }
     // 网络超时等非致命错误返回 null
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[collect] ${address}: ${msg}`);
     return null;
   }
 }

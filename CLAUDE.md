@@ -8,23 +8,7 @@ Telegram bot that tracks smart money wallet activity on Solana and pushes real-t
 
 ---
 
-## 子代理调度模式
-
-本项目使用 Claude 主进程充当 PM，通过 Agent 工具 spawn 子代理执行编码和审查任务。
-
-**调度原则：**
-- 主进程（PM 角色）负责需求分析、架构规划、知识沉淀，**不写业务代码**
-- 编码任务 spawn `Execution_Engineer` 子代理（TDD 编码、自我修复）
-- 审查任务 spawn `QA_Reviewer` 子代理（代码审查、质量把关）
-- PM 收到子代理结果后自主决定下一步：通过则继续下一个 Unit，驳回则重新 spawn 修复
-- 整个 Phase 的所有 Unit 应连续执行，不逐个询问用户"要不要继续"
-
-**允许停下来的唯一情况：**
-1. 所有 Unit 全部完成
-2. 需要用户提供外部信息（API key 等）
-3. 同一问题修复失败 3 次
-
-### 标准 6 步工作流
+## 标准 6 步工作流
 
 | 步骤 | 命令 | 核心作用 | 执行者 |
 |------|------|----------|--------|
@@ -129,6 +113,15 @@ The MVP is deliberately minimal. Core concerns:
 - 置信度降分规则（stale 数据 -10 分、价格偏差 >5% -10 分）✅
 - 回测 CLI 脚本（`pnpm --filter backend backtest`）✅
 - 详见 `docs/plans/2026-04-02-008-feat-data-reliability-phase3c-plan.md`
+
+#### Phase 3d（已完成 ✅）— 回测管线端到端可运行 + 管理后台
+- 回测 CLI `--seed-from-birdeye`：自动从 Birdeye 获取候选钱包，按 PnL 分组为聪明钱/基线组 ✅
+- 基线对照组走完整 collect→track→analyze 管线，报告含数据来源说明 + 局限性标注 ✅
+- BacktestRunner 服务模块（从 CLI 提取，支持进度回调）✅
+- Admin 回测 API（POST 触发 / GET 状态 / GET 报告 / SSE 进度流，X-Admin-Key 鉴权）✅
+- `/admin/backtest` 管理员页面（Clerk admin role 鉴权、触发按钮、实时进度条、报告展示）✅
+- 采集失败日志可见化（HTTP 状态码 / API 错误 / 网络异常全部输出到 stderr）✅
+- 详见 `docs/plans/2026-04-03-001-feat-backtest-runnable-plan.md` 和 `docs/plans/2026-04-03-002-feat-admin-backtest-dashboard-plan.md`
 
 ## Performance Targets
 

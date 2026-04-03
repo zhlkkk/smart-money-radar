@@ -1,4 +1,4 @@
-import type { BacktestReport, BacktestDataSource, BacktestStats } from './types.js';
+import type { BacktestReport, BacktestStats } from './types.js';
 
 /**
  * 格式化百分比数值，保留 2 位小数。

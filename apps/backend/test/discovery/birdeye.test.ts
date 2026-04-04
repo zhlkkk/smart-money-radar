@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchTopWallets, fetchWalletPnL, fetchHotTokensByVolume } from '../../src/discovery/birdeye.js';
+import {
+  fetchTopWallets,
+  fetchWalletPnL,
+  fetchHotTokensByVolume,
+  fetchTokenTopTraders,
+  normalizeTopTraderItem,
+} from '../../src/discovery/birdeye.js';
+import type { RateLimiter } from '../../src/discovery/rate-limiter.js';
 
 const API_KEY = 'test-birdeye-key';
 
@@ -307,5 +314,137 @@ describe('fetchWalletPnL', () => {
     );
 
     await expect(fetchWalletPnL(API_KEY, 'WalletAddr123')).rejects.toThrow('rate limit');
+  });
+});
+
+const noopRateLimiter: RateLimiter = { acquire: () => Promise.resolve() };
+
+describe('normalizeTopTraderItem', () => {
+  it('parses string pnl via parseFloat', () => {
+    const result = normalizeTopTraderItem({
+      address: 'Trader1',
+      pnl: '12345.67',
+      winRate: 0.8,
+      tradeCount: 50,
+    });
+
+    expect(result).toEqual({
+      address: 'Trader1',
+      pnl: 12345.67,
+      winRate: 0.8,
+      tradeCount: 50,
+      lastActiveTimestamp: 0,
+    });
+  });
+
+  it('returns null when address is missing', () => {
+    expect(normalizeTopTraderItem({ pnl: '100' })).toBeNull();
+  });
+
+  it('returns null when pnl is not a valid number', () => {
+    expect(normalizeTopTraderItem({ address: 'Trader1', pnl: 'not-a-number' })).toBeNull();
+  });
+
+  it('defaults missing fields to 0', () => {
+    const result = normalizeTopTraderItem({ address: 'Trader1', pnl: '100' });
+    expect(result).toEqual({
+      address: 'Trader1',
+      pnl: 100,
+      winRate: 0,
+      tradeCount: 0,
+      lastActiveTimestamp: 0,
+    });
+  });
+});
+
+describe('fetchTokenTopTraders', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns normalized WalletCandidate array', async () => {
+    const mockBody = {
+      success: true,
+      data: {
+        traders: [
+          { address: 'Trader1', pnl: '50000', winRate: 0.72, tradeCount: 150 },
+          { address: 'Trader2', pnl: '30000', winRate: 0.6, tradeCount: 80 },
+        ],
+      },
+    };
+    vi.mocked(fetch).mockResolvedValueOnce(birdeyeResponse(mockBody));
+
+    const result = await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      address: 'Trader1',
+      pnl: 50000,
+      winRate: 0.72,
+      tradeCount: 150,
+      lastActiveTimestamp: 0,
+    });
+  });
+
+  it('calls rateLimiter.acquire() before fetch', async () => {
+    const acquireFn = vi.fn().mockResolvedValue(undefined);
+    const limiter: RateLimiter = { acquire: acquireFn };
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      birdeyeResponse({ success: true, data: { traders: [] } }),
+    );
+
+    await fetchTokenTopTraders(API_KEY, 'TokenMint1', limiter);
+
+    expect(acquireFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns empty array on non-auth errors', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response('Server Error', { status: 500 }),
+    );
+
+    const result = await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);
+    expect(result).toEqual([]);
+  });
+
+  it('returns empty array on network error', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Network failure'));
+
+    const result = await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);
+    expect(result).toEqual([]);
+  });
+
+  it('throws on 401', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response('Unauthorized', { status: 401 }),
+    );
+
+    await expect(fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter)).rejects.toThrow('authentication failed');
+  });
+
+  it('throws on 429', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response('Too Many Requests', { status: 429 }),
+    );
+
+    await expect(fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter)).rejects.toThrow('rate limit');
+  });
+
+  it('includes sort_by=pnl&limit=50 in the URL', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      birdeyeResponse({ success: true, data: { traders: [] } }),
+    );
+
+    await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort_by=pnl');
+    expect(calledUrl).toContain('limit=50');
+    expect(calledUrl).toContain('address=TokenMint1');
   });
 });

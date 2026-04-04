@@ -1,4 +1,5 @@
 import type { WalletCandidate } from '../types.js';
+import type { RateLimiter } from './rate-limiter.js';
 
 const BIRDEYE_BASE = 'https://public-api.birdeye.so';
 const TIMEOUT_MS = 10_000;
@@ -256,5 +257,84 @@ export async function fetchWalletPnL(apiKey: string, address: string): Promise<W
       throw error;
     }
     return null;
+  }
+}
+
+/**
+ * Response shape for the Birdeye `/defi/v2/tokens/top_traders` endpoint.
+ * Fields are camelCase (not snake_case) in the actual API response.
+ */
+interface BirdeyeTopTraderItem {
+  address?: string;
+  pnl?: string; // Note: string in this endpoint, needs parseFloat
+  winRate?: number;
+  tradeCount?: number;
+}
+
+interface BirdeyeTopTraderResponse {
+  success: boolean;
+  data?: {
+    traders?: BirdeyeTopTraderItem[];
+  };
+}
+
+/**
+ * Normalize a top_traders item to WalletCandidate.
+ * pnl is a string in this endpoint and must be parsed.
+ */
+export function normalizeTopTraderItem(item: BirdeyeTopTraderItem): WalletCandidate | null {
+  const address = item.address;
+  if (!address) return null;
+
+  const pnl = typeof item.pnl === 'string' ? parseFloat(item.pnl) : 0;
+  if (isNaN(pnl)) return null;
+
+  const winRate = item.winRate ?? 0;
+  const tradeCount = item.tradeCount ?? 0;
+  const lastActiveTimestamp = 0; // Not available in this endpoint
+
+  return { address, pnl, winRate, tradeCount, lastActiveTimestamp };
+}
+
+/**
+ * Fetch top traders for a specific token from Birdeye.
+ * Respects rate limiting via the provided rateLimiter.
+ * Auth/rate-limit errors re-throw; other errors return [].
+ */
+export async function fetchTokenTopTraders(
+  apiKey: string,
+  mint: string,
+  rateLimiter: RateLimiter,
+): Promise<WalletCandidate[]> {
+  try {
+    await rateLimiter.acquire();
+
+    const url = `${BIRDEYE_BASE}/defi/v2/tokens/top_traders?address=${encodeURIComponent(mint)}&sort_by=pnl&limit=50`;
+    const response = await fetch(url, {
+      headers: makeHeaders(apiKey),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    checkAuthError(response.status);
+    checkRateLimit(response.status);
+
+    if (!response.ok) return [];
+
+    const body = (await response.json()) as BirdeyeTopTraderResponse;
+
+    if (!body.success || !body.data?.traders) return [];
+
+    const candidates: WalletCandidate[] = [];
+    for (const item of body.data.traders) {
+      const candidate = normalizeTopTraderItem(item);
+      if (candidate) candidates.push(candidate);
+    }
+
+    return candidates;
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message.includes('authentication failed') || error.message.includes('rate limit'))) {
+      throw error;
+    }
+    return [];
   }
 }

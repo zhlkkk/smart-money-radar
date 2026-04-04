@@ -1,4 +1,4 @@
-import type { SmartMoneyWallet, WalletStateRef } from '../types.js';
+import type { SmartMoneyWallet, WalletCandidate, WalletStateRef } from '../types.js';
 import type { PoolDatabase } from '@radar/db';
 import { createWalletState } from '../types.js';
 import { fetchTopWallets, fetchHotTokensByVolume, fetchTokenTopTraders } from './birdeye.js';
@@ -65,12 +65,21 @@ export function createDiscovery(config: DiscoveryConfig) {
         hotTokens.map((mint) => fetchTokenTopTraders(config.birdeyeApiKey, mint, birdeyeRateLimiter)),
       );
 
+      // Re-throw auth/rate-limit errors that Promise.allSettled captured as rejections
+      for (const r of topTraderResults) {
+        if (r.status === 'rejected' && r.reason instanceof Error) {
+          if (r.reason.message.includes('authentication failed') || r.reason.message.includes('rate limit')) {
+            throw r.reason;
+          }
+        }
+      }
+
       const topTraderCandidates = topTraderResults
-        .filter((r): r is PromiseFulfilledResult<import('../types.js').WalletCandidate[]> => r.status === 'fulfilled')
+        .filter((r): r is PromiseFulfilledResult<WalletCandidate[]> => r.status === 'fulfilled')
         .flatMap((r) => r.value);
 
       // 3. Merge gainers-losers + top_traders, deduplicate by address (keep highest pnl)
-      const candidateMap = new Map<string, import('../types.js').WalletCandidate>();
+      const candidateMap = new Map<string, WalletCandidate>();
       for (const c of [...gainersLosers, ...topTraderCandidates]) {
         const existing = candidateMap.get(c.address);
         if (!existing || c.pnl > existing.pnl) {
@@ -79,7 +88,7 @@ export function createDiscovery(config: DiscoveryConfig) {
       }
       const candidates = [...candidateMap.values()];
 
-      console.error(
+      console.info(
         `[discovery] Aggregated candidates: ${gainersLosers.length} from gainers-losers, ` +
           `${topTraderCandidates.length} from top_traders (${hotTokens.length} tokens), ` +
           `${candidates.length} unique after dedup`,

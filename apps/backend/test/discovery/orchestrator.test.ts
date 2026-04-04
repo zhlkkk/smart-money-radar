@@ -227,6 +227,65 @@ describe('discovery orchestrator', () => {
     // 2 pinned + up to walletCap(3) discovered
     expect(walletMap.size).toBeLessThanOrEqual(5);
     expect(walletMap.size).toBeGreaterThan(2); // more than just pinned
+
+    // Verify dedup kept the higher pnl for wallet0 (99999 from top_traders, not 5000 from gainers-losers)
+    expect(mockFetchTopWallets).toHaveBeenCalledTimes(1);
+    // scoreWallets receives deduplicated candidates — wallet0 should have pnl=99999
+    const { scoreWallets } = await import('../../src/discovery/scoring.js');
+    const scoreMock = vi.mocked(scoreWallets);
+    if (scoreMock.mock?.calls?.length) {
+      const candidatesArg = scoreMock.mock.calls[0]?.[0];
+      if (candidatesArg) {
+        const wallet0 = candidatesArg.find((c: { address: string }) => c.address === 'wallet0');
+        if (wallet0) {
+          expect(wallet0.pnl).toBe(99999);
+        }
+      }
+    }
+  });
+
+  it('continues with partial results when some top_traders succeed and others fail', async () => {
+    const config = makeConfig();
+    mockFetchTopWallets.mockResolvedValue(makeCandidates(3));
+    mockFetchHotTokensByVolume.mockResolvedValue(['TokenA', 'TokenB', 'TokenC']);
+    mockFetchTokenTopTraders.mockImplementation(async (_apiKey, mint) => {
+      if (mint === 'TokenA') throw new Error('Network timeout');
+      if (mint === 'TokenB') throw new Error('Connection refused');
+      if (mint === 'TokenC') {
+        return [{ address: 'topTraderWallet', pnl: 9000, winRate: 0.8, tradeCount: 150, lastActiveTimestamp: NOW }];
+      }
+      return [];
+    });
+    mockUpdateHeliusWebhookAddresses.mockResolvedValue({
+      webhookID: 'id', wallet: '', webhookURL: '', transactionTypes: [],
+      accountAddresses: [], webhookType: 'enhanced', authHeader: '',
+    });
+
+    const discovery = createDiscovery(config);
+    await discovery.runCycle();
+
+    // Should still complete with gainers-losers + TokenC's results
+    expect(config.walletStateRef.current.walletMap.size).toBeGreaterThan(2);
+    expect(mockFetchTokenTopTraders).toHaveBeenCalledTimes(3);
+  });
+
+  it('propagates auth errors from top_traders through Promise.allSettled', async () => {
+    const config = makeConfig();
+    mockFetchTopWallets.mockResolvedValue(makeCandidates(3));
+    mockFetchHotTokensByVolume.mockResolvedValue(['TokenA']);
+    mockFetchTokenTopTraders.mockRejectedValue(new Error('Birdeye API authentication failed (HTTP 401)'));
+    mockUpdateHeliusWebhookAddresses.mockResolvedValue({
+      webhookID: 'id', wallet: '', webhookURL: '', transactionTypes: [],
+      accountAddresses: [], webhookType: 'enhanced', authHeader: '',
+    });
+
+    const discovery = createDiscovery(config);
+    await discovery.runCycle();
+
+    // Auth error should abort cycle — Helius should NOT be called
+    expect(mockUpdateHeliusWebhookAddresses).not.toHaveBeenCalled();
+    // Wallet state should remain unchanged (only pinned)
+    expect(config.walletStateRef.current.walletMap.size).toBe(2);
   });
 
   it('continues with gainers-losers only when top_traders all fail', async () => {

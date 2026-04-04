@@ -87,6 +87,11 @@ function normalizeTraderItem(item: BirdeyeTraderItem): WalletCandidate | null {
   return { address, pnl, winRate, tradeCount, lastActiveTimestamp };
 }
 
+interface BirdeyeTokenTrendingResponse {
+  success: boolean;
+  data?: { tokens?: Array<{ address?: string }> };
+}
+
 /**
  * Well-known Solana token mints used as fallback when the trending endpoint
  * is unavailable (non-auth/rate-limit errors).
@@ -128,10 +133,7 @@ export async function fetchHotTokensByVolume(apiKey: string): Promise<string[]> 
 
         if (!response.ok) return [];
 
-        const body = (await response.json()) as {
-          success: boolean;
-          data?: { tokens?: Array<{ address?: string }> };
-        };
+        const body = (await response.json()) as BirdeyeTokenTrendingResponse;
 
         if (!body.success || !body.data?.tokens) return [];
 
@@ -159,7 +161,7 @@ export async function fetchHotTokensByVolume(apiKey: string): Promise<string[]> 
 
     // Deduplicate
     const unique = [...new Set(mints)];
-    console.error(`[birdeye] fetchHotTokensByVolume: received ${unique.length} token mints`);
+    console.info(`[birdeye] fetchHotTokensByVolume: received ${unique.length} token mints`);
     return unique.length > 0 ? unique : [...FALLBACK_TOKENS];
   } catch (error: unknown) {
     if (
@@ -286,8 +288,10 @@ export function normalizeTopTraderItem(item: BirdeyeTopTraderItem): WalletCandid
   const address = item.address;
   if (!address) return null;
 
-  const pnl = typeof item.pnl === 'string' ? parseFloat(item.pnl) : 0;
-  if (isNaN(pnl)) return null;
+  const rawPnl = typeof item.pnl === 'string' ? parseFloat(item.pnl)
+    : typeof item.pnl === 'number' ? item.pnl : 0;
+  if (!isFinite(rawPnl)) return null;
+  const pnl = rawPnl;
 
   const winRate = item.winRate ?? 0;
   const tradeCount = item.tradeCount ?? 0;

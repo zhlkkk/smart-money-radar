@@ -1,7 +1,8 @@
 import type { SmartMoneyWallet, WalletStateRef } from '../types.js';
 import type { PoolDatabase } from '@radar/db';
 import { createWalletState } from '../types.js';
-import { fetchTopWallets } from './birdeye.js';
+import { fetchTopWallets, fetchHotTokensByVolume, fetchTokenTopTraders } from './birdeye.js';
+import { createRateLimiter } from './rate-limiter.js';
 import { updateHeliusWebhookAddresses } from './helius-webhooks.js';
 import { scoreWallets, mergeWithPinned } from './scoring.js';
 import type { DiscoveryState, ScoredWallet } from './scoring.js';
@@ -27,6 +28,9 @@ export function createDiscovery(config: DiscoveryConfig) {
   let intervalHandle: ReturnType<typeof setInterval> | null = null;
   let currentDiscovered: ScoredWallet[] = [];
 
+  // Rate limiter for Birdeye top_traders calls (30 req/min)
+  const birdeyeRateLimiter = createRateLimiter(30);
+
   // Load persisted state if available
   const persisted = loadDiscoveryState(config.statePath);
   if (persisted) {
@@ -50,10 +54,39 @@ export function createDiscovery(config: DiscoveryConfig) {
     const startTime = Date.now();
 
     try {
-      // 1. Fetch candidates from Birdeye
-      const candidates = await fetchTopWallets(config.birdeyeApiKey);
+      // 1. Fetch candidates from multiple sources in parallel
+      const [gainersLosers, hotTokens] = await Promise.all([
+        fetchTopWallets(config.birdeyeApiKey),
+        fetchHotTokensByVolume(config.birdeyeApiKey),
+      ]);
+
+      // 2. Fetch top traders for each hot token (rate-limited)
+      const topTraderResults = await Promise.allSettled(
+        hotTokens.map((mint) => fetchTokenTopTraders(config.birdeyeApiKey, mint, birdeyeRateLimiter)),
+      );
+
+      const topTraderCandidates = topTraderResults
+        .filter((r): r is PromiseFulfilledResult<import('../types.js').WalletCandidate[]> => r.status === 'fulfilled')
+        .flatMap((r) => r.value);
+
+      // 3. Merge gainers-losers + top_traders, deduplicate by address (keep highest pnl)
+      const candidateMap = new Map<string, import('../types.js').WalletCandidate>();
+      for (const c of [...gainersLosers, ...topTraderCandidates]) {
+        const existing = candidateMap.get(c.address);
+        if (!existing || c.pnl > existing.pnl) {
+          candidateMap.set(c.address, c);
+        }
+      }
+      const candidates = [...candidateMap.values()];
+
+      console.error(
+        `[discovery] Aggregated candidates: ${gainersLosers.length} from gainers-losers, ` +
+          `${topTraderCandidates.length} from top_traders (${hotTokens.length} tokens), ` +
+          `${candidates.length} unique after dedup`,
+      );
+
       if (candidates.length === 0) {
-        console.warn('[discovery] No candidates from Birdeye, keeping current wallet list');
+        console.warn('[discovery] No candidates from any source, keeping current wallet list');
         return;
       }
 

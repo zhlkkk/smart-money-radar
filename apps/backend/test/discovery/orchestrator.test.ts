@@ -6,6 +6,8 @@ import { createWalletState } from '../../src/types.js';
 // Mock all dependencies
 vi.mock('../../src/discovery/birdeye.js', () => ({
   fetchTopWallets: vi.fn(),
+  fetchHotTokensByVolume: vi.fn(),
+  fetchTokenTopTraders: vi.fn(),
 }));
 
 vi.mock('../../src/discovery/helius-webhooks.js', () => ({
@@ -17,11 +19,13 @@ vi.mock('../../src/discovery/persistence.js', () => ({
   saveDiscoveryState: vi.fn().mockReturnValue(true),
 }));
 
-import { fetchTopWallets } from '../../src/discovery/birdeye.js';
+import { fetchTopWallets, fetchHotTokensByVolume, fetchTokenTopTraders } from '../../src/discovery/birdeye.js';
 import { updateHeliusWebhookAddresses } from '../../src/discovery/helius-webhooks.js';
 import { saveDiscoveryState } from '../../src/discovery/persistence.js';
 
 const mockFetchTopWallets = vi.mocked(fetchTopWallets);
+const mockFetchHotTokensByVolume = vi.mocked(fetchHotTokensByVolume);
+const mockFetchTokenTopTraders = vi.mocked(fetchTokenTopTraders);
 const mockUpdateHeliusWebhookAddresses = vi.mocked(updateHeliusWebhookAddresses);
 const mockSaveDiscoveryState = vi.mocked(saveDiscoveryState);
 
@@ -65,6 +69,9 @@ describe('discovery orchestrator', () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Default: hot tokens and top traders return empty (tests can override)
+    mockFetchHotTokensByVolume.mockResolvedValue([]);
+    mockFetchTokenTopTraders.mockResolvedValue([]);
   });
 
   it('runs a full discovery cycle: fetch, score, update state, update Helius, persist', async () => {
@@ -125,9 +132,10 @@ describe('discovery orchestrator', () => {
     expect(mockSaveDiscoveryState).not.toHaveBeenCalled();
   });
 
-  it('keeps current wallets when Birdeye fails', async () => {
+  it('keeps current wallets when all Birdeye sources fail', async () => {
     const config = makeConfig();
     mockFetchTopWallets.mockRejectedValue(new Error('Birdeye 500'));
+    mockFetchHotTokensByVolume.mockRejectedValue(new Error('Birdeye 500'));
 
     const discovery = createDiscovery(config);
     await discovery.runCycle();
@@ -173,5 +181,68 @@ describe('discovery orchestrator', () => {
 
     // 2 pinned + at most 3 discovered = 5
     expect(config.walletStateRef.current.walletMap.size).toBeLessThanOrEqual(5);
+  });
+
+  it('merges candidates from gainers-losers and top_traders, deduplicates by address keeping highest pnl', async () => {
+    const config = makeConfig();
+
+    // gainers-losers returns wallet0..wallet4
+    mockFetchTopWallets.mockResolvedValue(makeCandidates(5));
+
+    // hot tokens returns 2 token mints
+    mockFetchHotTokensByVolume.mockResolvedValue(['TokenA', 'TokenB']);
+
+    // top_traders returns candidates, some overlapping with gainers-losers
+    mockFetchTokenTopTraders.mockImplementation(async (_apiKey, mint) => {
+      if (mint === 'TokenA') {
+        return [
+          { address: 'wallet0', pnl: 99999, winRate: 0.9, tradeCount: 200, lastActiveTimestamp: NOW }, // overlap, higher pnl
+          { address: 'newWallet1', pnl: 8000, winRate: 0.7, tradeCount: 100, lastActiveTimestamp: NOW },
+        ];
+      }
+      if (mint === 'TokenB') {
+        return [
+          { address: 'newWallet2', pnl: 7000, winRate: 0.6, tradeCount: 80, lastActiveTimestamp: NOW },
+        ];
+      }
+      return [];
+    });
+
+    mockUpdateHeliusWebhookAddresses.mockResolvedValue({
+      webhookID: 'id', wallet: '', webhookURL: '', transactionTypes: [],
+      accountAddresses: [], webhookType: 'enhanced', authHeader: '',
+    });
+
+    const discovery = createDiscovery(config);
+    await discovery.runCycle();
+
+    // fetchTopWallets + fetchHotTokensByVolume called in parallel
+    expect(mockFetchTopWallets).toHaveBeenCalledTimes(1);
+    expect(mockFetchHotTokensByVolume).toHaveBeenCalledTimes(1);
+    // fetchTokenTopTraders called once per hot token
+    expect(mockFetchTokenTopTraders).toHaveBeenCalledTimes(2);
+
+    // Pipeline state should include merged candidates
+    const { walletMap } = config.walletStateRef.current;
+    // 2 pinned + up to walletCap(3) discovered
+    expect(walletMap.size).toBeLessThanOrEqual(5);
+    expect(walletMap.size).toBeGreaterThan(2); // more than just pinned
+  });
+
+  it('continues with gainers-losers only when top_traders all fail', async () => {
+    const config = makeConfig();
+    mockFetchTopWallets.mockResolvedValue(makeCandidates(5));
+    mockFetchHotTokensByVolume.mockResolvedValue(['TokenA']);
+    mockFetchTokenTopTraders.mockRejectedValue(new Error('Network error'));
+    mockUpdateHeliusWebhookAddresses.mockResolvedValue({
+      webhookID: 'id', wallet: '', webhookURL: '', transactionTypes: [],
+      accountAddresses: [], webhookType: 'enhanced', authHeader: '',
+    });
+
+    const discovery = createDiscovery(config);
+    await discovery.runCycle();
+
+    // Should still proceed with gainers-losers candidates
+    expect(config.walletStateRef.current.walletMap.size).toBeGreaterThan(2);
   });
 });

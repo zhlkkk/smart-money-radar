@@ -94,7 +94,7 @@ export class BacktestRunner {
 
     const totalCandidates = groups.smartMoney.length + groups.baseline.length;
     // 0.6 factor: floor(N * 0.3) * 2 groups = 0.6 * N wallets total.
-    // MIN_CANDIDATES_WARN=20 → threshold=12. Fires when <20 candidates (low-quality mode).
+    // MIN_CANDIDATES_WARN=50 → threshold=30. Fires when <50 candidates (low-quality mode).
     if (totalCandidates < MIN_CANDIDATES_WARN * 0.6) {
       this.onProgress({
         phase: 'seed',

@@ -183,15 +183,21 @@ async function loadWalletAddresses(filePath: string): Promise<string[]> {
 /**
  * Minimum number of candidates before the backtest is considered unreliable.
  * Below this threshold the run is aborted entirely.
+ *
+ * Raised from 10 to 20 now that multi-source aggregation (gainers-losers +
+ * top_traders per hot token) provides a much larger candidate pool.
  */
-export const MIN_CANDIDATES_FAIL = 10;
+export const MIN_CANDIDATES_FAIL = 20;
 
 /**
- * Minimum number of candidates for statistically useful results (target ≥20
- * with limit=50 on the Birdeye API).  Between FAIL and WARN the run continues
- * with a low-quality warning; at or above WARN it runs normally.
+ * Minimum number of candidates for statistically useful results.
+ * Between FAIL and WARN the run continues with a low-quality warning;
+ * at or above WARN it runs normally.
+ *
+ * Raised from 20 to 50 to match the expanded candidate pool from
+ * multi-source aggregation.
  */
-export const MIN_CANDIDATES_WARN = 20;
+export const MIN_CANDIDATES_WARN = 50;
 
 /**
  * 从 Birdeye 获取候选钱包，按 PnL 降序排列后分组：

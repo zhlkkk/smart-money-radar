@@ -125,7 +125,7 @@ describe('BacktestRunner', () => {
   });
 
   it('calls onProgress with phases in correct order', async () => {
-    const candidates = makeCandidates(20);
+    const candidates = makeCandidates(50);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     const phases: string[] = [];
@@ -154,7 +154,7 @@ describe('BacktestRunner', () => {
   });
 
   it('returns a valid BacktestReport with smartMoneyStats and baselineStats', async () => {
-    const candidates = makeCandidates(20);
+    const candidates = makeCandidates(50);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     const runner = new BacktestRunner({
@@ -175,7 +175,7 @@ describe('BacktestRunner', () => {
     expect(report.baselineStats.totalTrades).toBe(3);
   });
 
-  it('throws when fetchTopWallets returns < 10 candidates', async () => {
+  it('throws when fetchTopWallets returns < 20 candidates', async () => {
     const candidates = makeCandidates(5);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
@@ -186,12 +186,12 @@ describe('BacktestRunner', () => {
     });
 
     await expect(runner.run()).rejects.toThrow(
-      '钱包候选数量不足（需要至少 10 个，实际 5 个）',
+      '钱包候选数量不足（需要至少 20 个，实际 5 个）',
     );
   });
 
   it('progress percent reaches 100 at completion', async () => {
-    const candidates = makeCandidates(20);
+    const candidates = makeCandidates(50);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     let maxPercent = 0;
@@ -210,7 +210,7 @@ describe('BacktestRunner', () => {
   });
 
   it('attaches Birdeye dataSource metadata with dynamic wallet counts to the report', async () => {
-    const candidates = makeCandidates(20);
+    const candidates = makeCandidates(50);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
 
     const runner = new BacktestRunner({
@@ -221,16 +221,16 @@ describe('BacktestRunner', () => {
 
     const report = await runner.run();
 
-    // floor(20 * 0.3) = 6 wallets per group
+    // floor(50 * 0.3) = 15 wallets per group
     expect(report.dataSource?.smartMoney).toContain('PnL 前 30%');
-    expect(report.dataSource?.smartMoney).toContain('共 6 个钱包');
+    expect(report.dataSource?.smartMoney).toContain('共 15 个钱包');
     expect(report.dataSource?.baseline).toContain('PnL 后 30%');
-    expect(report.dataSource?.baseline).toContain('共 6 个钱包');
+    expect(report.dataSource?.baseline).toContain('共 15 个钱包');
   });
 
   it('emits [WARNING] progress event when candidate pool is small (low-quality mode)', async () => {
-    // 15 candidates → floor(15*0.3)=4 per group → total 8 wallets < MIN_CANDIDATES_WARN*0.6=12
-    const candidates = makeCandidates(15);
+    // 30 candidates → floor(30*0.3)=9 per group → total 18 wallets < MIN_CANDIDATES_WARN*0.6=30
+    const candidates = makeCandidates(30);
     vi.mocked(fetchTopWallets).mockResolvedValueOnce(candidates);
     const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

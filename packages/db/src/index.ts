@@ -1,6 +1,6 @@
 // @radar/db — database schema and clients for Smart Money Radar
-export * from './schema/index';
-export { createHttpClient } from './client';
-export type { HttpDatabase } from './client';
-export { createPoolClient } from './client.pool';
-export type { PoolDatabase } from './client.pool';
+export * from './schema/index.js';
+export { createHttpClient } from './client.js';
+export type { HttpDatabase } from './client.js';
+export { createPoolClient } from './client.pool.js';
+export type { PoolDatabase } from './client.pool.js';

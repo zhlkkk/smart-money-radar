@@ -87,6 +87,95 @@ function normalizeTraderItem(item: BirdeyeTraderItem): WalletCandidate | null {
 }
 
 /**
+ * Well-known Solana token mints used as fallback when the trending endpoint
+ * is unavailable (non-auth/rate-limit errors).
+ */
+const FALLBACK_TOKENS: string[] = [
+  'So11111111111111111111111111111111111111112',  // Wrapped SOL
+  'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+  'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', // BONK
+  'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', // WIF
+  'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',  // JUP
+  'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
+  'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So',  // mSOL
+  'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3', // PYTH
+  'jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL',  // JTO
+  'RLBxxFkseAZ4RgJH3Sqn8jXxhmGoz9jWxDNJMh8pL7a',  // RLBB
+  'hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux',  // HNT
+  '7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs', // RAY
+];
+
+/**
+ * Fetch trending tokens by 24h volume from Birdeye.
+ * Makes two requests (offset 0 and 20) to collect up to 40 token mints.
+ * On auth/rate-limit errors: re-throw.
+ * On other errors: return FALLBACK_TOKENS.
+ */
+export async function fetchHotTokensByVolume(apiKey: string): Promise<string[]> {
+  try {
+    const offsets = [0, 20];
+    const results = await Promise.allSettled(
+      offsets.map(async (offset) => {
+        const url = `${BIRDEYE_BASE}/defi/token_trending?sort_by=volume24hUSD&sort_type=desc&offset=${offset}&limit=20`;
+        const response = await fetch(url, {
+          headers: makeHeaders(apiKey),
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+
+        checkAuthError(response.status);
+        checkRateLimit(response.status);
+
+        if (!response.ok) return [];
+
+        const body = (await response.json()) as {
+          success: boolean;
+          data?: { tokens?: Array<{ address?: string }> };
+        };
+
+        if (!body.success || !body.data?.tokens) return [];
+
+        return body.data.tokens
+          .map((t) => t.address)
+          .filter((addr): addr is string => typeof addr === 'string' && addr.length > 0);
+      }),
+    );
+
+    // Collect fulfilled results; re-throw auth/rate-limit from rejected
+    const mints: string[] = [];
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        mints.push(...result.value);
+      } else {
+        const err = result.reason;
+        if (
+          err instanceof Error &&
+          (err.message.includes('authentication failed') || err.message.includes('rate limit'))
+        ) {
+          throw err;
+        }
+      }
+    }
+
+    // Deduplicate
+    const unique = [...new Set(mints)];
+    console.error(`[birdeye] fetchHotTokensByVolume: received ${unique.length} token mints`);
+    return unique.length > 0 ? unique : [...FALLBACK_TOKENS];
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      (error.message.includes('authentication failed') || error.message.includes('rate limit'))
+    ) {
+      throw error;
+    }
+    console.error(
+      `[birdeye] fetchHotTokensByVolume failed, using fallback tokens:`,
+      error instanceof Error ? error.message : String(error),
+    );
+    return [...FALLBACK_TOKENS];
+  }
+}
+
+/**
  * Fetch top-performing wallets from Birdeye's trader/gainers-losers endpoint.
  * Explicitly requests limit=50 (Starter plan max) to maximise candidate pool.
  * Returns normalized WalletCandidate array, or empty array on non-auth errors.

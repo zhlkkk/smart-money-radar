@@ -1,7 +1,7 @@
 ---
 title: "fix: 修复钱包列表不自动更新的问题"
 type: fix
-status: active
+status: completed
 date: 2026-04-05
 ---
 

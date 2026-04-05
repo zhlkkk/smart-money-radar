@@ -27,6 +27,7 @@ export function createDiscovery(config: DiscoveryConfig) {
   let running = false;
   let intervalHandle: ReturnType<typeof setInterval> | null = null;
   let currentDiscovered: ScoredWallet[] = [];
+  let cycleCount = 0;
 
   // Rate limiter for Birdeye top_traders calls (30 req/min)
   const birdeyeRateLimiter = createRateLimiter(30);
@@ -51,7 +52,9 @@ export function createDiscovery(config: DiscoveryConfig) {
       return;
     }
     running = true;
+    cycleCount++;
     const startTime = Date.now();
+    console.info(`[discovery] Cycle #${cycleCount} starting`);
 
     try {
       // 1. Fetch candidates from multiple sources in parallel
@@ -157,9 +160,11 @@ export function createDiscovery(config: DiscoveryConfig) {
             compositeScore: w.compositeScore,
           }));
           await syncTrackedWallets(config.db, dbEntries);
+          console.info(`[discovery] Database synced ${dbEntries.length} wallets`);
 
           if (removed.length > 0) {
             await deactivateWallets(config.db, removed.map((w) => w.address));
+            console.info(`[discovery] Deactivated ${removed.length} wallets`);
           }
         } catch (dbErr) {
           console.error('[discovery] Database sync failed (non-fatal)', {
@@ -180,6 +185,8 @@ export function createDiscovery(config: DiscoveryConfig) {
     } catch (err) {
       console.error('[discovery] Cycle failed', {
         error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        cycle: cycleCount,
         durationMs: Date.now() - startTime,
       });
     } finally {
@@ -188,6 +195,11 @@ export function createDiscovery(config: DiscoveryConfig) {
   }
 
   function start(): void {
+    console.info('[discovery] Starting', {
+      intervalMs: config.intervalMs,
+      walletCap: config.walletCap,
+      hasDb: config.db !== null,
+    });
     // Determine when to run first cycle
     const persisted = loadDiscoveryState(config.statePath);
     const now = Date.now();

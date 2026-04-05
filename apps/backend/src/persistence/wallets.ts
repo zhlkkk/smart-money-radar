@@ -1,6 +1,5 @@
 import { trackedWallets } from '@radar/db';
 import type { PoolDatabase } from '@radar/db';
-import type { SmartMoneyWallet } from '@radar/shared';
 
 export interface ScoredWalletInput {
   address: string;
@@ -47,6 +46,7 @@ export async function syncTrackedWallets(
           tradeCount: w.tradeCount ?? undefined,
           isActive: true,
           lastDiscoveredAt: w.source === 'discovered' ? new Date() : undefined,
+          updatedAt: new Date(),
         },
       });
   }

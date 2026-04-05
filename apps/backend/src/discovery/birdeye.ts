@@ -206,7 +206,7 @@ export async function fetchTopWallets(apiKey: string): Promise<WalletCandidate[]
     }
 
     // Diagnostic: log actual count to help identify plan vs API-default differences
-    console.error(`[birdeye] fetchTopWallets: received ${candidates.length} candidates`);
+    console.info(`[birdeye] fetchTopWallets: received ${candidates.length} candidates`);
 
     return candidates;
   } catch (error: unknown) {

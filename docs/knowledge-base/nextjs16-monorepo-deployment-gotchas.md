@@ -3,7 +3,8 @@ title: "Next.js 16 + pnpm Monorepo 部署排坑指南"
 type: knowledge
 unit: "Phase 2b - Unit 9, 10b"
 date: 2026-04-01
-tags: [nextjs16, monorepo, vercel, deployment, clerk, stripe]
+last_updated: 2026-04-05
+tags: [nextjs16, monorepo, vercel, deployment, clerk, stripe, turbopack, moduleResolution]
 ---
 
 # Next.js 16 + pnpm Monorepo 部署排坑指南
@@ -26,25 +27,50 @@ export const proxy = clerkMiddleware(async (auth, request) => {
 
 **注意**：Clerk SDK 的函数仍叫 `clerkMiddleware`（SDK 还没跟进重命名），但 Next.js 文件必须叫 `proxy.ts`。
 
-## 坑 2：Monorepo workspace 包的 .js 扩展名
+## 坑 2：Monorepo workspace 包的 .js 扩展名（⚠️ 已二次踩坑）
 
-**现象**：`@radar/shared` 和 `@radar/db` 的 `import ... from './foo.js'` 在 Next.js bundler 中报 "Module not found"。
+**现象**：`@radar/shared` 和 `@radar/db` 的 `import ... from './foo.js'` 在 Turbopack 构建中报 "Module not found"。
 
-**根因**：
-- TypeScript ESM 规范要求 import 用 `.js` 扩展名（因为 tsc 不重写扩展名）
-- workspace 包的 `package.json` 用 `"main": "./src/index.ts"` 直接指向源码
-- Next.js bundler（Turbopack）从 `.ts` 源码解析时找不到 `.js` 文件
-
-**解决**：去掉所有 workspace 包内部 import 的 `.js` 扩展名，让 bundler 自动解析。
-
-```diff
-- export { users } from './users.js';
-+ export { users } from './users';
+**Vercel 构建日志**：
+```
+Error: Turbopack build failed with 6 errors:
+Module not found: Can't resolve './client.js'       (packages/db/src/index.ts:3)
+Module not found: Can't resolve './client.pool.js'  (packages/db/src/index.ts:5)
+Module not found: Can't resolve './schema/index.js' (packages/db/src/index.ts:2)
+Module not found: Can't resolve './constants/index.js' (packages/shared/src/index.ts:24)
 ```
 
-**影响范围**：`@radar/shared`（index.ts, constants/index.ts）+ `@radar/db`（index.ts, schema/index.ts, client.ts, client.pool.ts, schema/alerts.ts, schema/subscriptions.ts）
+**根因**：TypeScript `moduleResolution: Node16` 与 Turbopack 源码解析的根本不兼容：
 
-**教训**：monorepo 中通过 bundler 直接消费 TS 源码时，不要用 `.js` 扩展名。如果包需要编译输出才用。
+| 工具 | 解析策略 | `from './client.js'` |
+|------|---------|---------------------|
+| **tsc (Node16)** | 模拟 Node.js ESM 行为，要求 `.js` 后缀 | ✅ 映射到 `client.ts` |
+| **Turbopack** | 直接读 `.ts` 源码，查找字面文件 | ❌ 找不到 `client.js` |
+| **Node.js ESM** | 加载编译后的 `.js` 文件 | ✅ 文件真实存在 |
+
+关键条件：workspace 包用 `"main": "./src/index.ts"` 直接暴露源码（无构建步骤），所以不存在 `.js` 输出文件。
+
+**2026-04-05 二次踩坑经过**（commit `09d3f51` → `399ce33`）：
+
+为修复 `tsc --noEmit` 的 TS2835 错误，给 9 个文件加上了 `.js` 后缀 → 本地 typecheck 通过 → 推送后 Vercel 部署失败。
+
+尝试过但失败的修复路径：
+1. **`moduleResolution: Bundler`** — shared/db 的 tsconfig 改为 Bundler 模式，去掉 `.js` 后缀 → Turbopack 能构建了，但 backend（Node16 模式）通过 workspace 引用检查这些包的源码时又报 TS2835
+2. **Turbopack `resolveExtensions`** — 在 next.config.ts 添加 `turbopack: { resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'] }` → 无效，Turbopack 仍然无法将 `.js` 映射到 `.ts`
+
+**最终解决**：恢复无后缀导入（原始状态），接受 `tsc` 的 TS2835 警告。Vercel 运行 `next build` 不运行 `tsc`，所以这些警告不影响部署。
+
+```diff
+- export { createHttpClient } from './client.js';
++ export { createHttpClient } from './client';
+```
+
+**影响范围**：`@radar/shared`（index.ts, constants/index.ts）+ `@radar/db`（index.ts, schema/index.ts, client.ts, client.pool.ts, schema/alerts.ts, schema/subscriptions.ts, schema/telegram-bindings.ts）
+
+**防止回归**：
+1. **导入路径变更后必须跑 `pnpm --filter web build`** — 不能只靠 `tsc` 通过就推送
+2. **绝不在 workspace 源码包中加 `.js` 后缀** — 即使 tsc 报警。只有当包有编译步骤输出 `.js` 文件时才需要
+3. **长期方案**：给 shared/db 加构建步骤（`tsc` 输出到 `dist/`，`main` 指向 `dist/index.js`），或等 backend 也能用 `moduleResolution: Bundler` 时统一切换
 
 ## 坑 3：Next.js 16 的 params 和 searchParams 是 Promise
 

@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { ArrowLeft, Check, CreditCard, Wallet, Clock } from 'lucide-react';
+import { ArrowLeft, Check, CreditCard, Wallet } from 'lucide-react';
 import { PLANS } from '@radar/shared';
 import { GlassCard } from '@/components/ui/glass-card';
 import { GridBackground } from '@/components/ui/grid-background';
 import { Badge } from '@/components/ui/badge';
 import { HelioCheckoutButton } from '@/components/helio-checkout';
+import { PaddleCheckoutButton } from '@/components/paddle-checkout';
 import { getTranslations } from 'next-intl/server';
 
 export const metadata = {
@@ -77,22 +78,13 @@ export default async function PricingPage() {
             <HelioCheckoutButton />
           </div>
 
-          {/* Paddle — 法币支付（待开放） */}
+          {/* Paddle — 法币支付 */}
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <CreditCard size={14} className="text-smr-text-muted" />
-              <span className="text-xs font-medium text-smr-text-muted">{t('pricing.cardPay')}</span>
-              <Badge variant="muted" size="sm">
-                <Clock size={10} className="mr-1" />
-                {t('pricing.comingSoon')}
-              </Badge>
+              <CreditCard size={14} className="text-smr-text-secondary" />
+              <span className="text-xs font-medium text-smr-text-secondary">{t('pricing.cardPay')}</span>
             </div>
-            <button
-              disabled
-              className="w-full cursor-not-allowed rounded-lg border border-[var(--smr-glass-border)] bg-[var(--smr-bg-elevated)] py-3 text-sm text-smr-text-muted opacity-50"
-            >
-              {t('pricing.cardDisabled')}
-            </button>
+            <PaddleCheckoutButton />
           </div>
         </div>
       </GlassCard>

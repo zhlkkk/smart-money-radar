@@ -258,6 +258,8 @@
     "cardPay": "信用卡支付",
     "comingSoon": "即将开放",
     "cardDisabled": "信用卡 / PayPal（审核中）",
+    "cardPayButton": "信用卡 / PayPal 支付",
+    "processing": "处理中...",
     "helioNote": "加密支付由 Helio (MoonPay Commerce) 安全处理。支持 USDC、SOL 等 Solana 链上资产。",
     "loginFirst": "登录后使用加密货币支付",
     "configuring": "加密支付配置中..."

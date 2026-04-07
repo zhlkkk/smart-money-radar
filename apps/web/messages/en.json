@@ -258,6 +258,8 @@
     "cardPay": "Card Payment",
     "comingSoon": "Coming Soon",
     "cardDisabled": "Credit Card / PayPal (Under Review)",
+    "cardPayButton": "Pay with Card / PayPal",
+    "processing": "Processing...",
     "helioNote": "Crypto payments securely processed by Helio (MoonPay Commerce). Supports USDC, SOL and other Solana assets.",
     "loginFirst": "Sign in to pay with crypto",
     "configuring": "Crypto payment configuring..."

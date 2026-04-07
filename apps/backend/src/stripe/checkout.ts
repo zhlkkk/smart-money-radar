@@ -29,7 +29,7 @@ export function registerCheckoutRoutes(
           },
         });
 
-        request.log.info({ id: transaction.id, keys: Object.keys(transaction) }, 'Paddle transaction created');
+        request.log.info({ id: transaction.id, checkout: transaction.checkout }, 'Paddle transaction created');
         const url = transaction.checkout?.url ?? (transaction as unknown as Record<string, unknown>).checkoutUrl as string | undefined;
         if (!url) {
           request.log.error({ checkout: transaction.checkout, id: transaction.id }, 'Paddle transaction created but no checkout URL');

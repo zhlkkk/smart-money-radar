@@ -79,12 +79,19 @@ export interface AlertData {
   confidence: ConfidenceResult;
 }
 
+export interface SourceTag {
+  source: string;
+  weight: number;
+  discoveredAt: number;
+}
+
 export interface WalletCandidate {
   address: string;
   pnl: number;
   winRate: number;
   tradeCount: number;
   lastActiveTimestamp: number;
+  sources?: SourceTag[];
 }
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';

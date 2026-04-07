@@ -1,4 +1,4 @@
-import type { SmartMoneyWallet, WalletCandidate } from '../types.js';
+import type { SmartMoneyWallet, SourceTag, WalletCandidate } from '../types.js';
 
 export interface ScoredWallet {
   address: string;
@@ -7,6 +7,7 @@ export interface ScoredWallet {
   compositeScore: number;
   missedCycles: number;
   source: 'pinned' | 'discovered';
+  sources: SourceTag[];
   pnl?: number;
   winRate?: number;
   tradeCount?: number;
@@ -16,6 +17,14 @@ export interface DiscoveryState {
   discovered: ScoredWallet[];
   lastRefresh: number; // timestamp ms
 }
+
+// Source weights for multi-source discovery
+export const SOURCE_WEIGHTS: Record<string, number> = {
+  birdeye: 0.7,
+  'helius-reverse': 0.5,
+};
+
+export const SOURCE_BONUS_WEIGHT = 0.2;
 
 // Weights for composite score
 const WEIGHT_PNL = 0.35;
@@ -106,6 +115,7 @@ export function scoreWallets(
         compositeScore,
         missedCycles: prev ? 0 : 0, // present in candidates → always 0
         source: 'discovered' as const,
+        sources: c.sources ?? [],
         pnl: c.pnl,
         winRate: c.winRate,
         tradeCount: c.tradeCount,

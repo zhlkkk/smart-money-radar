@@ -14,6 +14,7 @@ export type {
   WalletStateRef,
   AlertData,
   WalletCandidate,
+  SourceTag,
   RiskLevel,
   RiskAssessment,
   ConfidenceLevel,

@@ -8,7 +8,8 @@ export interface RateLimiter {
  * acquire() resolves immediately if a token is available, otherwise waits.
  */
 export function createRateLimiter(maxPerMinute: number): RateLimiter {
-  let tokens = maxPerMinute;
+  // Start with 1 token to prevent initial burst that could hit global rps limits
+  let tokens = 1;
   const intervalMs = 60_000 / maxPerMinute;
   let refillTimer: ReturnType<typeof setInterval> | null = null;
   const waitQueue: Array<() => void> = [];

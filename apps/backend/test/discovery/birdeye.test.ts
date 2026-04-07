@@ -414,7 +414,7 @@ describe('fetchTokenTopTraders', () => {
     await expect(fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter)).rejects.toThrow('rate limit');
   });
 
-  it('includes sort_by=volume&limit=10 in the URL', async () => {
+  it('includes required params in the URL per Birdeye docs', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       birdeyeResponse({ success: true, data: { traders: [] } }),
     );
@@ -422,6 +422,7 @@ describe('fetchTokenTopTraders', () => {
     await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);
 
     const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('time_frame=24h');
     expect(calledUrl).toContain('sort_by=volume');
     expect(calledUrl).toContain('sort_type=desc');
     expect(calledUrl).toContain('limit=10');

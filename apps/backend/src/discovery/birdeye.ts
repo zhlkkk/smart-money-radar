@@ -313,7 +313,7 @@ export async function fetchTokenTopTraders(
   try {
     await rateLimiter.acquire();
 
-    const url = `${BIRDEYE_BASE}/defi/v2/tokens/top_traders?address=${encodeURIComponent(mint)}&sort_by=volume&sort_type=desc&limit=10`;
+    const url = `${BIRDEYE_BASE}/defi/v2/tokens/top_traders?address=${encodeURIComponent(mint)}&time_frame=24h&sort_by=volume&sort_type=desc&limit=10`;
     const response = await fetch(url, {
       headers: makeHeaders(apiKey),
       signal: AbortSignal.timeout(TIMEOUT_MS),

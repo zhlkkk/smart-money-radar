@@ -6,14 +6,11 @@ describe('createRateLimiter', () => {
     vi.useRealTimers();
   });
 
-  it('allows requests within limit', async () => {
+  it('allows first request immediately', async () => {
     const limiter = createRateLimiter(5);
 
-    // Should resolve immediately for 5 requests
-    for (let i = 0; i < 5; i++) {
-      await limiter.acquire();
-    }
-    // If we get here, all 5 resolved without blocking
+    // First request should resolve immediately (1 initial token)
+    await limiter.acquire();
     expect(true).toBe(true);
   });
 
@@ -21,11 +18,10 @@ describe('createRateLimiter', () => {
     vi.useFakeTimers();
     const limiter = createRateLimiter(2);
 
-    // Exhaust both tokens
-    await limiter.acquire();
+    // Exhaust the single initial token
     await limiter.acquire();
 
-    // Third request should wait
+    // Second request should wait (no tokens left)
     let resolved = false;
     const promise = limiter.acquire().then(() => {
       resolved = true;

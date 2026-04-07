@@ -264,37 +264,32 @@ export async function fetchWalletPnL(apiKey: string, address: string): Promise<W
 
 /**
  * Response shape for the Birdeye `/defi/v2/tokens/top_traders` endpoint.
- * Fields are camelCase (not snake_case) in the actual API response.
+ * Per API docs: data.items[], each item has owner/realizedProfit/volume/trade.
  */
 interface BirdeyeTopTraderItem {
-  address?: string;
-  pnl?: string; // Note: string in this endpoint, needs parseFloat
-  winRate?: number;
-  tradeCount?: number;
+  owner?: string;
+  realizedProfit?: number;
+  volume?: number;
+  trade?: number;
 }
 
 interface BirdeyeTopTraderResponse {
   success: boolean;
   data?: {
-    traders?: BirdeyeTopTraderItem[];
+    items?: BirdeyeTopTraderItem[];
   };
 }
 
 /**
  * Normalize a top_traders item to WalletCandidate.
- * pnl is a string in this endpoint and must be parsed.
  */
 export function normalizeTopTraderItem(item: BirdeyeTopTraderItem): WalletCandidate | null {
-  const address = item.address;
+  const address = item.owner;
   if (!address) return null;
 
-  const rawPnl = typeof item.pnl === 'string' ? parseFloat(item.pnl)
-    : typeof item.pnl === 'number' ? item.pnl : 0;
-  if (!isFinite(rawPnl)) return null;
-  const pnl = rawPnl;
-
-  const winRate = item.winRate ?? 0;
-  const tradeCount = item.tradeCount ?? 0;
+  const pnl = item.realizedProfit ?? 0;
+  const winRate = 0; // Not available in this endpoint
+  const tradeCount = item.trade ?? 0;
   const lastActiveTimestamp = 0; // Not available in this endpoint
 
   return { address, pnl, winRate, tradeCount, lastActiveTimestamp };
@@ -329,13 +324,13 @@ export async function fetchTokenTopTraders(
 
     const body = (await response.json()) as BirdeyeTopTraderResponse;
 
-    if (!body.success || !body.data?.traders) {
+    if (!body.success || !body.data?.items) {
       console.warn(`[birdeye] top_traders empty response for ${mint}`, JSON.stringify(body).slice(0, 300));
       return [];
     }
 
     const candidates: WalletCandidate[] = [];
-    for (const item of body.data.traders) {
+    for (const item of body.data.items) {
       const candidate = normalizeTopTraderItem(item);
       if (candidate) candidates.push(candidate);
     }

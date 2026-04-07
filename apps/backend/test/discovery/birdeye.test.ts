@@ -299,36 +299,31 @@ describe('fetchWalletPnL', () => {
 const noopRateLimiter: RateLimiter = { acquire: () => Promise.resolve() };
 
 describe('normalizeTopTraderItem', () => {
-  it('parses string pnl via parseFloat', () => {
+  it('maps owner/realizedProfit/trade to WalletCandidate', () => {
     const result = normalizeTopTraderItem({
-      address: 'Trader1',
-      pnl: '12345.67',
-      winRate: 0.8,
-      tradeCount: 50,
+      owner: 'Trader1',
+      realizedProfit: 12345.67,
+      trade: 50,
     });
 
     expect(result).toEqual({
       address: 'Trader1',
       pnl: 12345.67,
-      winRate: 0.8,
+      winRate: 0,
       tradeCount: 50,
       lastActiveTimestamp: 0,
     });
   });
 
-  it('returns null when address is missing', () => {
-    expect(normalizeTopTraderItem({ pnl: '100' })).toBeNull();
-  });
-
-  it('returns null when pnl is not a valid number', () => {
-    expect(normalizeTopTraderItem({ address: 'Trader1', pnl: 'not-a-number' })).toBeNull();
+  it('returns null when owner is missing', () => {
+    expect(normalizeTopTraderItem({ realizedProfit: 100 })).toBeNull();
   });
 
   it('defaults missing fields to 0', () => {
-    const result = normalizeTopTraderItem({ address: 'Trader1', pnl: '100' });
+    const result = normalizeTopTraderItem({ owner: 'Trader1' });
     expect(result).toEqual({
       address: 'Trader1',
-      pnl: 100,
+      pnl: 0,
       winRate: 0,
       tradeCount: 0,
       lastActiveTimestamp: 0,
@@ -349,9 +344,9 @@ describe('fetchTokenTopTraders', () => {
     const mockBody = {
       success: true,
       data: {
-        traders: [
-          { address: 'Trader1', pnl: '50000', winRate: 0.72, tradeCount: 150 },
-          { address: 'Trader2', pnl: '30000', winRate: 0.6, tradeCount: 80 },
+        items: [
+          { owner: 'Trader1', realizedProfit: 50000, trade: 150 },
+          { owner: 'Trader2', realizedProfit: 30000, trade: 80 },
         ],
       },
     };
@@ -363,7 +358,7 @@ describe('fetchTokenTopTraders', () => {
     expect(result[0]).toEqual({
       address: 'Trader1',
       pnl: 50000,
-      winRate: 0.72,
+      winRate: 0,
       tradeCount: 150,
       lastActiveTimestamp: 0,
     });
@@ -374,7 +369,7 @@ describe('fetchTokenTopTraders', () => {
     const limiter: RateLimiter = { acquire: acquireFn };
 
     vi.mocked(fetch).mockResolvedValueOnce(
-      birdeyeResponse({ success: true, data: { traders: [] } }),
+      birdeyeResponse({ success: true, data: { items: [] } }),
     );
 
     await fetchTokenTopTraders(API_KEY, 'TokenMint1', limiter);
@@ -416,7 +411,7 @@ describe('fetchTokenTopTraders', () => {
 
   it('includes required params in the URL per Birdeye docs', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
-      birdeyeResponse({ success: true, data: { traders: [] } }),
+      birdeyeResponse({ success: true, data: { items: [] } }),
     );
 
     await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);

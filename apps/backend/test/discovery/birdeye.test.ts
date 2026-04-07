@@ -153,7 +153,7 @@ describe('fetchHotTokensByVolume', () => {
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
     const url0 = vi.mocked(fetch).mock.calls[0][0] as string;
     expect(url0).toContain('offset=0');
-    expect(url0).toContain('limit=10');
+    expect(url0).toContain('limit=20');
   });
 
   it('deduplicates token mints', async () => {
@@ -414,7 +414,7 @@ describe('fetchTokenTopTraders', () => {
     await expect(fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter)).rejects.toThrow('rate limit');
   });
 
-  it('includes sort_by=pnl&limit=50 in the URL', async () => {
+  it('includes sort_by=volume&limit=10 in the URL', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       birdeyeResponse({ success: true, data: { traders: [] } }),
     );
@@ -422,8 +422,9 @@ describe('fetchTokenTopTraders', () => {
     await fetchTokenTopTraders(API_KEY, 'TokenMint1', noopRateLimiter);
 
     const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
-    expect(calledUrl).toContain('sort_by=pnl');
-    expect(calledUrl).toContain('limit=50');
+    expect(calledUrl).toContain('sort_by=volume');
+    expect(calledUrl).toContain('sort_type=desc');
+    expect(calledUrl).toContain('limit=10');
     expect(calledUrl).toContain('address=TokenMint1');
   });
 });

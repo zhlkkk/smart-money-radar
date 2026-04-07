@@ -122,7 +122,7 @@ export async function fetchHotTokensByVolume(apiKey: string): Promise<string[]> 
     const offsets = [0];
     const results = await Promise.allSettled(
       offsets.map(async (offset) => {
-        const url = `${BIRDEYE_BASE}/defi/token_trending?sort_by=volume24hUSD&sort_type=desc&offset=${offset}&limit=10`;
+        const url = `${BIRDEYE_BASE}/defi/token_trending?sort_by=volume24hUSD&sort_type=desc&offset=${offset}&limit=20`;
         const response = await fetch(url, {
           headers: makeHeaders(apiKey),
           signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -313,7 +313,7 @@ export async function fetchTokenTopTraders(
   try {
     await rateLimiter.acquire();
 
-    const url = `${BIRDEYE_BASE}/defi/v2/tokens/top_traders?address=${encodeURIComponent(mint)}&sort_by=pnl&limit=50`;
+    const url = `${BIRDEYE_BASE}/defi/v2/tokens/top_traders?address=${encodeURIComponent(mint)}&sort_by=volume&sort_type=desc&limit=10`;
     const response = await fetch(url, {
       headers: makeHeaders(apiKey),
       signal: AbortSignal.timeout(TIMEOUT_MS),

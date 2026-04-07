@@ -29,8 +29,8 @@ export function createDiscovery(config: DiscoveryConfig) {
   let currentDiscovered: ScoredWallet[] = [];
   let cycleCount = 0;
 
-  // Rate limiter for Birdeye top_traders calls (30 req/min)
-  const birdeyeRateLimiter = createRateLimiter(30);
+  // Rate limiter for Birdeye top_traders calls (100 req/min, API allows 300 rps)
+  const birdeyeRateLimiter = createRateLimiter(100);
 
   // Load persisted state if available
   const persisted = loadDiscoveryState(config.statePath);

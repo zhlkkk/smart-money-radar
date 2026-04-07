@@ -330,7 +330,7 @@ export async function fetchTokenTopTraders(
     const body = (await response.json()) as BirdeyeTopTraderResponse;
 
     if (!body.success || !body.data?.traders) {
-      console.warn(`[birdeye] top_traders empty response for ${mint}`, { success: body.success });
+      console.warn(`[birdeye] top_traders empty response for ${mint}`, JSON.stringify(body).slice(0, 300));
       return [];
     }
 

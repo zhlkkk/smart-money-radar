@@ -83,7 +83,7 @@ async function callLLM(
       },
       body: JSON.stringify({
         model: llmConfig.model,
-        max_tokens: 100,
+        max_tokens: 200,
         temperature: 0.3,
         messages: [{ role: 'user', content: prompt }],
       }),

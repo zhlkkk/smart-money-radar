@@ -59,7 +59,7 @@ describe('generateAttribution', () => {
 
     const body = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
     expect(body.model).toBe('test-model');
-    expect(body.max_tokens).toBe(100);
+    expect(body.max_tokens).toBe(200);
   });
 
   it('returns empty string on API error', async () => {

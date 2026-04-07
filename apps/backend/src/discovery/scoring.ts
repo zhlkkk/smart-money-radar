@@ -7,6 +7,9 @@ export interface ScoredWallet {
   compositeScore: number;
   missedCycles: number;
   source: 'pinned' | 'discovered';
+  pnl?: number;
+  winRate?: number;
+  tradeCount?: number;
 }
 
 export interface DiscoveryState {
@@ -103,6 +106,9 @@ export function scoreWallets(
         compositeScore,
         missedCycles: prev ? 0 : 0, // present in candidates → always 0
         source: 'discovered' as const,
+        pnl: c.pnl,
+        winRate: c.winRate,
+        tradeCount: c.tradeCount,
       };
     });
   }

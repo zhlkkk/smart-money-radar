@@ -29,7 +29,7 @@ export function registerCheckoutRoutes(
           },
         });
 
-        const url = transaction.checkoutUrl;
+        const url = transaction.checkout?.url;
         if (!url) {
           return reply.status(500).send({ error: 'Failed to create checkout URL' });
         }

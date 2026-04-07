@@ -6,8 +6,6 @@ import { CreditCard, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '';
-
 export function PaddleCheckoutButton() {
   const { user, isSignedIn } = useUser();
   const router = useRouter();
@@ -31,7 +29,7 @@ export function PaddleCheckoutButton() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/checkout`, {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

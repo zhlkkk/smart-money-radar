@@ -68,11 +68,15 @@ export function createDiscovery(config: DiscoveryConfig) {
         hotTokens.map((mint) => fetchTokenTopTraders(config.birdeyeApiKey, mint, birdeyeRateLimiter)),
       );
 
-      // Re-throw auth/rate-limit errors that Promise.allSettled captured as rejections
+      // Re-throw auth errors (invalid API key) — these won't self-resolve.
+      // Rate-limit (429) errors are transient: log and continue with partial data.
       for (const r of topTraderResults) {
         if (r.status === 'rejected' && r.reason instanceof Error) {
-          if (r.reason.message.includes('authentication failed') || r.reason.message.includes('rate limit')) {
+          if (r.reason.message.includes('authentication failed')) {
             throw r.reason;
+          }
+          if (r.reason.message.includes('rate limit')) {
+            console.warn('[discovery] Birdeye rate limit hit, continuing with partial data');
           }
         }
       }

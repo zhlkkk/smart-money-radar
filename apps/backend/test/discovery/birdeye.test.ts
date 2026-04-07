@@ -138,49 +138,35 @@ describe('fetchHotTokensByVolume', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns token mints from two offset pages', async () => {
+  it('returns token mints from single page', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(
         birdeyeResponse({
           success: true,
-          data: { tokens: [{ address: 'Token1' }, { address: 'Token2' }] },
-        }),
-      )
-      .mockResolvedValueOnce(
-        birdeyeResponse({
-          success: true,
-          data: { tokens: [{ address: 'Token3' }, { address: 'Token4' }] },
+          data: { tokens: [{ address: 'Token1' }, { address: 'Token2' }, { address: 'Token3' }] },
         }),
       );
 
     const result = await fetchHotTokensByVolume(API_KEY);
 
-    expect(result).toEqual(['Token1', 'Token2', 'Token3', 'Token4']);
-    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
-    // Check offsets
+    expect(result).toEqual(['Token1', 'Token2', 'Token3']);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
     const url0 = vi.mocked(fetch).mock.calls[0][0] as string;
-    const url1 = vi.mocked(fetch).mock.calls[1][0] as string;
     expect(url0).toContain('offset=0');
-    expect(url1).toContain('offset=20');
+    expect(url0).toContain('limit=10');
   });
 
-  it('deduplicates token mints across pages', async () => {
+  it('deduplicates token mints', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(
         birdeyeResponse({
           success: true,
-          data: { tokens: [{ address: 'Token1' }, { address: 'Token2' }] },
-        }),
-      )
-      .mockResolvedValueOnce(
-        birdeyeResponse({
-          success: true,
-          data: { tokens: [{ address: 'Token2' }, { address: 'Token3' }] },
+          data: { tokens: [{ address: 'Token1' }, { address: 'Token2' }, { address: 'Token1' }] },
         }),
       );
 
     const result = await fetchHotTokensByVolume(API_KEY);
-    expect(result).toEqual(['Token1', 'Token2', 'Token3']);
+    expect(result).toEqual(['Token1', 'Token2']);
   });
 
   it('returns fallback tokens on network error', async () => {
@@ -193,9 +179,8 @@ describe('fetchHotTokensByVolume', () => {
     expect(result).toContain('So11111111111111111111111111111111111111112');
   });
 
-  it('returns fallback tokens when both pages return empty', async () => {
+  it('returns fallback tokens when page returns empty', async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(birdeyeResponse({ success: true, data: { tokens: [] } }))
       .mockResolvedValueOnce(birdeyeResponse({ success: true, data: { tokens: [] } }));
 
     const result = await fetchHotTokensByVolume(API_KEY);
@@ -214,18 +199,13 @@ describe('fetchHotTokensByVolume', () => {
     await expect(fetchHotTokensByVolume(API_KEY)).rejects.toThrow('rate limit');
   });
 
-  it('uses partial results when one page fails with non-auth error', async () => {
+  it('returns fallback tokens when page fails with non-auth error', async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        birdeyeResponse({
-          success: true,
-          data: { tokens: [{ address: 'Token1' }] },
-        }),
-      )
       .mockResolvedValueOnce(new Response('Server Error', { status: 500 }));
 
     const result = await fetchHotTokensByVolume(API_KEY);
-    expect(result).toEqual(['Token1']);
+    // Empty page → fallback tokens
+    expect(result.length).toBeGreaterThanOrEqual(10);
   });
 
   it('filters out items with missing address', async () => {
@@ -235,8 +215,7 @@ describe('fetchHotTokensByVolume', () => {
           success: true,
           data: { tokens: [{ address: 'Token1' }, { address: '' }, {}] },
         }),
-      )
-      .mockResolvedValueOnce(birdeyeResponse({ success: true, data: { tokens: [] } }));
+      );
 
     const result = await fetchHotTokensByVolume(API_KEY);
     expect(result).toEqual(['Token1']);

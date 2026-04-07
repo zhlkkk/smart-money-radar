@@ -119,10 +119,10 @@ const FALLBACK_TOKENS: string[] = [
  */
 export async function fetchHotTokensByVolume(apiKey: string): Promise<string[]> {
   try {
-    const offsets = [0, 20];
+    const offsets = [0];
     const results = await Promise.allSettled(
       offsets.map(async (offset) => {
-        const url = `${BIRDEYE_BASE}/defi/token_trending?sort_by=volume24hUSD&sort_type=desc&offset=${offset}&limit=20`;
+        const url = `${BIRDEYE_BASE}/defi/token_trending?sort_by=volume24hUSD&sort_type=desc&offset=${offset}&limit=10`;
         const response = await fetch(url, {
           headers: makeHeaders(apiKey),
           signal: AbortSignal.timeout(TIMEOUT_MS),

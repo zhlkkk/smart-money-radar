@@ -138,7 +138,7 @@ export async function generateAttribution(
   // 检查缓存
   const cached = attributionCache.get(cacheKey);
   if (cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
-    console.log('[attribution] cache hit', { tokenMint: cacheKey });
+    // cache hit — no log to reduce noise
     return cached.summary;
   }
 

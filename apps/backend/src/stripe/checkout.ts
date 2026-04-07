@@ -31,6 +31,7 @@ export function registerCheckoutRoutes(
 
         const url = transaction.checkout?.url;
         if (!url) {
+          request.log.error({ checkout: transaction.checkout, id: transaction.id }, 'Paddle transaction created but no checkout URL');
           return reply.status(500).send({ error: 'Failed to create checkout URL' });
         }
 

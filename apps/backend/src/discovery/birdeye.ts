@@ -322,11 +322,17 @@ export async function fetchTokenTopTraders(
     checkAuthError(response.status);
     checkRateLimit(response.status);
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.warn(`[birdeye] top_traders HTTP ${response.status} for ${mint}`);
+      return [];
+    }
 
     const body = (await response.json()) as BirdeyeTopTraderResponse;
 
-    if (!body.success || !body.data?.traders) return [];
+    if (!body.success || !body.data?.traders) {
+      console.warn(`[birdeye] top_traders empty response for ${mint}`, { success: body.success });
+      return [];
+    }
 
     const candidates: WalletCandidate[] = [];
     for (const item of body.data.traders) {
@@ -339,6 +345,7 @@ export async function fetchTokenTopTraders(
     if (error instanceof Error && (error.message.includes('authentication failed') || error.message.includes('rate limit'))) {
       throw error;
     }
+    console.warn(`[birdeye] top_traders failed for ${mint}:`, error instanceof Error ? error.message : String(error));
     return [];
   }
 }

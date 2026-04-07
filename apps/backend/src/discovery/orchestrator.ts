@@ -29,8 +29,9 @@ export function createDiscovery(config: DiscoveryConfig) {
   let currentDiscovered: ScoredWallet[] = [];
   let cycleCount = 0;
 
-  // Rate limiter for Birdeye top_traders calls (100 req/min, API allows 300 rps)
-  const birdeyeRateLimiter = createRateLimiter(100);
+  // Rate limiter for Birdeye top_traders calls (Starter plan: 15 rps global)
+  // Keep well below 15 rps to leave headroom for parallel gainers/trending calls
+  const birdeyeRateLimiter = createRateLimiter(10);
 
   // Load persisted state if available
   const persisted = loadDiscoveryState(config.statePath);
@@ -57,11 +58,9 @@ export function createDiscovery(config: DiscoveryConfig) {
     console.info(`[discovery] Cycle #${cycleCount} starting`);
 
     try {
-      // 1. Fetch candidates from multiple sources in parallel
-      const [gainersLosers, hotTokens] = await Promise.all([
-        fetchTopWallets(config.birdeyeApiKey),
-        fetchHotTokensByVolume(config.birdeyeApiKey),
-      ]);
+      // 1. Fetch candidates sequentially to stay within Starter plan 15 rps limit
+      const gainersLosers = await fetchTopWallets(config.birdeyeApiKey);
+      const hotTokens = await fetchHotTokensByVolume(config.birdeyeApiKey);
 
       // 2. Fetch top traders for each hot token (rate-limited)
       const topTraderResults = await Promise.allSettled(

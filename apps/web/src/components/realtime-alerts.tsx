@@ -66,27 +66,27 @@ export function RealtimeAlerts({ className = '', timeline = false }: RealtimeAle
     setPaused((p) => !p);
   }
 
-  if (alerts.length === 0 && !paused) return null;
-
   return (
     <div className={className}>
       {/* 控制栏 */}
       <div className="mb-3 flex items-center gap-3">
         <div className="flex items-center gap-2">
           <span
-            className={`inline-block h-2 w-2 rounded-full ${paused ? 'bg-[var(--smr-accent-gold)]' : 'bg-[var(--smr-accent-green)]'}`}
+            className={`inline-block h-2 w-2 rounded-full ${paused ? 'bg-[var(--smr-accent-gold)]' : connected ? 'bg-[var(--smr-accent-green)]' : 'bg-smr-text-muted'}`}
             style={{ animation: !paused && connected ? 'pulse-glow 2s ease-in-out infinite' : 'none' }}
           />
-          <span className={`text-xs font-medium ${paused ? 'text-[var(--smr-accent-gold)]' : 'text-[var(--smr-accent-green)]'}`}>
-            {paused ? t('paused') : t('live')}
+          <span className={`text-xs font-medium ${paused ? 'text-[var(--smr-accent-gold)]' : connected ? 'text-[var(--smr-accent-green)]' : 'text-smr-text-muted'}`}>
+            {paused ? t('paused') : connected ? t('live') : t('connecting')}
           </span>
-          <span className="text-xs text-smr-text-muted">
-            {t('alertCount', { count: alerts.length })}
-          </span>
+          {alerts.length > 0 && (
+            <span className="text-xs text-smr-text-muted">
+              {t('alertCount', { count: alerts.length })}
+            </span>
+          )}
         </div>
 
-        {/* 暂停/继续按钮 */}
-        <button
+        {/* 暂停/继续按钮 — 有告警时才显示 */}
+        {alerts.length > 0 && <button
           onClick={togglePause}
           className={`cursor-pointer flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
             paused
@@ -106,7 +106,7 @@ export function RealtimeAlerts({ className = '', timeline = false }: RealtimeAle
               {t('pause')}
             </>
           )}
-        </button>
+        </button>}
       </div>
 
       {/* 实时告警列表 */}

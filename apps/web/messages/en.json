@@ -241,6 +241,7 @@
     "freezeWarning": "Freeze Authority Exists — High Risk Token",
     "live": "LIVE",
     "paused": "PAUSED",
+    "connecting": "CONNECTING",
     "alertCount": "{count} alerts",
     "pause": "Pause",
     "resume": "Resume",

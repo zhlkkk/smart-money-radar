@@ -241,6 +241,7 @@
     "freezeWarning": "Freeze Authority 存在 — 高风险代币",
     "live": "实时",
     "paused": "已暂停",
+    "connecting": "连接中",
     "alertCount": "{count} 条告警",
     "pause": "暂停",
     "resume": "继续",

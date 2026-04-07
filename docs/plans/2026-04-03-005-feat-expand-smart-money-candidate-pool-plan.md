@@ -1,7 +1,7 @@
 ---
 title: "feat: Expand smart money candidate pool via multi-token top_traders aggregation"
 type: feat
-status: active
+status: completed
 date: 2026-04-03
 origin: docs/brainstorms/2026-04-03-expand-smart-money-candidate-pool-requirements.md
 ---
@@ -171,7 +171,7 @@ TB
 
 ---
 
-- [ ] **Unit 1: 新增 `fetchHotTokensByVolume()` 到 birdeye.ts**
+- [x] **Unit 1: 新增 `fetchHotTokensByVolume()` 到 birdeye.ts**
 
 **Goal:** 通过 Birdeye token_trending 获取当前高交易量 Solana token 列表，失败时回落硬编码备用
 
@@ -208,7 +208,7 @@ TB
 
 ---
 
-- [ ] **Unit 2: 新增 `fetchTokenTopTraders()` 到 birdeye.ts**
+- [x] **Unit 2: 新增 `fetchTokenTopTraders()` 到 birdeye.ts**
 
 **Goal:** 对单个 token mint 地址查询 top 交易者，使用正确的 camelCase 字段映射
 
@@ -251,7 +251,7 @@ TB
 
 ---
 
-- [ ] **Unit 3: 修改 orchestrator.ts 接入多源聚合**
+- [x] **Unit 3: 修改 orchestrator.ts 接入多源聚合**
 
 **Goal:** runCycle() 合并 gainers-losers + 多 token top_traders 候选，新建内部 rate limiter，Promise.allSettled 处理部分失败
 
@@ -292,7 +292,7 @@ TB
 
 ---
 
-- [ ] **Unit 4: 更新回测质量阈值常量**
+- [x] **Unit 4: 更新回测质量阈值常量**
 
 **Goal:** MIN_CANDIDATES_FAIL 升至 20，MIN_CANDIDATES_WARN 升至 50，使回测质量门控与扩充后的候选池规模匹配
 
@@ -326,7 +326,7 @@ TB
 
 ---
 
-- [ ] **Unit 5: 完整测试通过 & 类型检查**
+- [x] **Unit 5: 完整测试通过 & 类型检查**
 
 **Goal:** 确认所有改动不破坏现有 313 个测试，新增测试覆盖新函数
 

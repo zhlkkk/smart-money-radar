@@ -158,6 +158,9 @@ export function createDiscovery(config: DiscoveryConfig) {
             category: w.category,
             source: 'discovered' as const,
             compositeScore: w.compositeScore,
+            winRate: w.winRate,
+            pnl: w.pnl,
+            tradeCount: w.tradeCount,
           }));
           await syncTrackedWallets(config.db, dbEntries);
           console.info(`[discovery] Database synced ${dbEntries.length} wallets`);

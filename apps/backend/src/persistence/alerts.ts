@@ -25,7 +25,7 @@ export async function persistAlert(
       walletAddress: input.swap.buyerAddress,
       walletLabel: input.wallet.label,
       tokenMint: input.swap.tokenMint,
-      tokenSymbol: input.swap.tokenSymbol ?? null,
+      tokenSymbol: input.swap.tokenSymbol ?? input.enrichment.tokenSymbol ?? null,
       dexSource: input.swap.dexSource,
       amountRaw: input.swap.amountRaw ?? null,
       liquidity: input.enrichment.liquidity,

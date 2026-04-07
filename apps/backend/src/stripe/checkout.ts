@@ -29,8 +29,8 @@ export function registerCheckoutRoutes(
           },
         });
 
-        request.log.info({ id: transaction.id, checkout: transaction.checkout }, 'Paddle transaction created');
-        const url = transaction.checkout?.url ?? (transaction as unknown as Record<string, unknown>).checkoutUrl as string | undefined;
+        // Build Paddle hosted checkout URL using the transaction ID
+        const url = `https://checkout.paddle.com/payment?txn=${transaction.id}`;
         if (!url) {
           request.log.error({ checkout: transaction.checkout, id: transaction.id }, 'Paddle transaction created but no checkout URL');
           return reply.status(500).send({ error: 'Failed to create checkout URL' });

@@ -27,9 +27,16 @@ export function registerCheckoutRoutes(
           customData: {
             clerkUserId: body.clerkUserId,
           },
+          billingDetails: {
+            enableCheckout: true,
+            paymentTerms: {
+              interval: 'day',
+              frequency: 30,
+            },
+          },
         });
 
-        const url = transaction.checkout?.url;
+        const url = transaction.checkout?.url ?? (transaction as unknown as { checkoutUrl?: string }).checkoutUrl;
         if (!url) {
           request.log.error({ checkout: transaction.checkout, id: transaction.id }, 'Paddle transaction created but no checkout URL');
           return reply.status(500).send({ error: 'Failed to create checkout URL' });

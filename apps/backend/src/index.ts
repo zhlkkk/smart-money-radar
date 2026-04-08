@@ -88,10 +88,7 @@ const app = Fastify({
 
 await app.register(rateLimit, { max: 500, timeWindow: '1 minute' });
 
-registerWebhookRoutes(app, {
-  authToken: env.HELIUS_AUTH_TOKEN,
-  processTransaction: pipeline.processTransaction,
-});
+// Webhook routes registered after discovery setup (see below) to enable recordSwap integration
 
 // Sync pinned wallets to database on startup
 if (db) {
@@ -121,6 +118,16 @@ if (env.HELIUS_API_KEY && env.BIRDEYE_API_KEY && env.HELIUS_WEBHOOK_ID) {
     db,
   });
 }
+
+// Register webhook routes with optional counterparty tracking
+registerWebhookRoutes(app, {
+  authToken: env.HELIUS_AUTH_TOKEN,
+  processTransaction: async (tx) => {
+    // Fire-and-forget: record swap for counterparty discovery
+    discovery?.recordSwap(tx);
+    await pipeline.processTransaction(tx);
+  },
+});
 
 // REST API routes (Phase 2b)
 registerHealthRoutes(app, { db });

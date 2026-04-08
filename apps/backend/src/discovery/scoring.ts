@@ -49,25 +49,58 @@ export function normalizeMetric(values: number[]): number[] {
 
   const ranks = new Array<number>(n);
   for (let i = 0; i < n; i++) {
-    // Count how many values are strictly less than this one
-    // Since sorted, find first occurrence of this value
+    const current = indexed[i]!;
     let firstOccurrence = i;
-    while (firstOccurrence > 0 && indexed[firstOccurrence - 1].value === indexed[i].value) {
+    while (firstOccurrence > 0 && indexed[firstOccurrence - 1]!.value === current.value) {
       firstOccurrence--;
     }
-    // The rank for tied values = position of first occurrence / (n-1)
-    ranks[indexed[i].index] = firstOccurrence / (n - 1);
+    ranks[current.index] = firstOccurrence / (n - 1);
   }
 
   return ranks;
+}
+
+// Max possible source weight sum for bonus normalization
+const MAX_SOURCE_WEIGHT_SUM = Object.values(SOURCE_WEIGHTS).reduce((a, b) => a + b, 0);
+
+/**
+ * Check if a candidate is helius-reverse-only (no quality data sources).
+ * Candidates with undefined/empty sources are treated as Birdeye (backward compat).
+ */
+function isReverseOnly(candidate: WalletCandidate): boolean {
+  const sources: SourceTag[] = candidate.sources ?? [];
+  return sources.length > 0 && sources.every((s: SourceTag) => s.source === 'helius-reverse');
+}
+
+/**
+ * Compute source bonus for multi-source candidates.
+ * Single source → 0 (no bonus). Multiple sources → normalized weight sum × SOURCE_BONUS_WEIGHT.
+ */
+function computeSourceBonus(sources: SourceTag[]): number {
+  if (sources.length < 2) return 0;
+  const weightSum = sources.reduce((sum, s: SourceTag) => sum + s.weight, 0);
+  return (weightSum / MAX_SOURCE_WEIGHT_SUM) * SOURCE_BONUS_WEIGHT;
+}
+
+/**
+ * Get the primary source label (highest weight) from sources array.
+ * Returns 'Birdeye' for undefined/empty sources (backward compat).
+ */
+function getPrimarySourceLabel(sources: SourceTag[]): string {
+  if (sources.length === 0) return 'Birdeye';
+  const primary = sources.reduce((best, s) => (s.weight > best.weight ? s : best));
+  // Title Case: 'helius-reverse' → 'Helius-Reverse'
+  return primary.source.replace(/(^|-)(\w)/g, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
 }
 
 /**
  * Score and select top discovered wallets from candidates.
  *
  * - Filters out pinned addresses
- * - Normalizes metrics via percentile ranking
- * - Computes composite score with weighted sum
+ * - Separates helius-reverse-only candidates from quality-data candidates
+ * - Normalizes metrics via percentile ranking (quality candidates only)
+ * - Assigns fixed 0.5 normalized values for reverse-only candidates
+ * - Computes composite score with weighted sum + multi-source bonus
  * - Applies grace period for previously discovered wallets not in current candidates
  * - Caps output at walletCap
  */
@@ -87,40 +120,78 @@ export function scoreWallets(
   if (filtered.length > 0) {
     const now = Date.now();
 
-    const pnlValues = filtered.map((c) => c.pnl);
-    const winRateValues = filtered.map((c) => c.winRate);
-    const tradeCountValues = filtered.map((c) => c.tradeCount);
-    // Recency: more recent = higher value. Convert to "how recent" by negating age.
-    const recencyValues = filtered.map((c) => -(now - c.lastActiveTimestamp));
+    // Separate candidates: quality-data (Birdeye) vs reverse-only (helius-reverse)
+    const qualityCandidates: WalletCandidate[] = [];
+    const reverseOnlyCandidates: WalletCandidate[] = [];
+    for (const c of filtered) {
+      if (isReverseOnly(c)) {
+        reverseOnlyCandidates.push(c);
+      } else {
+        qualityCandidates.push(c);
+      }
+    }
 
-    const normPnl = normalizeMetric(pnlValues);
-    const normWinRate = normalizeMetric(winRateValues);
-    const normTradeCount = normalizeMetric(tradeCountValues);
-    const normRecency = normalizeMetric(recencyValues);
+    // Normalize only quality candidates (preserves their percentile rankings)
+    const qNormPnl = normalizeMetric(qualityCandidates.map((c) => c.pnl));
+    const qNormWinRate = normalizeMetric(qualityCandidates.map((c) => c.winRate));
+    const qNormTradeCount = normalizeMetric(qualityCandidates.map((c) => c.tradeCount));
+    const qNormRecency = normalizeMetric(
+      qualityCandidates.map((c) => -(now - c.lastActiveTimestamp)),
+    );
 
-    scored = filtered.map((c, i) => {
-      const compositeScore =
-        WEIGHT_PNL * normPnl[i] +
-        WEIGHT_WIN_RATE * normWinRate[i] +
-        WEIGHT_TRADE_COUNT * normTradeCount[i] +
-        WEIGHT_RECENCY * normRecency[i];
+    // Score quality candidates
+    for (let i = 0; i < qualityCandidates.length; i++) {
+      const c = qualityCandidates[i]!;
+      const baseScore =
+        WEIGHT_PNL * qNormPnl[i]! +
+        WEIGHT_WIN_RATE * qNormWinRate[i]! +
+        WEIGHT_TRADE_COUNT * qNormTradeCount[i]! +
+        WEIGHT_RECENCY * qNormRecency[i]!;
 
-      // Check if this wallet was previously discovered (reset missedCycles)
-      const prev = currentDiscovered.find((d) => d.address === c.address);
+      const sources = c.sources ?? [];
+      const bonus = computeSourceBonus(sources);
+      const compositeScore = baseScore * (1 + bonus);
 
-      return {
+      scored.push({
         address: c.address,
-        label: '', // placeholder, assigned after sorting
+        label: '', // assigned after sorting
         category: 'discovered',
         compositeScore,
-        missedCycles: prev ? 0 : 0, // present in candidates → always 0
+        missedCycles: 0,
         source: 'discovered' as const,
-        sources: c.sources ?? [],
+        sources,
         pnl: c.pnl,
         winRate: c.winRate,
         tradeCount: c.tradeCount,
-      };
-    });
+      });
+    }
+
+    // Score reverse-only candidates with fixed 0.5 normalized values
+    for (const c of reverseOnlyCandidates) {
+      const baseScore =
+        WEIGHT_PNL * 0.5 +
+        WEIGHT_WIN_RATE * 0.5 +
+        WEIGHT_TRADE_COUNT * 0.5 +
+        WEIGHT_RECENCY * 0.5;
+
+      const sources = c.sources ?? [];
+      // Single source (helius-reverse only) → no bonus
+      const bonus = computeSourceBonus(sources);
+      const compositeScore = baseScore * (1 + bonus);
+
+      scored.push({
+        address: c.address,
+        label: '',
+        category: 'discovered',
+        compositeScore,
+        missedCycles: 0,
+        source: 'discovered' as const,
+        sources,
+        pnl: c.pnl,
+        winRate: c.winRate,
+        tradeCount: c.tradeCount,
+      });
+    }
   }
 
   // Grace period: wallets in currentDiscovered but NOT in new candidates
@@ -145,9 +216,11 @@ export function scoreWallets(
   // Cap at walletCap
   const capped = combined.slice(0, walletCap);
 
-  // Assign rank-based labels
+  // Assign rank-based labels with dynamic source name
   for (let i = 0; i < capped.length; i++) {
-    capped[i].label = `Birdeye #${i + 1}`;
+    const wallet = capped[i]!;
+    const primarySource = getPrimarySourceLabel(wallet.sources ?? []);
+    wallet.label = `${primarySource} #${i + 1}`;
   }
 
   return capped;

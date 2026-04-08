@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createDiscovery } from '../../src/discovery/orchestrator.js';
-import type { SmartMoneyWallet, WalletStateRef } from '../../src/types.js';
+import type { SmartMoneyWallet, WalletStateRef, SourceTag } from '../../src/types.js';
 import { createWalletState } from '../../src/types.js';
+import type { CounterpartyTracker } from '../../src/discovery/counterparty-tracker.js';
 
 // Mock all dependencies
 vi.mock('../../src/discovery/birdeye.js', () => ({
@@ -36,7 +37,7 @@ function makePinned(): Map<string, SmartMoneyWallet> {
   ]);
 }
 
-function makeConfig() {
+function makeConfig(overrides?: { counterpartyTracker?: CounterpartyTracker }) {
   const pinned = makePinned();
   const walletStateRef: WalletStateRef = { current: createWalletState(pinned) };
   return {
@@ -48,6 +49,24 @@ function makeConfig() {
     statePath: '/tmp/test-discovery-state.json',
     intervalMs: 60_000,
     walletCap: 3,
+    db: null,
+    ...overrides,
+  };
+}
+
+function makeMockTracker(candidates: ReturnType<typeof makeCandidates>): CounterpartyTracker {
+  return {
+    recordSwap: vi.fn(),
+    getCandidates: vi.fn().mockReturnValue(
+      candidates.map((c) => ({
+        ...c,
+        pnl: NaN,
+        winRate: NaN,
+        tradeCount: NaN,
+        sources: [{ source: 'helius-reverse', weight: 0.5, discoveredAt: Date.now() } as SourceTag],
+      })),
+    ),
+    getStats: vi.fn().mockReturnValue({ totalTracked: candidates.length, totalGlobalCounts: candidates.length }),
   };
 }
 
@@ -280,6 +299,62 @@ describe('discovery orchestrator', () => {
     expect(mockUpdateHeliusWebhookAddresses).not.toHaveBeenCalled();
     // Wallet state should remain unchanged (only pinned)
     expect(config.walletStateRef.current.walletMap.size).toBe(2);
+  });
+
+  describe('multi-provider', () => {
+    it('merges candidates from Birdeye and helius-reverse providers', async () => {
+      const reverseCandidates = [
+        { address: 'reverse1', pnl: 0, winRate: 0, tradeCount: 0, lastActiveTimestamp: NOW },
+        { address: 'wallet0', pnl: 0, winRate: 0, tradeCount: 0, lastActiveTimestamp: NOW }, // overlap with Birdeye
+      ];
+      const tracker = makeMockTracker(reverseCandidates);
+      const config = makeConfig({ counterpartyTracker: tracker });
+
+      mockFetchTopWallets.mockResolvedValue(makeCandidates(3));
+      mockUpdateHeliusWebhookAddresses.mockResolvedValue({
+        webhookID: 'id', wallet: '', webhookURL: '', transactionTypes: [],
+        accountAddresses: [], webhookType: 'enhanced', authHeader: '',
+      });
+
+      const discovery = createDiscovery(config);
+      await discovery.runCycle();
+
+      // Both providers were called
+      expect(mockFetchTopWallets).toHaveBeenCalled();
+      expect(tracker.getCandidates).toHaveBeenCalled();
+
+      // Pipeline has more than just pinned wallets
+      expect(config.walletStateRef.current.walletMap.size).toBeGreaterThan(2);
+
+      // wallet0 should have sources from both providers (merged)
+      const savedState = mockSaveDiscoveryState.mock.calls[0]![1] as {
+        discovered: Array<{ address: string; sources: SourceTag[] }>;
+      };
+      const wallet0 = savedState.discovered.find((w) => w.address === 'wallet0');
+      expect(wallet0).toBeDefined();
+      expect(wallet0!.sources.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('continues when helius-reverse fails but Birdeye succeeds', async () => {
+      const tracker: CounterpartyTracker = {
+        recordSwap: vi.fn(),
+        getCandidates: vi.fn().mockImplementation(() => { throw new Error('tracker error'); }),
+        getStats: vi.fn().mockReturnValue({ totalTracked: 0, totalGlobalCounts: 0 }),
+      };
+      const config = makeConfig({ counterpartyTracker: tracker });
+
+      mockFetchTopWallets.mockResolvedValue(makeCandidates(3));
+      mockUpdateHeliusWebhookAddresses.mockResolvedValue({
+        webhookID: 'id', wallet: '', webhookURL: '', transactionTypes: [],
+        accountAddresses: [], webhookType: 'enhanced', authHeader: '',
+      });
+
+      const discovery = createDiscovery(config);
+      await discovery.runCycle();
+
+      // Should still work with Birdeye results only
+      expect(config.walletStateRef.current.walletMap.size).toBeGreaterThan(2);
+    });
   });
 
   it('continues with gainers-losers only when top_traders all fail', async () => {

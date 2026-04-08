@@ -3,9 +3,11 @@ import {
   scoreWallets,
   mergeWithPinned,
   normalizeMetric,
+  SOURCE_WEIGHTS,
+  SOURCE_BONUS_WEIGHT,
   type ScoredWallet,
 } from '../../src/discovery/scoring.js';
-import type { WalletCandidate, SmartMoneyWallet } from '../../src/types.js';
+import type { WalletCandidate, SmartMoneyWallet, SourceTag } from '../../src/types.js';
 
 function makeCandidate(overrides: Partial<WalletCandidate> & { address: string }): WalletCandidate {
   return {
@@ -219,6 +221,181 @@ describe('scoreWallets', () => {
 
     expect(result[0].label).toBe('Birdeye #1');
     expect(result[1].label).toBe('Birdeye #2');
+  });
+});
+
+describe('scoreWallets — multi-source scoring', () => {
+  const pinnedAddresses = new Set<string>(['pinned1']);
+  const walletCap = 30;
+
+  function makeSourceTag(source: string, weight?: number): SourceTag {
+    return {
+      source,
+      weight: weight ?? SOURCE_WEIGHTS[source] ?? 0.5,
+      discoveredAt: Date.now(),
+    };
+  }
+
+  it('single-source (birdeye) candidate has no bonus — score unchanged', () => {
+    const candidates: WalletCandidate[] = [
+      makeCandidate({
+        address: 'w1',
+        pnl: 100,
+        sources: [makeSourceTag('birdeye')],
+      }),
+      makeCandidate({
+        address: 'w2',
+        pnl: 50,
+        sources: [makeSourceTag('birdeye')],
+      }),
+    ];
+
+    const withSources = scoreWallets(candidates, pinnedAddresses, [], walletCap);
+
+    // Same candidates without sources (backward compat path)
+    const withoutSources = scoreWallets(
+      candidates.map(({ sources: _s, ...rest }) => rest as WalletCandidate),
+      pinnedAddresses,
+      [],
+      walletCap,
+    );
+
+    // Scores should be identical — single source gets no bonus
+    expect(withSources[0].compositeScore).toBeCloseTo(withoutSources[0].compositeScore, 10);
+    expect(withSources[1].compositeScore).toBeCloseTo(withoutSources[1].compositeScore, 10);
+  });
+
+  it('dual-source candidate scores higher than single-source', () => {
+    const singleSource: WalletCandidate[] = [
+      makeCandidate({
+        address: 'single',
+        pnl: 100,
+        winRate: 0.6,
+        tradeCount: 20,
+        sources: [makeSourceTag('birdeye')],
+      }),
+      makeCandidate({ address: 'filler', pnl: 50 }), // need 2+ for normalization
+    ];
+
+    const dualSource: WalletCandidate[] = [
+      makeCandidate({
+        address: 'dual',
+        pnl: 100,
+        winRate: 0.6,
+        tradeCount: 20,
+        sources: [makeSourceTag('birdeye'), makeSourceTag('helius-reverse')],
+      }),
+      makeCandidate({ address: 'filler', pnl: 50 }),
+    ];
+
+    const singleResult = scoreWallets(singleSource, pinnedAddresses, [], walletCap);
+    const dualResult = scoreWallets(dualSource, pinnedAddresses, [], walletCap);
+
+    const singleScore = singleResult.find((w) => w.address === 'single')!.compositeScore;
+    const dualScore = dualResult.find((w) => w.address === 'dual')!.compositeScore;
+
+    expect(dualScore).toBeGreaterThan(singleScore);
+  });
+
+  it('sources undefined (backward compat) → no bonus', () => {
+    const candidates: WalletCandidate[] = [
+      makeCandidate({ address: 'legacy', pnl: 100 }), // no sources field
+      makeCandidate({ address: 'filler', pnl: 50 }),
+    ];
+
+    const result = scoreWallets(candidates, pinnedAddresses, [], walletCap);
+    const legacy = result.find((w) => w.address === 'legacy')!;
+
+    // Should have empty sources array
+    expect(legacy.sources).toEqual([]);
+    // Label defaults to 'Birdeye'
+    expect(legacy.label).toMatch(/^Birdeye #\d+$/);
+  });
+
+  it('helius-reverse-only candidates get fixed 0.5 normalized values', () => {
+    const candidates: WalletCandidate[] = [
+      makeCandidate({
+        address: 'reverse1',
+        pnl: NaN,
+        winRate: NaN,
+        tradeCount: NaN,
+        sources: [makeSourceTag('helius-reverse')],
+      }),
+    ];
+
+    const result = scoreWallets(candidates, pinnedAddresses, [], walletCap);
+
+    // With all 4 dimensions at 0.5, baseScore = 0.35*0.5 + 0.30*0.5 + 0.20*0.5 + 0.15*0.5 = 0.5
+    // Single source → no bonus → compositeScore = 0.5
+    expect(result).toHaveLength(1);
+    expect(result[0].compositeScore).toBeCloseTo(0.5, 5);
+  });
+
+  it('reverse-only candidates do not pollute Birdeye percentile rankings', () => {
+    // Two Birdeye candidates with distinct PnL: 100 and 200
+    // If reverse-only (NaN) was included in normalizeMetric, rankings would shift
+    const birdeyeOnly: WalletCandidate[] = [
+      makeCandidate({ address: 'b1', pnl: 100, sources: [makeSourceTag('birdeye')] }),
+      makeCandidate({ address: 'b2', pnl: 200, sources: [makeSourceTag('birdeye')] }),
+    ];
+
+    const withReverse: WalletCandidate[] = [
+      ...birdeyeOnly,
+      makeCandidate({
+        address: 'r1',
+        pnl: NaN,
+        winRate: NaN,
+        tradeCount: NaN,
+        sources: [makeSourceTag('helius-reverse')],
+      }),
+    ];
+
+    const resultWithout = scoreWallets(birdeyeOnly, pinnedAddresses, [], walletCap);
+    const resultWith = scoreWallets(withReverse, pinnedAddresses, [], walletCap);
+
+    const b1Without = resultWithout.find((w) => w.address === 'b1')!.compositeScore;
+    const b1With = resultWith.find((w) => w.address === 'b1')!.compositeScore;
+    const b2Without = resultWithout.find((w) => w.address === 'b2')!.compositeScore;
+    const b2With = resultWith.find((w) => w.address === 'b2')!.compositeScore;
+
+    // Birdeye candidate scores should be identical regardless of reverse-only presence
+    expect(b1With).toBeCloseTo(b1Without, 10);
+    expect(b2With).toBeCloseTo(b2Without, 10);
+  });
+
+  it('label reflects primary source name by highest weight', () => {
+    const candidates: WalletCandidate[] = [
+      makeCandidate({
+        address: 'multi',
+        pnl: 100,
+        sources: [makeSourceTag('helius-reverse'), makeSourceTag('birdeye')],
+      }),
+    ];
+
+    const result = scoreWallets(candidates, pinnedAddresses, [], walletCap);
+
+    // Birdeye has weight 0.7 > helius-reverse 0.5 → primary is 'Birdeye'
+    expect(result[0].label).toBe('Birdeye #1');
+  });
+
+  it('label shows Helius-Reverse when it is the only source', () => {
+    const candidates: WalletCandidate[] = [
+      makeCandidate({
+        address: 'rev',
+        pnl: NaN,
+        winRate: NaN,
+        tradeCount: NaN,
+        sources: [makeSourceTag('helius-reverse')],
+      }),
+    ];
+
+    const result = scoreWallets(candidates, pinnedAddresses, [], walletCap);
+    expect(result[0].label).toBe('Helius-Reverse #1');
+  });
+
+  it('empty candidates array returns empty', () => {
+    const result = scoreWallets([], pinnedAddresses, [], walletCap);
+    expect(result).toEqual([]);
   });
 });
 

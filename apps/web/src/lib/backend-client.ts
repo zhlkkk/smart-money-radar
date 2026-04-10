@@ -19,6 +19,7 @@ export interface AlertRow {
   liquidity: number | null;
   fdv: number | null;
   marketCap: number | null;
+  volume24h: number | null;
   mintAuthority: string | null;
   freezeAuthority: string | null;
   aiSummary: string | null;

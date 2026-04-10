@@ -166,17 +166,16 @@ describe('Pipeline', () => {
 
   it('includes volume24h in alertBus event', async () => {
     const emitted: unknown[] = [];
-    alertBus.on('alert', (data) => emitted.push(data));
+    const listener = (data: unknown) => emitted.push(data);
+    alertBus.on('alert', listener);
 
     setupSwapMocks(); // enrichToken mock returns volume24h: 500_000
     await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
 
-    await new Promise((r) => setTimeout(r, 10));
+    await vi.waitFor(() => expect(emitted).toHaveLength(1), { timeout: 1000 });
 
-    expect(emitted).toHaveLength(1);
     expect((emitted[0] as { volume24h: number }).volume24h).toBe(500_000);
-
-    alertBus.removeAllListeners('alert');
+    alertBus.removeListener('alert', listener);
   });
 
   it('rejects transactions from a wallet removed from state', async () => {

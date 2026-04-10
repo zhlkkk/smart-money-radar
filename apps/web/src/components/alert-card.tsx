@@ -1,158 +1,191 @@
 'use client';
 
-// 告警卡片 — 时间线样式 + 严重程度边框 + 可展开 AI 详情
+// 告警卡片 — 融合风：顶部色带 + 四列指标 + AI 摘要内联 + 数据源 footer
 
-import { useState } from 'react';
 import type { AlertRow } from '@/lib/backend-client';
 import { formatCompact, formatRelativeTime, truncateAddress } from '@/lib/format';
 import { GlassCard } from '@/components/ui/glass-card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp, AlertTriangle, Brain, ExternalLink } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface AlertCardProps {
   alert: AlertRow;
-  defaultExpanded?: boolean;
+  defaultExpanded?: boolean; // kept for call-site compatibility, no longer used
 }
 
-type Severity = 'high' | 'medium' | 'info';
+type Severity = 'high' | 'medium' | 'low';
 
 function getSeverity(alert: AlertRow): Severity {
-  if (alert.freezeAuthority != null && alert.freezeAuthority !== '') return 'high';
-  return 'info';
+  const hasFreezeRisk = alert.freezeAuthority != null && alert.freezeAuthority !== '';
+  const hasMintRisk = alert.mintAuthority != null && alert.mintAuthority !== '';
+  if (hasFreezeRisk || hasMintRisk) return 'high';
+  if (
+    (alert.liquidity !== null && alert.liquidity < 100_000) ||
+    (alert.volume24h !== null && alert.volume24h < 50_000)
+  ) return 'medium';
+  return 'low';
 }
 
-const severityStyles: Record<Severity, { border: string; labelKey: 'highRisk' | 'mediumRisk' | 'info'; variant: 'red' | 'gold' | 'cyan' }> = {
-  high: { border: 'border-l-4 border-l-[var(--smr-accent-red)]', labelKey: 'highRisk', variant: 'red' },
-  medium: { border: 'border-l-4 border-l-[var(--smr-accent-gold)]', labelKey: 'mediumRisk', variant: 'gold' },
-  info: { border: 'border-l-4 border-l-[var(--smr-accent-cyan)]', labelKey: 'info', variant: 'cyan' },
+function getRiskWarning(alert: AlertRow): string | null {
+  const hasFreezeRisk = alert.freezeAuthority != null && alert.freezeAuthority !== '';
+  const hasMintRisk = alert.mintAuthority != null && alert.mintAuthority !== '';
+  if (hasFreezeRisk && hasMintRisk) return 'Mint & Freeze Authority 均未撤销';
+  if (hasFreezeRisk) return 'Freeze Authority 未撤销，存在冻结风险';
+  if (hasMintRisk) return 'Mint Authority 未撤销，存在增发风险';
+  return null;
+}
+
+const RISK_BAND_STYLE: Record<Severity, string> = {
+  high:   'linear-gradient(90deg, var(--smr-accent-red),  color-mix(in srgb, var(--smr-accent-red)  40%, transparent))',
+  medium: 'linear-gradient(90deg, var(--smr-accent-gold), color-mix(in srgb, var(--smr-accent-gold) 40%, transparent))',
+  low:    'linear-gradient(90deg, var(--smr-accent-cyan), color-mix(in srgb, var(--smr-accent-cyan) 40%, transparent))',
 };
 
-export function AlertCard({ alert, defaultExpanded = true }: AlertCardProps) {
+const SEVERITY_BADGE_PROPS: Record<Severity, { variant: 'red' | 'gold' | 'cyan'; labelKey: 'highRisk' | 'mediumRisk' | 'info' }> = {
+  high:   { variant: 'red',  labelKey: 'highRisk' },
+  medium: { variant: 'gold', labelKey: 'mediumRisk' },
+  low:    { variant: 'cyan', labelKey: 'info' },
+};
+
+const METRICS: Array<{ label: string; key: 'liquidity' | 'fdv' | 'marketCap' | 'volume24h'; highlight?: boolean }> = [
+  { label: 'Liq',     key: 'liquidity',  highlight: true },
+  { label: 'FDV',     key: 'fdv' },
+  { label: 'MC',      key: 'marketCap' },
+  { label: 'Vol 24h', key: 'volume24h' },
+];
+
+export function AlertCard({ alert }: AlertCardProps) {
   const t = useTranslations('alerts');
-  const [expanded, setExpanded] = useState(defaultExpanded);
   const severity = getSeverity(alert);
-  const style = severityStyles[severity];
+  const riskWarning = getRiskWarning(alert);
+  const { variant, labelKey } = SEVERITY_BADGE_PROPS[severity];
 
   return (
     <GlassCard
-      className={`${style.border} overflow-hidden p-0 transition-all hover:scale-[1.01] hover:shadow-[var(--smr-shadow-card-hover)]`}
+      className="overflow-hidden p-0 transition-all hover:scale-[1.01] hover:shadow-[var(--smr-shadow-card-hover)]"
       hover
     >
+      {/* 顶部风险色带 */}
+      <div style={{ height: '3px', background: RISK_BAND_STYLE[severity] }} />
+
       <div className="p-4">
-        {/* 顶部：时间 + 钱包 + 严重程度 */}
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-smr-text">
-              {alert.walletLabel ?? truncateAddress(alert.walletAddress)}
-            </span>
-            {alert.dexSource && (
-              <Badge variant="muted">{alert.dexSource}</Badge>
-            )}
-            <Badge variant={style.variant}>{t(style.labelKey)}</Badge>
+        {/* 顶行：钱包名 + 时间/DEX + 徽章 */}
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-smr-text">
+              🐋 {alert.walletLabel ?? truncateAddress(alert.walletAddress)}
+            </div>
+            <div className="mt-0.5 text-[10px] text-smr-text-muted">
+              {[alert.dexSource, formatRelativeTime(alert.createdAt)].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant={variant}>{t(labelKey)}</Badge>
             {alert.confidenceLevel && (
-              <Badge variant={
-                alert.confidenceLevel === 'high' ? 'green' :
-                alert.confidenceLevel === 'medium' ? 'gold' : 'red'
-              }>
-                {alert.confidenceLevel === 'high' ? t('confidenceHigh') :
+              <Badge
+                variant={
+                  alert.confidenceLevel === 'high' ? 'green' :
+                  alert.confidenceLevel === 'medium' ? 'gold' : 'red'
+                }
+              >
+                {alert.confidenceLevel === 'high' ? '✓ ' : ''}
+                {alert.confidenceLevel === 'high'   ? t('confidenceHigh') :
                  alert.confidenceLevel === 'medium' ? t('confidenceMedium') :
-                 t('confidenceLow')}
+                                                      t('confidenceLow')}
+                {alert.confidenceScore != null && ` ${alert.confidenceScore}`}
               </Badge>
             )}
           </div>
-          <span className="font-data text-xs text-smr-text-muted">
-            {formatRelativeTime(alert.createdAt)}
-          </span>
         </div>
 
-        {/* 代币信息 + 外链 */}
-        <div className="mb-3 flex items-center gap-3">
-          <span className="font-data text-base font-bold text-[var(--smr-accent-cyan)]">
+        {/* 代币行 */}
+        <div className="mb-3 flex items-baseline gap-2">
+          <span className="font-data text-lg font-extrabold text-[var(--smr-accent-cyan)]">
             {alert.tokenSymbol ?? truncateAddress(alert.tokenMint)}
           </span>
-          <span className="font-data text-xs text-smr-text-muted">
+          <span className="font-data text-[10px] text-smr-text-muted">
             {truncateAddress(alert.tokenMint)}
           </span>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3">
             <a
               href={`https://birdeye.so/token/${alert.tokenMint}?chain=solana`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex cursor-pointer items-center gap-1 text-[10px] text-smr-text-muted transition hover:text-[var(--smr-accent-cyan)]"
+              className="text-[10px] text-smr-text-muted transition hover:text-[var(--smr-accent-cyan)]"
             >
-              Birdeye <ExternalLink size={10} />
+              ↗ Birdeye
             </a>
             <a
               href={`https://dexscreener.com/solana/${alert.tokenMint}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex cursor-pointer items-center gap-1 text-[10px] text-smr-text-muted transition hover:text-[var(--smr-accent-cyan)]"
+              className="text-[10px] text-smr-text-muted transition hover:text-[var(--smr-accent-cyan)]"
             >
-              DexScreener <ExternalLink size={10} />
+              ↗ DexScreener
             </a>
           </div>
         </div>
 
-        {/* 指标行 */}
-        <div className="mb-3 grid grid-cols-3 gap-3">
-          <div>
-            <div className="text-[10px] text-smr-text-muted">Liquidity</div>
-            <div className="font-data text-sm font-medium text-smr-text">
-              ${formatCompact(alert.liquidity)}
-            </div>
-          </div>
-          <div>
-            <div className="text-[10px] text-smr-text-muted">FDV</div>
-            <div className="font-data text-sm font-medium text-smr-text">
-              ${formatCompact(alert.fdv)}
-            </div>
-          </div>
-          <div>
-            <div className="text-[10px] text-smr-text-muted">Market Cap</div>
-            <div className="font-data text-sm font-medium text-smr-text">
-              ${formatCompact(alert.marketCap)}
-            </div>
-          </div>
-        </div>
-
-        {/* 风险标记 */}
-        {severity === 'high' && (
+        {/* 风险警告（高风险时显示） */}
+        {riskWarning && (
           <div className="mb-3 flex items-center gap-2 rounded-md bg-[var(--smr-accent-red)]/10 px-3 py-1.5">
-            <AlertTriangle size={14} className="text-[var(--smr-accent-red)]" />
-            <span className="text-xs text-[var(--smr-accent-red)]">
-              {t('freezeWarning')}
-            </span>
+            <AlertTriangle size={13} className="shrink-0 text-[var(--smr-accent-red)]" />
+            <span className="text-xs text-[var(--smr-accent-red)]">⚠️ {riskWarning}</span>
           </div>
         )}
 
-        {/* AI 摘要 展开/折叠 */}
-        {alert.aiSummary && (
-          <button
-            onClick={() => setExpanded((e) => !e)}
-            className="flex w-full cursor-pointer items-center gap-2 rounded-md bg-[var(--smr-bg-elevated)] px-3 py-2 text-left text-sm text-smr-text-secondary transition hover:bg-[var(--smr-bg-hover)]"
-            style={{ transition: 'background var(--smr-transition-fast)' }}
-          >
-            <Brain size={14} className="shrink-0 text-[var(--smr-accent-cyan)]" />
-            <span className="flex-1">
-              {expanded ? t('aiDetail') : t('aiDetailExpand')}
-            </span>
-            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-        )}
-      </div>
-
-      {/* 展开的 AI 详情 */}
-      {alert.aiSummary && expanded && (
-        <div
-          className="border-t border-[var(--smr-glass-border)] bg-[var(--smr-bg-elevated)] px-4 py-3"
-          style={{ animation: 'fade-in var(--smr-transition-normal)' }}
-        >
-          <p className="text-sm leading-relaxed text-smr-text-secondary">
-            {alert.aiSummary}
-          </p>
+        {/* 四列指标 */}
+        <div className="mb-3 flex overflow-hidden rounded-md bg-[var(--smr-bg-elevated)]">
+          {METRICS.map(({ label, key, highlight }, i) => (
+            <div
+              key={label}
+              className={`flex-1 px-2 py-2 text-center ${i > 0 ? 'border-l border-[var(--smr-glass-border)]' : ''}`}
+            >
+              <div className="text-[9px] uppercase tracking-wide text-smr-text-muted">{label}</div>
+              <div
+                className={`font-data text-xs font-semibold ${
+                  highlight ? 'text-[var(--smr-accent-cyan)]' : 'text-smr-text'
+                }`}
+              >
+                ${formatCompact(alert[key])}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+
+        {/* AI 摘要 — 始终可见，不再折叠 */}
+        {alert.aiSummary && (
+          <div className="mb-3 border-l-2 border-[var(--smr-accent-cyan)] pl-3">
+            <p className="text-xs italic leading-relaxed text-smr-text-secondary">
+              🤖 {alert.aiSummary}
+            </p>
+          </div>
+        )}
+
+        {/* 数据源 footer */}
+        <div className="flex items-center justify-between border-t border-[var(--smr-glass-border)] pt-2">
+          <span className="text-[10px] text-smr-text-muted">🔍 Helius → DexScreener → Claude</span>
+          <div className="flex gap-3">
+            <a
+              href={`https://birdeye.so/token/${alert.tokenMint}?chain=solana`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-[var(--smr-accent-cyan)]/70 transition hover:text-[var(--smr-accent-cyan)]"
+            >
+              Birdeye
+            </a>
+            <a
+              href={`https://dexscreener.com/solana/${alert.tokenMint}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-[var(--smr-accent-cyan)]/70 transition hover:text-[var(--smr-accent-cyan)]"
+            >
+              DexScreener
+            </a>
+          </div>
+        </div>
+      </div>
     </GlassCard>
   );
 }

@@ -78,6 +78,9 @@ export interface PipelineConfig {
 
 export function createPipeline(config: PipelineConfig) {
   const dedup = new TxDedup();
+  const log = config.logger ?? {
+    error: (obj: unknown, msg: string) => console.error(`[pipeline] ${msg}`, obj),
+  };
 
   async function processTransaction(tx: HeliusEnhancedTransaction): Promise<void> {
     if (dedup.isDuplicate(tx.signature)) return;
@@ -96,7 +99,20 @@ export function createPipeline(config: PipelineConfig) {
     const tokenSymbol = swap.tokenSymbol ?? enrichment.tokenSymbol ?? null;
 
     // 质量过滤 — 跳过低质量代币以减少噪音
-    if (!passesQualityFilter(enrichment)) return;
+    if (!passesQualityFilter(enrichment)) {
+      log.error(
+        {
+          signature: swap.signature,
+          tokenMint: swap.tokenMint,
+          tokenSymbol,
+          liquidity: enrichment.liquidity,
+          fdv: enrichment.fdv,
+          volume24h: enrichment.volume24h,
+        },
+        'Alert skipped by quality filter',
+      );
+      return;
+    }
 
     // 风险评估
     const riskAssessment = assessRisk(enrichment);
@@ -139,6 +155,7 @@ export function createPipeline(config: PipelineConfig) {
       liquidity: enrichment.liquidity,
       fdv: enrichment.fdv,
       marketCap: enrichment.marketCap,
+      volume24h: enrichment.volume24h,
       mintAuthority: enrichment.mintAuthority,
       freezeAuthority: enrichment.freezeAuthority,
       aiSummary,
@@ -160,10 +177,19 @@ export function createPipeline(config: PipelineConfig) {
       dbWrite,
     ]);
 
+    // Log Telegram send failure
+    const tgResult = results[0];
+    if (tgResult && tgResult.status === 'rejected') {
+      log.error(
+        { err: tgResult.reason, signature: swap.signature, tokenMint: swap.tokenMint },
+        'Telegram alert send failed',
+      );
+    }
+
     // Log DB write failure but never throw
     const dbResult = results[1];
     if (dbResult && dbResult.status === 'rejected') {
-      config.logger?.error(
+      log.error(
         { err: dbResult.reason, signature: swap.signature },
         'Failed to persist alert to database',
       );

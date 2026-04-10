@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { alertBus } from '../src/events.js';
 
 vi.mock('../src/webhook/parse.js', () => ({
   parseSwap: vi.fn(),
@@ -161,6 +162,21 @@ describe('Pipeline', () => {
 
     expect(enrichToken).toHaveBeenCalledWith('MintNew', expect.anything(), 2000, undefined);
     expect(sendAlert).toHaveBeenCalledOnce();
+  });
+
+  it('includes volume24h in alertBus event', async () => {
+    const emitted: unknown[] = [];
+    alertBus.on('alert', (data) => emitted.push(data));
+
+    setupSwapMocks(); // enrichToken mock returns volume24h: 500_000
+    await pipeline.processTransaction(swapFixture as HeliusEnhancedTransaction);
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(emitted).toHaveLength(1);
+    expect((emitted[0] as { volume24h: number }).volume24h).toBe(500_000);
+
+    alertBus.removeAllListeners('alert');
   });
 
   it('rejects transactions from a wallet removed from state', async () => {

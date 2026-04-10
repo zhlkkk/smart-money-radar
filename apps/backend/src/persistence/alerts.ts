@@ -31,6 +31,7 @@ export async function persistAlert(
       liquidity: input.enrichment.liquidity,
       fdv: input.enrichment.fdv,
       marketCap: input.enrichment.marketCap,
+      volume24h: input.enrichment.volume24h,
       mintAuthority:
         input.enrichment.mintAuthority === 'unchecked' ? null : input.enrichment.mintAuthority,
       freezeAuthority:

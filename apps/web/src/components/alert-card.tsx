@@ -48,7 +48,9 @@ const SEVERITY_BADGE_PROPS: Record<Severity, { variant: 'red' | 'gold' | 'cyan';
   low:    { variant: 'cyan', labelKey: 'info' },
 };
 
-const METRICS: Array<{ label: string; key: 'liquidity' | 'fdv' | 'marketCap' | 'volume24h'; highlight?: boolean }> = [
+type MetricKey = 'liquidity' | 'fdv' | 'marketCap' | 'volume24h';
+
+const METRICS: Array<{ label: string; key: MetricKey; highlight?: true }> = [
   { label: 'Liq',     key: 'liquidity',  highlight: true },
   { label: 'FDV',     key: 'fdv' },
   { label: 'MC',      key: 'marketCap' },

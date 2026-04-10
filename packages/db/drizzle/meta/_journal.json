@@ -8,6 +8,13 @@
       "when": 1775029017211,
       "tag": "0000_hesitant_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775805571841,
+      "tag": "0001_brief_guardsmen",
+      "breakpoints": true
     }
   ]
 }

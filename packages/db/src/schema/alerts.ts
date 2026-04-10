@@ -17,6 +17,7 @@ export const alertsHistory = pgTable('alerts_history', {
   liquidity: real('liquidity'),
   fdv: real('fdv'),
   marketCap: real('market_cap'),
+  volume24h: real('volume24h'),
   mintAuthority: text('mint_authority'),
   freezeAuthority: text('freeze_authority'),
   aiSummary: text('ai_summary'),

@@ -4,6 +4,7 @@ import {
   getHeliusWebhook,
   updateHeliusWebhookAddresses,
   findWebhookByUrl,
+  clearWebhookConfigCache,
 } from '../../src/discovery/helius-webhooks.js';
 import type { HeliusWebhook } from '../../src/types.js';
 import { sleep } from '../../src/utils/sleep.js';
@@ -30,6 +31,7 @@ function makeWebhook(overrides: Partial<HeliusWebhook> = {}): HeliusWebhook {
 describe('helius-webhooks', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
+    clearWebhookConfigCache();
   });
 
   afterEach(() => {
@@ -69,9 +71,9 @@ describe('helius-webhooks', () => {
       vi.mocked(fetch).mockResolvedValue(new Response('rate limited', { status: 429 }));
 
       await expect(listHeliusWebhooks(FAKE_KEY)).rejects.toThrow('status 429');
-      // 1 initial + 3 retries = 4 calls
-      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(4);
-      expect(sleep).toHaveBeenCalledTimes(3);
+      // 1 initial + 5 retries = 6 calls
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(6);
+      expect(sleep).toHaveBeenCalledTimes(5);
     });
 
     it('throws on 500 with status code in message', async () => {
@@ -134,6 +136,23 @@ describe('helius-webhooks', () => {
       // Verify other fields are preserved
       expect(body.webhookType).toBe('enhanced');
       expect(body.authHeader).toBe('Bearer secret');
+    });
+
+    it('uses cached config on second call (skips GET)', async () => {
+      const existing = makeWebhook({ accountAddresses: ['old'] });
+      const updated1 = makeWebhook({ accountAddresses: ['a1'] });
+      const updated2 = makeWebhook({ accountAddresses: ['a2'] });
+
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(new Response(JSON.stringify(existing), { status: 200 })) // GET
+        .mockResolvedValueOnce(new Response(JSON.stringify(updated1), { status: 200 })) // PUT 1
+        .mockResolvedValueOnce(new Response(JSON.stringify(updated2), { status: 200 })); // PUT 2 (no GET)
+
+      await updateHeliusWebhookAddresses(FAKE_KEY, 'wh-1', ['a1']);
+      await updateHeliusWebhookAddresses(FAKE_KEY, 'wh-1', ['a2']);
+
+      // 1 GET + 2 PUTs = 3 calls (not 2 GETs + 2 PUTs = 4)
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3);
     });
 
     it('throws when GET fails', async () => {

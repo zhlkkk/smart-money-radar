@@ -6,6 +6,11 @@ import {
   findWebhookByUrl,
 } from '../../src/discovery/helius-webhooks.js';
 import type { HeliusWebhook } from '../../src/types.js';
+import { sleep } from '../../src/utils/sleep.js';
+
+vi.mock('../../src/utils/sleep.js', () => ({
+  sleep: vi.fn().mockResolvedValue(undefined),
+}));
 
 const FAKE_KEY = 'test-api-key';
 
@@ -47,12 +52,26 @@ describe('helius-webhooks', () => {
       );
     });
 
-    it('throws on 429 with status code in message', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce(
-        new Response('rate limited', { status: 429 }),
-      );
+    it('retries on 429 then succeeds', async () => {
+      const webhooks = [makeWebhook()];
+      vi.mocked(fetch)
+        .mockResolvedValueOnce(new Response('rate limited', { status: 429 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify(webhooks), { status: 200 }));
+
+      const result = await listHeliusWebhooks(FAKE_KEY);
+
+      expect(result).toEqual(webhooks);
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+      expect(sleep).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws after exhausting retries on 429', async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response('rate limited', { status: 429 }));
 
       await expect(listHeliusWebhooks(FAKE_KEY)).rejects.toThrow('status 429');
+      // 1 initial + 3 retries = 4 calls
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(4);
+      expect(sleep).toHaveBeenCalledTimes(3);
     });
 
     it('throws on 500 with status code in message', async () => {

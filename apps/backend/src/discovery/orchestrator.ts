@@ -7,7 +7,7 @@ import { updateHeliusWebhookAddresses } from './helius-webhooks.js';
 import { scoreWallets, mergeWithPinned, SOURCE_WEIGHTS } from './scoring.js';
 import type { DiscoveryState, ScoredWallet } from './scoring.js';
 import { loadDiscoveryState, saveDiscoveryState } from './persistence.js';
-import { syncTrackedWallets, deactivateWallets } from '../persistence/wallets.js';
+import { syncTrackedWallets, deactivateWallets, loadActiveWallets } from '../persistence/wallets.js';
 import { createCounterpartyTracker } from './counterparty-tracker.js';
 import type { CounterpartyTracker } from './counterparty-tracker.js';
 
@@ -103,6 +103,39 @@ export function createDiscovery(config: DiscoveryConfig) {
     const merged = mergeWithPinned(config.pinnedWallets, currentDiscovered);
     config.walletStateRef.current = createWalletState(merged);
     console.info(`[discovery] Pipeline initialized with ${merged.size} total wallets (${config.pinnedWallets.size} pinned + ${currentDiscovered.length} discovered)`);
+  }
+
+  /**
+   * Restore wallet state from the database when local JSON is unavailable
+   * (e.g., after container redeploy on Railway).
+   */
+  async function restoreFromDb(): Promise<void> {
+    if (currentDiscovered.length > 0 || !config.db) return;
+
+    try {
+      const dbWallets = await loadActiveWallets(config.db);
+      if (dbWallets.length === 0) return;
+
+      currentDiscovered = dbWallets.map((w) => ({
+        address: w.address,
+        label: w.label ?? undefined,
+        category: w.category ?? undefined,
+        compositeScore: w.compositeScore ?? 0,
+        winRate: w.winRate ?? NaN,
+        pnl: w.pnl ?? NaN,
+        tradeCount: w.tradeCount ?? 0,
+        lastActiveTimestamp: Date.now(),
+        sources: [],
+      }));
+
+      const merged = mergeWithPinned(config.pinnedWallets, currentDiscovered);
+      config.walletStateRef.current = createWalletState(merged);
+      console.info(`[discovery] Restored ${dbWallets.length} wallets from database (container restart recovery)`);
+    } catch (err) {
+      console.error('[discovery] Database restore failed (non-fatal)', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   // Build provider array
@@ -265,11 +298,11 @@ export function createDiscovery(config: DiscoveryConfig) {
         const allAddresses = [...merged.keys()];
         await updateHeliusWebhookAddresses(config.heliusApiKey, config.heliusWebhookId, allAddresses);
       } catch (heliusErr) {
-        // Rollback in-memory state
-        config.walletStateRef.current = previousSnapshot;
-        currentDiscovered = previousDiscovered;
-        console.error('[discovery] Helius webhook update failed, rolled back', {
+        // Keep in-memory wallet state (so pipeline can process any existing webhook events)
+        // but don't persist — next successful cycle will sync everything
+        console.error('[discovery] Helius webhook update failed, keeping in-memory state', {
           error: heliusErr instanceof Error ? heliusErr.message : String(heliusErr),
+          walletsInMemory: merged.size,
         });
         return;
       }
@@ -326,12 +359,16 @@ export function createDiscovery(config: DiscoveryConfig) {
     }
   }
 
-  function start(): void {
+  async function start(): Promise<void> {
     console.info('[discovery] Starting', {
       intervalMs: config.intervalMs,
       walletCap: config.walletCap,
       hasDb: config.db !== null,
     });
+
+    // If no local state, try DB recovery before starting cycles
+    await restoreFromDb();
+
     // Determine when to run first cycle
     const persisted = loadDiscoveryState(config.statePath);
     const now = Date.now();

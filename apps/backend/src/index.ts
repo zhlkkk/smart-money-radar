@@ -267,7 +267,7 @@ try {
 
   // Start wallet discovery after server is accepting webhooks
   if (discovery) {
-    discovery.start();
+    await discovery.start();
   }
 
   // 每小时清理过期订阅的频道成员

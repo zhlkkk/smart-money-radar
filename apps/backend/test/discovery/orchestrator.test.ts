@@ -136,18 +136,17 @@ describe('discovery orchestrator', () => {
     expect(mockSaveDiscoveryState).not.toHaveBeenCalled();
   });
 
-  it('rolls back in-memory state when Helius PUT fails', async () => {
+  it('keeps in-memory state when Helius PUT fails (no rollback)', async () => {
     const config = makeConfig();
     mockFetchTopWallets.mockResolvedValue(makeCandidates(5));
     mockUpdateHeliusWebhookAddresses.mockRejectedValue(new Error('Helius 500'));
 
-    const previousSize = config.walletStateRef.current.walletMap.size;
-
     const discovery = createDiscovery(config);
     await discovery.runCycle();
 
-    // State was rolled back
-    expect(config.walletStateRef.current.walletMap.size).toBe(previousSize);
+    // In-memory state should contain discovered wallets (not rolled back)
+    expect(config.walletStateRef.current.walletMap.size).toBeGreaterThan(0);
+    // But should NOT persist (webhook wasn't updated)
     expect(mockSaveDiscoveryState).not.toHaveBeenCalled();
   });
 

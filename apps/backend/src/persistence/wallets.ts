@@ -1,5 +1,38 @@
 import { trackedWallets } from '@radar/db';
+import { eq } from 'drizzle-orm';
 import type { PoolDatabase } from '@radar/db';
+
+export interface LoadedWallet {
+  address: string;
+  label: string | null;
+  category: string | null;
+  compositeScore: number | null;
+  winRate: number | null;
+  pnl: number | null;
+  tradeCount: number | null;
+}
+
+/**
+ * Load all active discovered wallets from the database.
+ * Used at startup to restore wallet state in container environments
+ * where local JSON persistence is lost on redeploy.
+ */
+export async function loadActiveWallets(db: PoolDatabase): Promise<LoadedWallet[]> {
+  const rows = await db
+    .select({
+      address: trackedWallets.address,
+      label: trackedWallets.label,
+      category: trackedWallets.category,
+      compositeScore: trackedWallets.compositeScore,
+      winRate: trackedWallets.winRate,
+      pnl: trackedWallets.pnl,
+      tradeCount: trackedWallets.tradeCount,
+    })
+    .from(trackedWallets)
+    .where(eq(trackedWallets.isActive, true));
+
+  return rows;
+}
 
 export interface ScoredWalletInput {
   address: string;
